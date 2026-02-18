@@ -39,7 +39,7 @@ export async function proxy(request: NextRequest) {
   // Check for NextAuth session token
   let nextAuthToken = null
   try {
-    nextAuthToken = await getToken({ req: request, secret: process.env.AUTH_SECRET })
+    nextAuthToken = await getToken({ req: request, secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET })
   } catch (error) {
     // NextAuth not configured or error, continue with cookie-based auth
     console.log("NextAuth token check failed, using cookie-based auth")

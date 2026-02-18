@@ -9,8 +9,8 @@ if (!process.env.MICROSOFT_CLIENT_ID) {
 if (!process.env.MICROSOFT_CLIENT_SECRET) {
   console.error("❌ MICROSOFT_CLIENT_SECRET is missing from environment variables")
 }
-if (!process.env.AUTH_SECRET) {
-  console.error("❌ AUTH_SECRET is missing from environment variables")
+if (!process.env.AUTH_SECRET && !process.env.NEXTAUTH_SECRET) {
+  console.error("❌ AUTH_SECRET / NEXTAUTH_SECRET is missing from environment variables")
 }
 
 export const authOptions: NextAuthOptions = {
@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
     AzureADProvider({
       clientId: process.env.MICROSOFT_CLIENT_ID!,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-      tenantId: process.env.MICROSOFT_TENANT_ID || "common",
+      tenantId: process.env.MICROSOFT_TENANT_ID || process.env.AZURE_AD_TENANT_ID || "common",
       authorization: {
         params: {
           scope: "openid profile email",
@@ -121,7 +121,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 }
 
 const handler = NextAuth(authOptions)
