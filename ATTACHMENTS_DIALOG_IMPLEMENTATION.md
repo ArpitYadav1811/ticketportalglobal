@@ -140,7 +140,9 @@ app/
 
 
 
-
+git add .
+git commit -m "fix: manual author sync for vercel"
+git push
 
 
 now 
