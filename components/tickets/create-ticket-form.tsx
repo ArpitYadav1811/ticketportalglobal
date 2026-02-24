@@ -612,27 +612,50 @@ export default function CreateTicketForm() {
       {/* Customer vs Internal Selection */}
       <div className="bg-white border border-border rounded-xl p-6 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Classification</h3>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="isInternal"
-              checked={!formData.isInternal}
-              onChange={() => handleInternalToggle(false)}
-              className="w-4 h-4"
-            />
-            <span className="text-foreground font-medium">Customer Ticket</span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="isInternal"
-              checked={formData.isInternal}
-              onChange={() => handleInternalToggle(true)}
-              className="w-4 h-4"
-            />
-            <span className="text-foreground font-medium">Internal Ticket</span>
-          </label>
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="isInternal"
+                checked={!formData.isInternal}
+                onChange={() => handleInternalToggle(false)}
+                className="w-4 h-4"
+              />
+              <span className="text-foreground font-medium">Customer Ticket</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="isInternal"
+                checked={formData.isInternal}
+                onChange={() => handleInternalToggle(true)}
+                className="w-4 h-4"
+              />
+              <span className="text-foreground font-medium">Internal Ticket</span>
+            </label>
+          </div>
+
+          {/* Organization dropdown - only shown when Internal Ticket is selected */}
+          {formData.isInternal && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Organization *
+              </label>
+              <Combobox
+                options={organizations.map((org) => ({
+                  value: org.id.toString(),
+                  label: org.name,
+                  subtitle: org.description,
+                }))}
+                value={formData.organizationId}
+                onChange={handleOrganizationChange}
+                placeholder="Select organization..."
+                searchPlaceholder="Search organizations..."
+                emptyText="No organizations found"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -661,29 +684,8 @@ export default function CreateTicketForm() {
       {/* Ticket Classification */}
       <div className="bg-white border border-border rounded-xl p-6 space-y-4 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground">
-          {formData.isInternal ? "Organization & Target Business Group" : "Ticket Classification"}
+          {formData.isInternal ? "Target Business Group" : "Ticket Classification"}
         </h3>
-
-        {/* Organization dropdown - only for Internal tickets */}
-        {formData.isInternal && (
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Organization *
-            </label>
-            <Combobox
-              options={organizations.map((org) => ({
-                value: org.id.toString(),
-                label: org.name,
-                subtitle: org.description,
-              }))}
-              value={formData.organizationId}
-              onChange={handleOrganizationChange}
-              placeholder="Select organization..."
-              searchPlaceholder="Search organizations..."
-              emptyText="No organizations found"
-            />
-          </div>
-        )}
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">

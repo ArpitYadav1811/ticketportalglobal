@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, History, RefreshCw, PlusCircle, CheckCircle2, PauseCircle, PlayCircle, UserPlus, FolderKanban, ArrowRightLeft } from "lucide-react"
+import { X, History, RefreshCw, PlusCircle, CheckCircle2, PauseCircle, PlayCircle, UserPlus, FolderKanban, ArrowRightLeft, UserCheck, MessageSquare } from "lucide-react"
 import { getTicketAuditLog } from "@/lib/actions/tickets"
 import { format } from "date-fns"
 
@@ -117,6 +117,20 @@ export default function ActivityHistoryModal({
                 if (log.notes) {
                   actionText += ` - ${log.notes}`
                 }
+              } else if (log.action_type === 'spoc_change') {
+                icon = <UserCheck className="w-4 h-4" />
+                iconBg = "bg-teal-100 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400"
+                if (log.old_value === 'Unassigned') {
+                  actionText = `assigned SPOC to ${log.new_value}`
+                } else if (log.new_value === 'Unassigned') {
+                  actionText = `removed SPOC ${log.old_value}`
+                } else {
+                  actionText = `changed SPOC from ${log.old_value} to ${log.new_value}`
+                }
+              } else if (log.action_type === 'comment_edited') {
+                icon = <MessageSquare className="w-4 h-4" />
+                iconBg = "bg-cyan-100 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400"
+                actionText = `edited a comment`
               } else {
                 actionText = `${log.action_type}: ${log.new_value || ''}`
               }

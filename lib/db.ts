@@ -1,13 +1,39 @@
 import { neon, NeonQueryFunction } from "@neondatabase/serverless"
 import { getDatabaseUrl } from "./utils/db-config"
 
-// ✅ Simple, direct initialization - no Proxy, no lazy tricks
-const databaseUrl = getDatabaseUrl()
+// ─── Global Singleton Pattern for Development ────────────────────────────────
+// Prevents creating new database connections on every Fast Refresh (HMR)
+// In production, this runs once per serverless function invocation (normal behavior)
 
-// Initialize Neon client
+// Extend globalThis to include our database client
+declare global {
+  // eslint-disable-next-line no-var
+  var __neonClient: ReturnType<typeof neon> | undefined
+}
+
+// Get or create the Neon client using singleton pattern
+function getNeonClient() {
+  const databaseUrl = getDatabaseUrl()
+  
+  // In development, reuse the existing client to avoid reconnecting on HMR
+  if (process.env.NODE_ENV !== "production") {
+    if (!global.__neonClient) {
+      console.log("[DB] Creating new Neon client (development)")
+      global.__neonClient = neon(databaseUrl)
+    } else {
+      console.log("[DB] Reusing existing Neon client (development)")
+    }
+    return global.__neonClient
+  }
+  
+  // In production, create a new client for each serverless invocation
+  return neon(databaseUrl)
+}
+
+// Initialize Neon client with singleton pattern
 // Note: Neon serverless uses fetch under the hood
 // For timeout issues, we'll add retry logic via a wrapper
-const neonClient = neon(databaseUrl)
+const neonClient = getNeonClient()
 
 // Helper function to check if an error is retryable
 function isRetryableError(error: unknown): boolean {
@@ -160,7 +186,6 @@ export type Ticket = {
   created_at: Date
   updated_at: Date
   is_internal: boolean
-  parent_ticket_id: number | null
   redirected_from_business_unit_group_id: number | null
   redirected_from_spoc_user_id: number | null
   redirection_remarks: string | null

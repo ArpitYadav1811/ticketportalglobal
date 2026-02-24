@@ -2,7 +2,7 @@
  * Ticket Type Definitions
  * 
  * This file contains comprehensive TypeScript type definitions for tickets,
- * including support for internal tickets, sub-tickets, and redirection.
+ * including support for internal tickets and redirection.
  */
 
 /**
@@ -60,9 +60,6 @@ export interface Ticket {
   // NEW: Internal tickets support
   is_internal: boolean
 
-  // NEW: Sub-tickets (child tickets) support
-  parent_ticket_id: number | null
-
   // NEW: Redirection support
   redirected_from_business_unit_group_id: number | null
   redirected_from_spoc_user_id: number | null
@@ -98,10 +95,6 @@ export interface TicketWithDetails extends Ticket {
 
   // Counts
   attachment_count: number
-
-  // Sub-tickets (children)
-  child_tickets?: TicketWithDetails[]
-  parent_ticket?: TicketWithDetails | null
 }
 
 /**
@@ -122,7 +115,6 @@ export interface CreateTicketInput {
   estimatedReleaseDate?: string | null
   // NEW fields
   isInternal?: boolean
-  parentTicketId?: number | null
 }
 
 /**
@@ -133,15 +125,6 @@ export interface RedirectTicketInput {
   newBusinessUnitGroupId: number
   newSpocUserId: number
   remarks: string
-}
-
-/**
- * Sub-ticket creation input type
- */
-export interface CreateSubTicketInput extends CreateTicketInput {
-  parentTicketId: number
-  // For sub-tickets, initiator is SPOC of parent
-  // SPOC group name is parent's target business group
 }
 
 /**
@@ -157,8 +140,7 @@ export interface TicketFilters {
   includeDeleted?: boolean
   myTeam?: boolean
   userId?: number
+  teamMemberIds?: number[]
   // NEW filters
   isInternal?: boolean
-  parentTicketId?: number | null // null = only parent tickets, number = specific parent's children
-  hasChildren?: boolean
 }

@@ -47,9 +47,8 @@ export async function getTickets(filters?: {
   includeDeleted?: boolean
   myTeam?: boolean
   userId?: number
+  teamMemberIds?: number[]
   isInternal?: boolean
-  parentTicketId?: number | null
-  hasChildren?: boolean
   targetBusinessGroup?: string
   initiator?: string
   initiatorGroup?: string
@@ -76,8 +75,7 @@ export async function getTickets(filters?: {
         holder.full_name as hold_by_name,
         redirected_bug.name as redirected_from_group_name,
         redirected_spoc.full_name as redirected_from_spoc_name,
-        (SELECT COUNT(*) FROM attachments att WHERE att.ticket_id = t.id) as attachment_count,
-        (SELECT COUNT(*) FROM tickets child WHERE child.parent_ticket_id = t.id AND (child.is_deleted IS NULL OR child.is_deleted = FALSE)) as child_ticket_count
+        (SELECT COUNT(*) FROM attachments att WHERE att.ticket_id = t.id) as attachment_count
       FROM tickets t
       LEFT JOIN users u ON t.created_by = u.id
       LEFT JOIN users a ON t.assigned_to = a.id
@@ -99,6 +97,21 @@ export async function getTickets(filters?: {
 
     // Apply filters in JavaScript
     let filteredTickets = [...tickets]
+
+    // My Team filter - show tickets where assignee or creator is in the team
+    if (filters?.myTeam && filters?.teamMemberIds && filters.teamMemberIds.length > 0) {
+      filteredTickets = filteredTickets.filter(t => {
+        // Include tickets where:
+        // 1. Assignee is a team member
+        // 2. Creator is a team member
+        // 3. SPOC is a team member
+        const isAssigneeInTeam = t.assigned_to && filters.teamMemberIds!.includes(t.assigned_to)
+        const isCreatorInTeam = t.created_by && filters.teamMemberIds!.includes(t.created_by)
+        const isSpocInTeam = t.spoc_user_id && filters.teamMemberIds!.includes(t.spoc_user_id)
+        
+        return isAssigneeInTeam || isCreatorInTeam || isSpocInTeam
+      })
+    }
 
     if (filters?.status && filters.status !== "all") {
       filteredTickets = filteredTickets.filter(t => t.status === filters.status)
@@ -143,27 +156,6 @@ export async function getTickets(filters?: {
         const isInternal = t.creator_business_unit_group_id !== null && t.creator_business_unit_group_id !== undefined
         return isInternal === filters.isInternal
       })
-    }
-
-    // Filter by parent ticket (for sub-tickets)
-    if (filters?.parentTicketId !== undefined) {
-      if (filters.parentTicketId === null) {
-        // Only parent tickets (no parent)
-        filteredTickets = filteredTickets.filter(t => !t.parent_ticket_id)
-      } else {
-        // Only sub-tickets of specific parent
-        filteredTickets = filteredTickets.filter(t => t.parent_ticket_id === filters.parentTicketId)
-      }
-    }
-
-    // Filter tickets that have children
-    if (filters?.hasChildren === true) {
-      const parentTicketIds = new Set(
-        filteredTickets
-          .filter(t => t.parent_ticket_id)
-          .map(t => t.parent_ticket_id)
-      )
-      filteredTickets = filteredTickets.filter(t => parentTicketIds.has(t.id))
     }
 
     // Filter by target business group
@@ -301,7 +293,6 @@ export async function createTicket(data: {
   productReleaseName?: string
   estimatedReleaseDate?: string | null
   isInternal?: boolean
-  parentTicketId?: number | null
   assignedTo?: number | null
 }) {
   try {
@@ -342,7 +333,7 @@ export async function createTicket(data: {
         business_unit_group_id, target_business_group_id, assignee_group_id,
         project_name, project_id, category_id, subcategory_id,
         estimated_duration, product_release_name, estimated_release_date,
-        is_internal, parent_ticket_id
+        is_internal
       )
       VALUES (
         ${ticketId},
@@ -365,8 +356,7 @@ export async function createTicket(data: {
         ${data.estimatedDuration || null},
         ${data.productReleaseName || null},
         ${data.estimatedReleaseDate || null},
-        ${data.isInternal || false},
-        ${data.parentTicketId || null}
+        ${data.isInternal || false}
       )
       RETURNING *
     `
@@ -593,6 +583,124 @@ export async function addComment(ticketId: number, content: string) {
   } catch (error) {
     console.error("[v0] Error adding comment:", error)
     return { success: false, error: "Failed to add comment" }
+  }
+}
+
+export async function updateComment(commentId: number, content: string) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || !currentUser.id) {
+      return { success: false, error: "User not authenticated" }
+    }
+
+    // Get the comment and verify ownership
+    const commentBefore = await sql`
+      SELECT c.*, t.id as ticket_id, t.ticket_number
+      FROM comments c
+      JOIN tickets t ON c.ticket_id = t.id
+      WHERE c.id = ${commentId}
+    `
+
+    if (commentBefore.length === 0) {
+      return { success: false, error: "Comment not found" }
+    }
+
+    const comment = commentBefore[0]
+    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+
+    // Only comment owner or admin can edit
+    if (comment.user_id !== currentUser.id && !isAdmin) {
+      return { success: false, error: "You can only edit your own comments" }
+    }
+
+    // Update the comment
+    const result = await sql`
+      UPDATE comments
+      SET 
+        content = ${content},
+        updated_at = CURRENT_TIMESTAMP,
+        is_edited = TRUE,
+        edited_by = ${currentUser.id}
+      WHERE id = ${commentId}
+      RETURNING *
+    `
+
+    // Log comment edit to audit trail
+    await addAuditLog({
+      ticketId: comment.ticket_id,
+      actionType: 'comment_edited',
+      oldValue: null,
+      newValue: `Comment #${commentId} edited`,
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email,
+      notes: `Comment was edited at ${new Date().toISOString()}`,
+    })
+
+    revalidatePath("/tickets")
+    revalidatePath(`/tickets/${comment.ticket_id}`)
+
+    return { success: true, data: result[0] }
+  } catch (error) {
+    console.error("[v0] Error updating comment:", error)
+    return { success: false, error: "Failed to update comment" }
+  }
+}
+
+export async function updateTicketSPOC(ticketId: number, newSpocId: number) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+
+    // Get ticket info before update
+    const ticketBefore = await sql`
+      SELECT t.*, spoc.full_name as old_spoc_name
+      FROM tickets t
+      LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
+      WHERE t.id = ${ticketId}
+    `
+
+    if (ticketBefore.length === 0) {
+      return { success: false, error: "Ticket not found" }
+    }
+
+    const ticket = ticketBefore[0]
+    const oldSpocId = ticket.spoc_user_id
+
+    // Only process if SPOC actually changed
+    if (oldSpocId !== newSpocId) {
+      // Get new SPOC name
+      const newSpocResult = await sql`
+        SELECT full_name FROM users WHERE id = ${newSpocId}
+      `
+      const newSpocName = newSpocResult.length > 0 ? newSpocResult[0].full_name : 'Unknown'
+
+      // Update ticket
+      await sql`
+        UPDATE tickets
+        SET spoc_user_id = ${newSpocId}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${ticketId}
+      `
+
+      // Log SPOC change to audit trail
+      await addAuditLog({
+        ticketId,
+        actionType: 'spoc_change',
+        oldValue: ticket.old_spoc_name || 'Unassigned',
+        newValue: newSpocName,
+        performedBy: currentUser.id,
+        performedByName: currentUser.full_name || currentUser.email,
+      })
+
+      revalidatePath("/tickets")
+      revalidatePath(`/tickets/${ticketId}`)
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error updating SPOC:", error)
+    return { success: false, error: "Failed to update SPOC" }
   }
 }
 

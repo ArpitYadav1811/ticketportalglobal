@@ -4,8 +4,9 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useTheme } from "next-themes"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { Settings, Plus, Trash2, Users, Eye, EyeOff, Check, UserPlus } from "lucide-react"
+import { Settings, Plus, Trash2, Users, Eye, EyeOff, Check, UserPlus, Moon, Sun, Monitor } from "lucide-react"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { getUsers } from "@/lib/actions/tickets"
 import {
@@ -24,7 +25,9 @@ import AddTeamMemberModal from "@/components/settings/add-team-member-modal"
 
 export default function SettingsPage() {
   const { data: session, status, update } = useSession()
+  const { theme, setTheme } = useTheme()
   const [activeTab, setActiveTab] = useState("my-group")
+  const [mounted, setMounted] = useState(false)
   const [businessGroups, setBusinessGroups] = useState<any[]>([])
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [teamMembers, setTeamMembers] = useState<any[]>([])
@@ -45,6 +48,11 @@ export default function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showAddMemberModal, setShowAddMemberModal] = useState(false)
 
+  // Avoid hydration mismatch for theme
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Load business groups once on mount
   useEffect(() => {
     const loadBusinessGroups = async () => {
@@ -62,6 +70,12 @@ export default function SettingsPage() {
 
   // Load initial user data and update when session changes
   useEffect(() => {
+    // Handle loading state explicitly to prevent infinite loading during HMR
+    if (status === "loading") {
+      // Keep loading state true while NextAuth is initializing
+      return
+    }
+
     if (status === "authenticated" && session?.user) {
       const userFromSession = {
         id: parseInt(session.user.id || "0"),
@@ -286,8 +300,8 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl">
-        <div className="mb-8">
+      <div className="max-w-full">
+        <div className="mb-2 bg-white dark:bg-gray-800 border border-border rounded-xl p-4 shadow-sm">
           <h1 className="text-3xl font-poppins font-bold text-foreground flex items-center gap-3">
             <Settings className="w-8 h-8" />
             Settings
@@ -295,16 +309,17 @@ export default function SettingsPage() {
           <p className="text-muted-foreground mt-2">Manage your account settings and preferences</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full bg-white dark:bg-gray-800 border border-border rounded-xl p-2 shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 border-b ">
             <TabsTrigger value="my-group">My Group</TabsTrigger>
             <TabsTrigger value="my-team">My Team</TabsTrigger>
             <TabsTrigger value="account">Account Information</TabsTrigger>
+            <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
           {/* My Group Tab */}
-          <TabsContent value="my-group" className="mt-6">
-            <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
+          <TabsContent value="my-group" className="mt-2">
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-blue-600" />
@@ -323,7 +338,7 @@ export default function SettingsPage() {
                   <select
                     value={selectedBusinessGroup}
                     onChange={(e) => setSelectedBusinessGroup(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-border rounded-lg bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg bg-card dark:bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   >
                     <option value="">Select a business group</option>
                     {businessGroups.map((group) => (
@@ -349,7 +364,7 @@ export default function SettingsPage() {
 
           {/* My Team Tab */}
           <TabsContent value="my-team" className="mt-6">
-            <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -409,7 +424,7 @@ export default function SettingsPage() {
 
           {/* Account Information Tab */}
           <TabsContent value="account" className="mt-6">
-            <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-6 shadow-sm">
               <h3 className="font-poppins font-semibold text-foreground text-lg mb-6">Account Information</h3>
 
               <form onSubmit={handleSaveAccountInfo} className="space-y-4">
@@ -419,7 +434,7 @@ export default function SettingsPage() {
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-border rounded-lg bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg bg-card dark:bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   />
                 </div>
 
@@ -438,7 +453,7 @@ export default function SettingsPage() {
                   <select
                     value={selectedBusinessGroup}
                     onChange={(e) => setSelectedBusinessGroup(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-border rounded-lg bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg bg-card dark:bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   >
                     <option value="">Select a business group</option>
                     {businessGroups.map((group) => (
@@ -579,6 +594,137 @@ export default function SettingsPage() {
                     </div>
                   </form>
                 )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Appearance Tab */}
+          <TabsContent value="appearance" className="mt-6">
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                  <Moon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="font-poppins font-semibold text-lg text-foreground">Theme Preferences</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">Customize your visual experience</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-4">
+                    Choose your theme
+                  </label>
+                  
+                  {mounted ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Light Theme Option */}
+                      <button
+                        onClick={() => setTheme("light")}
+                        className={`relative p-4 rounded-lg border-2 transition-all ${
+                          theme === "light"
+                            ? "border-primary bg-primary/5 dark:bg-primary/10"
+                            : "border-border hover:border-primary/50 bg-card"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-200 to-yellow-400 flex items-center justify-center">
+                            <Sun className="w-6 h-6 text-yellow-700" />
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-foreground">Light</div>
+                            <div className="text-xs text-muted-foreground mt-1">Bright and clear</div>
+                          </div>
+                          {theme === "light" && (
+                            <div className="absolute top-2 right-2">
+                              <Check className="w-5 h-5 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Dark Theme Option */}
+                      <button
+                        onClick={() => setTheme("dark")}
+                        className={`relative p-4 rounded-lg border-2 transition-all ${
+                          theme === "dark"
+                            ? "border-primary bg-primary/5 dark:bg-primary/10"
+                            : "border-border hover:border-primary/50 bg-card"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center">
+                            <Moon className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-foreground">Dark</div>
+                            <div className="text-xs text-muted-foreground mt-1">Easy on the eyes</div>
+                          </div>
+                          {theme === "dark" && (
+                            <div className="absolute top-2 right-2">
+                              <Check className="w-5 h-5 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+
+                      {/* System Theme Option */}
+                      <button
+                        onClick={() => setTheme("system")}
+                        className={`relative p-4 rounded-lg border-2 transition-all ${
+                          theme === "system"
+                            ? "border-primary bg-primary/5 dark:bg-primary/10"
+                            : "border-border hover:border-primary/50 bg-card"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
+                            <Monitor className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-foreground">System</div>
+                            <div className="text-xs text-muted-foreground mt-1">Match your device</div>
+                          </div>
+                          {theme === "system" && (
+                            <div className="absolute top-2 right-2">
+                              <Check className="w-5 h-5 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="p-4 rounded-lg border-2 border-border bg-card">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+                            <div className="w-16 h-4 bg-muted rounded animate-pulse" />
+                            <div className="w-24 h-3 bg-muted rounded animate-pulse" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-start gap-3 p-4 bg-muted/50 dark:bg-muted/20 rounded-lg">
+                    <div className="text-muted-foreground mt-0.5">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-foreground font-medium mb-1">Theme Preference</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your theme preference is saved locally and will persist across sessions. 
+                        The System option automatically switches between light and dark based on your device settings.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>

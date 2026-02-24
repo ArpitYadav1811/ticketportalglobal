@@ -4,13 +4,14 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { ArrowLeft, Edit, MessageSquare, Paperclip, Clock, User, Calendar, Tag, Download, FileText, ListChecks, CheckCircle2, History, RefreshCw, UserPlus, FolderKanban, PauseCircle, PlayCircle, XCircle, PlusCircle, ArrowRightLeft, Building2, GitBranch, Trash2 } from "lucide-react"
+import { ArrowLeft, Edit, MessageSquare, Paperclip, Clock, User, Calendar, Tag, Download, FileText, ListChecks, CheckCircle2, History, RefreshCw, UserPlus, FolderKanban, PauseCircle, PlayCircle, XCircle, PlusCircle, ArrowRightLeft, Building2, GitBranch, Trash2, UserCheck } from "lucide-react"
 import { getTicketById, updateTicketStatus, addComment, getTicketAuditLog, redirectTicket } from "@/lib/actions/tickets"
 import { getSubcategoryDetails } from "@/lib/actions/master-data"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import RedirectModal from "@/components/tickets/redirect-modal"
 import StatusChangeModal from "@/components/tickets/status-change-modal"
+import AttachmentsDialog from "@/components/tickets/attachments-dialog"
 
 export default function TicketDetailPage() {
   const params = useParams()
@@ -29,6 +30,7 @@ export default function TicketDetailPage() {
   const [isStatusChangeModalOpen, setIsStatusChangeModalOpen] = useState(false)
   const [selectedNewStatus, setSelectedNewStatus] = useState<string>("")
   const [changingStatus, setChangingStatus] = useState(false)
+  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false)
 
   // Load current user from session or localStorage
   useEffect(() => {
@@ -314,13 +316,24 @@ export default function TicketDetailPage() {
 
             {/* Attachments */}
             <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6">
-              <h2 className="font-poppins font-bold text-foreground mb-4 flex items-center gap-2">
-                <Paperclip className="w-5 h-5" />
-                Attachments ({ticket.attachments?.length || 0})
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-poppins font-bold text-foreground flex items-center gap-2">
+                  <Paperclip className="w-5 h-5" />
+                  Attachments ({ticket.attachments?.length || 0})
+                </h2>
+                {ticket.attachments?.length > 0 && (
+                  <button
+                    onClick={() => setIsAttachmentsDialogOpen(true)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    View All
+                  </button>
+                )}
+              </div>
               {ticket.attachments?.length > 0 ? (
                 <div className="space-y-2">
-                  {ticket.attachments.map((attachment: any) => (
+                  {ticket.attachments.slice(0, 3).map((attachment: any) => (
                     <div
                       key={attachment.id}
                       className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-surface dark:hover:bg-gray-700 transition-colors"
@@ -351,6 +364,14 @@ export default function TicketDetailPage() {
                       )}
                     </div>
                   ))}
+                  {ticket.attachments.length > 3 && (
+                    <button
+                      onClick={() => setIsAttachmentsDialogOpen(true)}
+                      className="w-full text-center py-2 text-sm text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
+                    >
+                      + {ticket.attachments.length - 3} more attachment{ticket.attachments.length - 3 !== 1 ? 's' : ''}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
@@ -572,6 +593,20 @@ export default function TicketDetailPage() {
                       if (log.notes) {
                         actionText += ` - ${log.notes}`
                       }
+                    } else if (log.action_type === 'spoc_change') {
+                      icon = <UserCheck className="w-4 h-4" />
+                      iconBg = "bg-teal-100 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400"
+                      if (log.old_value === 'Unassigned') {
+                        actionText = `assigned SPOC to ${log.new_value}`
+                      } else if (log.new_value === 'Unassigned') {
+                        actionText = `removed SPOC ${log.old_value}`
+                      } else {
+                        actionText = `changed SPOC from ${log.old_value} to ${log.new_value}`
+                      }
+                    } else if (log.action_type === 'comment_edited') {
+                      icon = <MessageSquare className="w-4 h-4" />
+                      iconBg = "bg-cyan-100 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400"
+                      actionText = `edited a comment`
                     } else {
                       actionText = `${log.action_type}: ${log.new_value || ''}`
                     }
@@ -622,6 +657,14 @@ export default function TicketDetailPage() {
         newStatus={selectedNewStatus}
         ticketNumber={ticket?.ticket_number || 0}
         loading={changingStatus}
+      />
+
+      {/* Attachments Dialog */}
+      <AttachmentsDialog
+        isOpen={isAttachmentsDialogOpen}
+        onClose={() => setIsAttachmentsDialogOpen(false)}
+        attachments={ticket?.attachments || []}
+        ticketNumber={ticket?.ticket_number || 0}
       />
     </DashboardLayout>
   )

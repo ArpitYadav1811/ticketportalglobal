@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Search, Filter, Users, X, FileDown } from "lucide-react"
 import { getUsers } from "@/lib/actions/tickets"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
+import { getMyTeamMembers } from "@/lib/actions/my-team"
+import { TeamTooltip } from "@/components/ui/team-tooltip"
 
 interface User {
   id: number
@@ -15,6 +17,15 @@ interface BusinessUnitGroup {
   id: number
   name: string
   description: string | null
+}
+
+interface TeamMember {
+  id: number
+  name: string
+  email: string
+  business_unit_group_id: number | null
+  group_name: string | null
+  team_member_id: number
 }
 
 interface Ticket {
@@ -36,6 +47,8 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
   const [userId, setUserId] = useState<number | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [businessUnitGroups, setBusinessUnitGroups] = useState<BusinessUnitGroup[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [loadingTeam, setLoadingTeam] = useState(false)
   const [filters, setFilters] = useState({
     status: "all",
     dateFrom: "",
@@ -61,7 +74,10 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
       const userData = localStorage.getItem("user")
       if (userData) {
         const user = JSON.parse(userData)
-        setUserId(Number(user.id)) // Ensure ID is a number
+        const uid = Number(user.id)
+        setUserId(uid)
+        // Load team members for this user
+        loadTeamMembers(uid)
       }
     } catch (e) {
       console.error("Failed to parse user data:", e)
@@ -87,10 +103,29 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
     }
   }
 
+  const loadTeamMembers = async (uid: number) => {
+    setLoadingTeam(true)
+    try {
+      const result = await getMyTeamMembers(uid)
+      if (result.success && result.data) {
+        setTeamMembers(result.data as TeamMember[])
+      }
+    } catch (error) {
+      console.error("Failed to load team members:", error)
+    } finally {
+      setLoadingTeam(false)
+    }
+  }
+
   const handleApplyFilters = () => {
+    const teamMemberIds = filters.myTeam && teamMembers.length > 0
+      ? teamMembers.map(tm => tm.id)
+      : []
+    
     onFilterChange({
       ...filters,
       userId: filters.myTeam ? userId : undefined,
+      teamMemberIds: teamMemberIds,
     })
   }
 
@@ -123,12 +158,28 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
   }
 
   const handleMyTeamToggle = () => {
-    const newFilters = { ...filters, myTeam: !filters.myTeam }
+    const newMyTeamValue = !filters.myTeam
+    const newFilters = { ...filters, myTeam: newMyTeamValue }
     setFilters(newFilters)
-    onFilterChange({
-      ...newFilters,
-      userId: !filters.myTeam ? userId : undefined,
-    })
+    
+    if (newMyTeamValue) {
+      // Turning ON "My Team" filter
+      const teamMemberIds = teamMembers.length > 0
+        ? teamMembers.map(tm => tm.id)
+        : []
+      
+      onFilterChange({
+        ...newFilters,
+        userId: userId,
+        teamMemberIds: teamMemberIds,
+      })
+    } else {
+      // Turning OFF "My Team" filter - clear team-related filters
+      onFilterChange({
+        ...newFilters,
+        teamMemberIds: undefined,
+      })
+    }
   }
 
   const activeFilterCount = [
@@ -138,7 +189,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
     filters.dateTo,
     filters.spoc,
     filters.assignee,
-    filters.myTeam,
+    // filters.myTeam, // Excluded - My Team is a separate filter, not part of the main filter block
     filters.targetBusinessGroup,
     filters.initiator,
     filters.initiatorGroup,
@@ -205,17 +256,37 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
         </button>
 
         {/* My Team Toggle */}
-        <button
-          onClick={handleMyTeamToggle}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-            filters.myTeam
-              ? "bg-primary text-white"
-              : "bg-white dark:bg-gray-700 border border-border text-foreground hover:bg-surface dark:hover:bg-gray-600"
-          }`}
+        <TeamTooltip
+          teamMembers={teamMembers.map(tm => ({
+            id: tm.id,
+            name: tm.name,
+            email: tm.email,
+            group: tm.group_name || undefined,
+          }))}
+          isActive={filters.myTeam}
         >
-          <Users className="w-4 h-4" />
-          My Team
-        </button>
+          <button
+            onClick={handleMyTeamToggle}
+            disabled={loadingTeam}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              filters.myTeam
+                ? "bg-primary text-white"
+                : "bg-white dark:bg-gray-700 border border-border text-foreground hover:bg-surface dark:hover:bg-gray-600"
+            } ${loadingTeam ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <Users className="w-4 h-4" />
+            My Team
+            {teamMembers.length > 0 && (
+              <span className={`inline-flex items-center justify-center w-5 h-5 text-xs rounded-full ${
+                filters.myTeam 
+                  ? "bg-white dark:bg-gray-700 text-primary" 
+                  : "bg-primary text-white"
+              }`}>
+                {teamMembers.length}
+              </span>
+            )}
+          </button>
+        </TeamTooltip>
       </div>
 
       {/* Expanded Filters */}
@@ -336,7 +407,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
               >
                 <option value="">All Initiators</option>
                 {uniqueInitiators.map((name) => (
-                  <option key={name} value={name}>
+                  <option key={name} value={name || ""}>
                     {name}
                   </option>
                 ))}
@@ -353,7 +424,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
               >
                 <option value="">All Groups</option>
                 {uniqueInitiatorGroups.map((name) => (
-                  <option key={name} value={name}>
+                  <option key={name} value={name || ""}>
                     {name}
                   </option>
                 ))}
@@ -370,7 +441,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
               >
                 <option value="">All Projects</option>
                 {uniqueProjects.map((name) => (
-                  <option key={name} value={name}>
+                  <option key={name} value={name || ""}>
                     {name}
                   </option>
                 ))}
