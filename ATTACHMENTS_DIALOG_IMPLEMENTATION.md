@@ -116,6 +116,34 @@ app/
 - Hover states and transitions for better UX
 
 ### Accessibility:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+now 
 - Proper ARIA labels
 - Keyboard navigation support
 - Focus management
