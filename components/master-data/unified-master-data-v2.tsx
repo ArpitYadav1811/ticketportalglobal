@@ -226,7 +226,7 @@ export default function UnifiedMasterDataV2() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6">
+    <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="business-groups">Business Groups</TabsTrigger>
@@ -315,11 +315,11 @@ export default function UnifiedMasterDataV2() {
                 return (
                   <div key={category.id} className="border border-border rounded-lg">
                     {/* Category Header */}
-                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50">
                       <div className="flex items-center gap-2 flex-1">
                         <button
                           onClick={() => toggleCategory(category.id)}
-                          className="hover:bg-white dark:hover:bg-gray-600 rounded p-1"
+                          className="hover:bg-white dark:hover:bg-slate-600 rounded p-1"
                         >
                           {expandedCategories.has(category.id) ? (
                             <ChevronDown className="w-5 h-5" />
@@ -354,7 +354,7 @@ export default function UnifiedMasterDataV2() {
                             return (
                               <div
                                 key={subcat.id}
-                                className="border border-border rounded-lg p-3 ml-6 bg-white dark:bg-gray-800"
+                                className="border border-border rounded-lg p-3 ml-6 bg-white dark:bg-slate-800"
                               >
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1">

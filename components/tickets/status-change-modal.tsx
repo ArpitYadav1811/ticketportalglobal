@@ -62,7 +62,7 @@ export default function StatusChangeModal({
       <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col">
+      <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
@@ -73,7 +73,7 @@ export default function StatusChangeModal({
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-surface dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-surface dark:hover:bg-slate-700 rounded-lg transition-colors"
             disabled={loading}
           >
             <X className="w-5 h-5 text-muted-foreground" />
@@ -122,11 +122,11 @@ export default function StatusChangeModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-border bg-surface/50 dark:bg-gray-700/50">
+        <div className="flex items-center justify-between p-4 border-t border-border bg-surface/50 dark:bg-slate-700/50">
           <button
             onClick={handleClose}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-surface dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-surface dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

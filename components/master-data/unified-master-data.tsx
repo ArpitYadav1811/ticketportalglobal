@@ -333,7 +333,7 @@ export default function UnifiedMasterData() {
                   return (
                     <div key={category.id} className="border border-border rounded-lg ml-8">
                       {/* Category Header */}
-                      <div className="flex items-center justify-between p-3 bg-gray-50">
+                      <div className="flex items-center justify-between p-3 bg-slate-50">
                         <div className="flex items-center gap-2 flex-1">
                           <button
                             onClick={() => toggleCategory(tbg.id, category.id)}

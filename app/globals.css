@@ -4,27 +4,28 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated colors to match Sharpen Focus brand (Deep Purple #530093, Medium Purple #A21094) */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0 0);
-  --surface: oklch(0.96 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-
-  /* Primary: Deep Purple #530093 */
-  --primary: oklch(0.385 0.193 283.5);
-  --primary-foreground: oklch(0.98 0 0);
-
-  /* Secondary: Medium Purple #A21094 */
-  --secondary: oklch(0.56 0.174 284.2);
-  --secondary-foreground: oklch(0.98 0 0);
-
-  --muted: oklch(0.92 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.385 0.193 283.5);
-  --accent-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.97 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+
+  /* Additional variables for compatibility */
+  --surface: oklch(0.97 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --destructive-foreground: oklch(0.985 0 0);
 
   /* Status colors for tickets */
   --status-open: oklch(0.53 0.15 259.5);
@@ -34,25 +35,22 @@
   --danger: oklch(0.58 0.18 25.3);
   --warning: oklch(0.72 0.15 80);
 
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.96 0 0);
-  --ring: oklch(0.385 0.193 283.5);
-  --chart-1: oklch(0.385 0.193 283.5);
-  --chart-2: oklch(0.56 0.174 284.2);
-  --chart-3: oklch(0.646 0.222 41.116);
+  /* Chart colors */
+  --chart-1: oklch(0.205 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.708 0 0);
   --chart-4: oklch(0.63 0.15 142.4);
   --chart-5: oklch(0.72 0.15 80);
-  --radius: 0.625rem;
+
+  /* Sidebar variables */
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.385 0.193 283.5);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.96 0 0);
-  --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.385 0.193 283.5);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.145 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -98,15 +96,14 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-open-sans), "Open Sans", sans-serif;
-  --font-poppins: var(--font-poppins), "Poppins", sans-serif;
+  --font-sans: 'Geist', 'Geist Fallback', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', 'Courier New', Courier, monospace;
+  
+  /* Map shadcn variables to Tailwind names */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -114,12 +111,20 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Additional variables for compatibility */
+  --color-surface: var(--surface);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-status-open: var(--status-open);
   --color-status-closed: var(--status-closed);
   --color-status-hold: var(--status-hold);
@@ -131,9 +136,6 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -149,12 +151,9 @@
   * {
     @apply border-border outline-ring/50;
   }
-
   body {
-    @apply bg-background text-foreground;
+    @apply bg-slate-50 text-foreground font-sans antialiased;
   }
-
-  /* Removed problematic input-field class definition - now using inline Tailwind classes */
 }
 
 @layer utilities {
@@ -243,25 +242,25 @@
   background: transparent;
 }
 
-.scrollbar-track-gray-800::-webkit-scrollbar-track {
-  background: rgb(31 41 55);
+.scrollbar-track-slate-800::-webkit-scrollbar-track {
+  background: rgb(30 41 59);
   border-radius: 4px;
 }
 
-.scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
-  background: rgb(75 85 99);
+.scrollbar-thumb-slate-600::-webkit-scrollbar-thumb {
+  background: rgb(71 85 105);
   border-radius: 4px;
 }
 
-.scrollbar-thumb-gray-600:hover::-webkit-scrollbar-thumb,
-.hover\:scrollbar-thumb-gray-500:hover::-webkit-scrollbar-thumb {
-  background: rgb(107 114 128);
+.scrollbar-thumb-slate-600:hover::-webkit-scrollbar-thumb,
+.hover\:scrollbar-thumb-slate-500:hover::-webkit-scrollbar-thumb {
+  background: rgb(100 116 139);
 }
 
 /* Firefox scrollbar */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgb(75 85 99) rgb(31 41 55);
+  scrollbar-color: rgb(71 85 105) rgb(30 41 59);
 }
 /* Enhanced Custom Scrollbar Styles for Tooltips */
 .scrollbar-thin::-webkit-scrollbar {
@@ -273,24 +272,24 @@
   background: transparent;
 }
 
-.scrollbar-thumb-gray-500::-webkit-scrollbar-thumb {
-  background: rgb(107 114 128);
+.scrollbar-thumb-slate-500::-webkit-scrollbar-thumb {
+  background: rgb(100 116 139);
   border-radius: 3px;
 }
 
-.scrollbar-thumb-gray-500:hover::-webkit-scrollbar-thumb,
-.hover\:scrollbar-thumb-gray-400:hover::-webkit-scrollbar-thumb {
-  background: rgb(156 163 175);
+.scrollbar-thumb-slate-500:hover::-webkit-scrollbar-thumb,
+.hover\:scrollbar-thumb-slate-400:hover::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184);
 }
 
-.dark .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
-  background: rgb(75 85 99);
+.dark .scrollbar-thumb-slate-600::-webkit-scrollbar-thumb {
+  background: rgb(71 85 105);
   border-radius: 3px;
 }
 
-.dark .scrollbar-thumb-gray-600:hover::-webkit-scrollbar-thumb,
-.dark .hover\:scrollbar-thumb-gray-500:hover::-webkit-scrollbar-thumb {
-  background: rgb(107 114 128);
+.dark .scrollbar-thumb-slate-600:hover::-webkit-scrollbar-thumb,
+.dark .hover\:scrollbar-thumb-slate-500:hover::-webkit-scrollbar-thumb {
+  background: rgb(100 116 139);
 }
 
 /* Firefox scrollbar for tooltips */
@@ -298,10 +297,10 @@
   scrollbar-width: thin;
 }
 
-.scrollbar-thumb-gray-500 {
-  scrollbar-color: rgb(107 114 128) transparent;
+.scrollbar-thumb-slate-500 {
+  scrollbar-color: rgb(100 116 139) transparent;
 }
 
-.dark .scrollbar-thumb-gray-600 {
-  scrollbar-color: rgb(75 85 99) transparent;
+.dark .scrollbar-thumb-slate-600 {
+  scrollbar-color: rgb(71 85 105) transparent;
 }

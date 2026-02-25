@@ -113,7 +113,7 @@ export default function HorizontalNav() {
           <div className="flex items-center gap-8">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-100 dark:border-blue-900 flex items-center justify-center transition-transform group-hover:scale-105">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-transform group-hover:scale-105">
                 <Image
                   src="/company-logo.svg"
                   alt="Company Logo"
@@ -123,7 +123,7 @@ export default function HorizontalNav() {
                 />
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-bold text-slate-900 dark:text-white text-lg leading-tight">
+                <h1 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">
                   Ticket Portal
                 </h1>
               </div>
@@ -168,7 +168,7 @@ export default function HorizontalNav() {
                 className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 border-2 border-transparent hover:border-slate-200 dark:hover:border-slate-700"
               >
                 {/* Avatar */}
-                <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                <div className="w-9 h-9 bg-black rounded-lg flex items-center justify-center shadow-sm">
                   <span className="text-white font-bold text-sm">
                     {initials}
                   </span>
@@ -198,7 +198,7 @@ export default function HorizontalNav() {
                     {/* User Info Header (Mobile) */}
                     <div className="px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 md:hidden bg-slate-50 dark:bg-slate-900">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
                           <span className="text-white font-bold text-sm">{initials}</span>
                         </div>
                         <div>

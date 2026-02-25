@@ -141,7 +141,7 @@ export default function TargetBusinessGroupMappingsTab() {
   const filteredMappings = getFilteredMappings()
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6">
+    <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-poppins font-bold text-foreground">Target Business Group Mappings</h2>
@@ -202,7 +202,7 @@ export default function TargetBusinessGroupMappingsTab() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface dark:bg-gray-700/50">
+            <tr className="border-b border-border bg-surface dark:bg-slate-700/50">
               <th className="text-left py-3 px-4 font-semibold text-foreground">Target Business Group</th>
               <th className="text-left py-3 px-4 font-semibold text-foreground">Category</th>
               <th className="text-left py-3 px-4 font-semibold text-foreground">Subcategory</th>
@@ -224,7 +224,7 @@ export default function TargetBusinessGroupMappingsTab() {
               </tr>
             ) : (
               filteredMappings.map((item) => (
-                <tr key={item.id} className="border-b border-border hover:bg-surface dark:hover:bg-gray-700/50 transition-colors">
+                <tr key={item.id} className="border-b border-border hover:bg-surface dark:hover:bg-slate-700/50 transition-colors">
                   <td className="py-3 px-4 text-foreground">{item.target_business_group_name}</td>
                   <td className="py-3 px-4 text-foreground">{item.category_name}</td>
                   <td className="py-3 px-4 text-foreground">{item.subcategory_name}</td>
@@ -346,7 +346,7 @@ function TargetBusinessGroupMappingDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto border border-border">
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto border border-border">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-poppins font-bold text-foreground">
             {editItem.id ? "Edit Mapping" : "Add Mapping"}

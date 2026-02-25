@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import Link from "next/link"
 import { ArrowUpRight, Paperclip, Eye } from "lucide-react"
 import { getRecentTickets } from "@/lib/actions/stats"
+import { getStatusColor } from "@/lib/utils-colors"
 
 interface Ticket {
   id: number
@@ -41,18 +42,6 @@ export default function RecentTickets() {
     setIsLoading(false)
   }
 
-  const getStatusColor = (status: string) => {
-    const normalizedStatus = status.toLowerCase().replace(/\s+/g, "-")
-    return (
-      {
-        open: "bg-red-50 text-red-700 border border-red-200",
-        "in-progress": "bg-yellow-50 text-yellow-700 border border-yellow-200",
-        resolved: "bg-green-50 text-green-700 border border-green-200",
-        hold: "bg-gray-50 text-gray-700 border border-gray-200",
-        closed: "bg-green-50 text-green-700 border border-green-200",
-      }[normalizedStatus] || "bg-gray-50 text-gray-700 border border-gray-200"
-    )
-  }
 
   const formatStatus = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()

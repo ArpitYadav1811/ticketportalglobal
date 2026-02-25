@@ -22,6 +22,7 @@ import TicketHistoryTooltip from "./ticket-history-tooltip"
 import StatusChangeModal from "./status-change-modal"
 import AttachmentsDialog from "./attachments-dialog"
 import { FolderKanban } from "lucide-react"
+import { getStatusColor } from "@/lib/utils-colors"
 
 interface Ticket {
   id: number
@@ -460,13 +461,20 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
     setIsAttachmentsDialogOpen(true)
   }
 
-  const statusColor = {
-    open: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900",
-    "on-hold": "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900",
-    resolved: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900",
-    closed: "bg-slate-50 dark:bg-slate-950/30 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-900",
-    returned: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900",
-    deleted: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900",
+  // Helper function to get status color with dark mode support
+  const getStatusColorWithDark = (status: string) => {
+    const baseColor = getStatusColor(status)
+    // Add dark mode variants for better visibility
+    const darkModeMap: Record<string, string> = {
+      "open": "dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900",
+      "on-hold": "dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
+      "resolved": "dark:bg-green-950/30 dark:text-green-400 dark:border-green-900",
+      "closed": "dark:bg-slate-950/30 dark:text-slate-400 dark:border-slate-900",
+      "returned": "dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900",
+      "deleted": "dark:bg-red-950/30 dark:text-red-400 dark:border-red-900",
+    }
+    const normalizedStatus = status.toLowerCase().replace(/\s+/g, "-")
+    return `${baseColor} ${darkModeMap[normalizedStatus] || "dark:bg-slate-950/30 dark:text-slate-400 dark:border-slate-900"}`
   }
 
   const handleExport = () => {
@@ -535,7 +543,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 border border-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-border rounded-xl overflow-hidden">
         <div className="p-8 text-center text-foreground-secondary">Loading tickets...</div>
       </div>
     )
@@ -543,7 +551,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
 
   if (tickets.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 border border-border rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-border rounded-xl overflow-hidden">
         <div className="p-8 text-center text-foreground-secondary">
           No tickets found. Try adjusting your filters or create a new ticket.
         </div>
@@ -555,7 +563,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
     <div className="bg-white dark:bg-gray-800 border border-border rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-surface dark:bg-gray-700 border-b border-border">
+          <thead className="bg-surface dark:bg-slate-700 border-b border-border">
             <tr>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
                 Initiator
@@ -595,8 +603,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
             {tickets.map((ticket, index) => (
                     <tr
                       key={ticket.id}
-                      className={`hover:bg-surface dark:hover:bg-gray-700 transition-colors ${
-                        ticket.is_deleted ? "opacity-50 bg-gray-50 dark:bg-gray-900/50" : ""
+                      className={`hover:bg-surface dark:hover:bg-slate-700 transition-colors ${
+                        ticket.is_deleted ? "opacity-50 bg-slate-50 dark:bg-slate-900/50" : ""
                       }`}
                     >
                       {/* Initiator Name and Group */}
@@ -629,7 +637,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                         }`}>
                           {ticket.ticket_type === "requirement" ? "Requirement" : "Support"}
                         </span>
-                        <div className="text-xs text-foreground-secondary mt-0.5">#{ticket.ticket_number}</div>
+                        <div className="text-xs text-foreground-secondary mt-0.5 font-mono">#{ticket.ticket_number}</div>
                       </td>
 
                       {/* Title (for Requirements) or Category/Subcategory (for Support) */}
@@ -720,7 +728,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                                 openStatusChangeModal(ticket, newStatus)
                               }
                             }}
-                            className={`px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${statusColor[ticket.status] || statusColor["open"]}`}
+                            className={`px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${getStatusColorWithDark(ticket.status)}`}
                           >
                             {getAvailableStatusOptions(ticket).map((status) => (
                               <option key={status} value={status}>
@@ -729,7 +737,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                             ))}
                           </select>
                         ) : (
-                          <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${statusColor[ticket.status] || statusColor["open"]}`}>
+                          <span className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${getStatusColorWithDark(ticket.status)}`}>
                             {ticket.status === "on-hold" ? "On-Hold" : ticket.status === "deleted" ? "Deleted" : ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
                           </span>
                         )}

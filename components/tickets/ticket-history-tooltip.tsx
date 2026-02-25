@@ -311,7 +311,7 @@ export default function TicketHistoryTooltip({
                 return (
                   <div
                     key={log.id}
-                    className="flex items-start gap-2 py-1.5 border-b border-border/50 dark:border-gray-700/50 last:border-0"
+                    className="flex items-start gap-2 py-1.5 border-b border-border/50 dark:border-slate-700/50 last:border-0"
                   >
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
                       {icon}

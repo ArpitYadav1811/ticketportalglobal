@@ -44,8 +44,8 @@ export default function QuickStats() {
       title: "Open Tickets",
       value: isLoading ? "..." : stats.open,
       icon: <Clock className="w-7 h-7" />,
-      bgColor: "bg-blue-50 dark:bg-blue-950/30",
-      iconColor: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-slate-100 dark:bg-slate-800",
+      iconColor: "text-slate-700 dark:text-slate-300",
       borderColor: "border-blue-100 dark:border-blue-900",
     },
     {
@@ -82,7 +82,7 @@ export default function QuickStats() {
           <TrendingUp className="w-6 h-6 text-slate-700 dark:text-slate-300" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
             Statistics Overview
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
@@ -110,7 +110,7 @@ export default function QuickStats() {
               <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                 {stat.title}
               </p>
-              <p className="text-4xl font-bold text-slate-900 dark:text-white">
+              <p className="text-3xl font-semibold text-slate-900 dark:text-white">
                 {stat.value}
               </p>
             </div>

@@ -154,7 +154,7 @@ export default function CustomTooltip({
       {isVisible && (
         <div
           ref={tooltipRef}
-          className="fixed z-[99999] max-w-4xl bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl border border-gray-700 dark:border-gray-600 transition-all duration-200"
+          className="fixed z-[99999] max-w-4xl bg-slate-900 dark:bg-slate-700 text-white text-sm rounded-lg shadow-xl border border-slate-700 dark:border-slate-600 transition-all duration-200"
           style={{
             top: `${tooltipPosition.top}px`,
             left: `${tooltipPosition.left}px`,
@@ -163,7 +163,7 @@ export default function CustomTooltip({
           onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
-          <div className="p-3 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 dark:hover:scrollbar-thumb-gray-500">
+          <div className="p-3 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-500 hover:scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-600 dark:hover:scrollbar-thumb-slate-500">
             <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
               {displayContent}
             </div>
@@ -190,7 +190,7 @@ export default function CustomTooltip({
 
           {/* Arrow indicator */}
           <div
-            className={`absolute w-2 h-2 bg-gray-900 dark:bg-gray-700 border-gray-700 dark:border-gray-600 transform rotate-45 ${
+            className={`absolute w-2 h-2 bg-slate-900 dark:bg-slate-700 border-slate-700 dark:border-slate-600 transform rotate-45 ${
               position === "top"
                 ? "bottom-[-4px] left-1/2 -translate-x-1/2 border-b border-r"
                 : position === "bottom"

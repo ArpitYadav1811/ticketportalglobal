@@ -89,7 +89,7 @@ export default function ProjectNamesTab() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6">
+    <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="font-poppins font-bold text-foreground">Project Names</h2>
         <div className="flex gap-2">
@@ -107,7 +107,7 @@ export default function ProjectNamesTab() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-surface/50 dark:bg-gray-700/50">
+            <tr className="border-b border-border bg-surface/50 dark:bg-slate-700/50">
               <th className="text-left py-3 px-4 font-semibold text-foreground">Project Name</th>
               <th className="text-left py-3 px-4 font-semibold text-foreground">Estimated Release Date</th>
               <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
@@ -116,7 +116,7 @@ export default function ProjectNamesTab() {
           <tbody>
             {data && data.length > 0 ? (
               data.map((item) => (
-                <tr key={item.id} className="border-b border-border hover:bg-surface dark:hover:bg-gray-700">
+                <tr key={item.id} className="border-b border-border hover:bg-surface dark:hover:bg-slate-700">
                   <td className="py-3 px-4">{item.name}</td>
                   <td className="py-3 px-4 text-foreground-secondary">
                     {formatDateForDisplay(item.estimated_release_date)}

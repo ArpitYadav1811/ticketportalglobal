@@ -9,6 +9,7 @@ import { getDelayedTickets } from "@/lib/actions/stats"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import * as XLSX from "xlsx"
+import { getStatusColor } from "@/lib/utils-colors"
 
 interface DelayedTicket {
   id: number
@@ -303,15 +304,7 @@ export default function DelayedTicketsReportPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
-                          className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
-                            ticket.status === "open"
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                              : ticket.status === "on-hold"
-                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
-                              : ticket.status === "resolved"
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300"
-                          }`}
+                          className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${getStatusColor(ticket.status)}`}
                         >
                           {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace("-", " ")}
                         </span>

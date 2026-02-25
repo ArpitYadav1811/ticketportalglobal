@@ -610,7 +610,7 @@ export default function CreateTicketForm() {
       )}
 
       {/* Customer vs Internal Selection */}
-      <div className="bg-white border border-border rounded-xl p-6 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
+      <div className="bg-white border border-border rounded-xl p-6 shadow-lg dark:bg-slate-800 dark:border-slate-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Classification</h3>
         <div className="space-y-4"><div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex items-center gap-3 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"><input type="radio" name="isInternal"
@@ -653,7 +653,7 @@ export default function CreateTicketForm() {
       </div>
 
       {/* Ticket Type Selection (Issue vs Requirement) */}
-      <div className="bg-white border border-border rounded-xl p-6 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
+      <div className="bg-white border border-border rounded-xl p-6 shadow-lg dark:bg-slate-800 dark:border-slate-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Type</h3>
         <div className="flex gap-4">
           {["support", "requirement"].map((type) => (
@@ -675,7 +675,7 @@ export default function CreateTicketForm() {
       </div>
 
       {/* Ticket Classification */}
-      <div className="bg-white border border-border rounded-xl p-6 space-y-4 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
+      <div className="bg-white border border-border rounded-xl p-6 space-y-4 shadow-lg dark:bg-slate-800 dark:border-slate-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground">
           {formData.isInternal ? "Target Business Group" : "Ticket Classification"}
         </h3>
@@ -816,7 +816,7 @@ export default function CreateTicketForm() {
       </div>
 
       {/* Assignment & Details */}
-      <div className="bg-white border border-border rounded-xl p-6 space-y-4 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
+      <div className="bg-white border border-border rounded-xl p-6 space-y-4 shadow-lg dark:bg-slate-800 dark:border-slate-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground">Assignment & Details</h3>
 
         <div>
@@ -897,7 +897,7 @@ export default function CreateTicketForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-black hover:bg-gray-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300  flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CheckCircle className="w-5 h-5" /><span>{isLoading ? "Creating..." : "Create Ticket"}</span>
         </button>

@@ -107,7 +107,7 @@ export default function RedirectModal({
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
+      <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
@@ -118,7 +118,7 @@ export default function RedirectModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-surface dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-surface dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -180,7 +180,7 @@ export default function RedirectModal({
                       <button
                         key={group.id}
                         onClick={() => handleGroupSelect(group.id)}
-                        className={`w-full px-4 py-3 text-left hover:bg-surface dark:hover:bg-gray-700 transition-colors ${
+                        className={`w-full px-4 py-3 text-left hover:bg-surface dark:hover:bg-slate-700 transition-colors ${
                           selectedGroupId === group.id ? "bg-primary/10 dark:bg-primary/20 border-l-4 border-primary" : ""
                         }`}
                       >
@@ -212,7 +212,7 @@ export default function RedirectModal({
                 SPOC (Auto-selected)
               </label>
               {loadingSpoc ? (
-                <div className="px-4 py-2.5 border border-border rounded-lg bg-surface dark:bg-gray-700">
+                <div className="px-4 py-2.5 border border-border rounded-lg bg-surface dark:bg-slate-700">
                   <p className="text-sm text-muted-foreground">Loading SPOC...</p>
                 </div>
               ) : selectedSpocName ? (
@@ -245,10 +245,10 @@ export default function RedirectModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-border bg-surface/50 dark:bg-gray-700/50">
+        <div className="flex items-center justify-between p-4 border-t border-border bg-surface/50 dark:bg-slate-700/50">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-surface dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-surface dark:hover:bg-slate-700 transition-colors"
           >
             Cancel
           </button>

@@ -11,7 +11,7 @@ import { HelpCircle, Info, AlertCircle } from "lucide-react"
  */
 export default function TooltipExamples() {
   return (
-    <div className="p-8 space-y-12 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-8 space-y-12 bg-slate-50 dark:bg-slate-900 min-h-screen">
       <h1 className="text-3xl font-bold text-foreground mb-8">Tooltip Examples</h1>
 
       {/* Basic Examples */}
@@ -54,7 +54,7 @@ export default function TooltipExamples() {
             content="This is a very long description that will be truncated after 100 characters by default. Users can click 'Show More' to see the full content. This demonstrates the expandable tooltip feature that helps keep the UI clean while still providing access to detailed information when needed."
             maxLength={80}
           >
-            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-blue-500">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded cursor-pointer hover:border-blue-500">
               <Info className="w-4 h-4 text-blue-500" />
               <span className="text-sm">Long Description</span>
             </div>
@@ -66,7 +66,7 @@ export default function TooltipExamples() {
             maxLength={100}
             width="lg"
           >
-            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-blue-500">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded cursor-pointer hover:border-blue-500">
               <AlertCircle className="w-4 h-4 text-red-500" />
               <span className="text-sm">Ticket #12345</span>
             </div>
@@ -106,7 +106,7 @@ export default function TooltipExamples() {
             content="This is a light-themed tooltip"
             variant="light"
           >
-            <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+            <button className="px-4 py-2 bg-slate-200 text-slate-800 rounded hover:bg-slate-300">
               Light Theme
             </button>
           </AdvancedTooltip>
@@ -143,7 +143,7 @@ export default function TooltipExamples() {
                     <p className="text-xs opacity-75">john.doe@example.com</p>
                   </div>
                 </div>
-                <div className="pt-2 border-t border-gray-600 dark:border-gray-300 space-y-1">
+                <div className="pt-2 border-t border-slate-600 dark:border-slate-300 space-y-1">
                   <p className="text-xs">Role: Developer</p>
                   <p className="text-xs">Department: Engineering</p>
                   <p className="text-xs">Joined: Jan 15, 2024</p>
@@ -153,7 +153,7 @@ export default function TooltipExamples() {
             showMoreButton={false}
             width="md"
           >
-            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-blue-500">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded cursor-pointer hover:border-blue-500">
               <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-semibold">
                 JD
               </div>
@@ -201,7 +201,7 @@ export default function TooltipExamples() {
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium">Email Address</label>
             <CustomTooltip content="Enter your work email address. This will be used for all notifications.">
-              <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
             </CustomTooltip>
           </div>
 
@@ -236,8 +236,8 @@ export default function TooltipExamples() {
         <h2 className="text-2xl font-semibold text-foreground">6. Table Cell Tooltips</h2>
         
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg">
-            <thead className="bg-gray-100 dark:bg-gray-700">
+          <table className="min-w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg">
+            <thead className="bg-slate-100 dark:bg-slate-700">
               <tr>
                 <th className="px-4 py-2 text-left text-sm font-semibold">Ticket</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold">Description</th>
@@ -245,7 +245,7 @@ export default function TooltipExamples() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-gray-300 dark:border-gray-600">
+              <tr className="border-t border-slate-300 dark:border-slate-600">
                 <td className="px-4 py-3">
                   <AdvancedTooltip
                     title="Ticket #12345"

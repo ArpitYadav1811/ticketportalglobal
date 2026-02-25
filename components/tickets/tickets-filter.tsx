@@ -221,7 +221,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
   ].filter(Boolean).length
 
   return (
-    <div className="space-y-4 bg-card dark:bg-gray-800 p-4 shadow-lg rounded-md w-full border border-border">
+    <div className="space-y-4 bg-card dark:bg-slate-800 p-4 shadow-lg rounded-md w-full border border-border">
       {/* Quick Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         {/* Universal Search */}
@@ -233,7 +233,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
               placeholder="Search tickets, descriptions, users, categories..."
               value={filters.search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full px-4 py-2.5 pl-10 border border-border rounded-lg bg-white dark:bg-gray-700 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-2.5 pl-10 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
             />
             {filters.search && (
               <button
@@ -254,7 +254,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
         {onExport && (
           <button
             onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap bg-white dark:bg-gray-700 border border-border text-foreground hover:bg-surface dark:hover:bg-gray-600"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
           >
             <FileDown className="w-4 h-4" />
             Export
@@ -267,13 +267,13 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
           className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
             showFilters || activeFilterCount > 0
               ? "bg-primary text-white"
-              : "bg-white dark:bg-gray-700 border border-border text-foreground hover:bg-surface dark:hover:bg-gray-600"
+              : "bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
           }`}
         >
           <Filter className="w-4 h-4" />
           Filters
           {activeFilterCount > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-white dark:bg-gray-700 text-primary rounded-full">
+            <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-white dark:bg-slate-700 text-primary rounded-full">
               {activeFilterCount}
             </span>
           )}
@@ -295,7 +295,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
               filters.myTeam
                 ? "bg-primary text-white"
-                : "bg-white dark:bg-gray-700 border border-border text-foreground hover:bg-surface dark:hover:bg-gray-600"
+                : "bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
             } ${loadingTeam ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <Users className="w-4 h-4" />
@@ -303,7 +303,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
             {teamMembers.length > 0 && (
               <span className={`inline-flex items-center justify-center w-5 h-5 text-xs rounded-full ${
                 filters.myTeam 
-                  ? "bg-white dark:bg-gray-700 text-primary" 
+                  ? "bg-white dark:bg-slate-700 text-primary" 
                   : "bg-primary text-white"
               }`}>
                 {teamMembers.length}
@@ -315,7 +315,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
 
       {/* Expanded Filters */}
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6 space-y-4">
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {/* Status */}
             <div>

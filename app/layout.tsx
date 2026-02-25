@@ -1,24 +1,11 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Poppins, Open_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { NextAuthSessionProvider } from "@/components/providers/session-provider"
 import { SessionRefresher } from "@/components/providers/session-refresher"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  weight: ["400", "500", "600", "700", "800"],
-})
-
-const openSans = Open_Sans({
-  subsets: ["latin"],
-  variable: "--font-open-sans",
-  weight: ["400", "500", "600", "700"],
-})
 
 export const metadata: Metadata = {
   title: "Ticket Portal",
@@ -57,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${openSans.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body 
         className={`font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning

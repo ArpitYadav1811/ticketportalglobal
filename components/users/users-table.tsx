@@ -100,7 +100,7 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
       designer: "bg-pink-100 text-pink-700",
       analyst: "bg-indigo-100 text-indigo-700",
     }
-    return roleColors[role] || "bg-gray-100 text-gray-700"
+    return roleColors[role] || "bg-slate-100 text-slate-700"
   }
 
   const formatRoleName = (role: string) => {
@@ -149,7 +149,7 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
             {users.map((user) => (
               <tr
                 key={user.id}
-                className={`hover:bg-surface transition-colors ${user.is_active === false ? "opacity-50 bg-gray-50" : ""}`}
+                className={`hover:bg-surface transition-colors ${user.is_active === false ? "opacity-50 bg-slate-50" : ""}`}
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">

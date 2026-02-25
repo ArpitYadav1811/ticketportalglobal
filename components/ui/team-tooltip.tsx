@@ -108,11 +108,11 @@ export function TeamTooltip({ children, teamMembers, isActive = false }: TeamToo
             className={`absolute w-3 h-3 ${
               isActive
                 ? "bg-primary dark:bg-primary"
-                : "bg-white dark:bg-gray-800"
+                : "bg-white dark:bg-slate-800"
             } border ${
               isActive
                 ? "border-primary dark:border-primary"
-                : "border-border dark:border-gray-700"
+                : "border-border dark:border-slate-700"
             } rotate-45 ${
               position === "top" ? "bottom-[-6px]" : "top-[-6px]"
             } ${
@@ -129,7 +129,7 @@ export function TeamTooltip({ children, teamMembers, isActive = false }: TeamToo
             className={`relative rounded-lg shadow-xl border ${
               isActive
                 ? "bg-primary dark:bg-primary text-white border-primary dark:border-primary"
-                : "bg-white dark:bg-gray-800 text-foreground border-border dark:border-gray-700"
+                : "bg-white dark:bg-slate-800 text-foreground border-border dark:border-slate-700"
             } overflow-hidden`}
           >
             {/* Header */}
@@ -137,7 +137,7 @@ export function TeamTooltip({ children, teamMembers, isActive = false }: TeamToo
               className={`px-4 py-3 border-b ${
                 isActive
                   ? "border-white/20 dark:border-white/20"
-                  : "border-border dark:border-gray-700"
+                  : "border-border dark:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -185,13 +185,13 @@ export function TeamTooltip({ children, teamMembers, isActive = false }: TeamToo
                         ? `border-b ${
                             isActive
                               ? "border-white/10 dark:border-white/10"
-                              : "border-border dark:border-gray-700"
+                              : "border-border dark:border-slate-700"
                           }`
                         : ""
                     } ${
                       isActive
                         ? "hover:bg-white/10 dark:hover:bg-white/10"
-                        : "hover:bg-surface dark:hover:bg-gray-700"
+                        : "hover:bg-surface dark:hover:bg-slate-700"
                     } transition-colors`}
                   >
                     <div className="flex items-start gap-3">
@@ -255,7 +255,7 @@ export function TeamTooltip({ children, teamMembers, isActive = false }: TeamToo
                 className={`px-4 py-2 text-center border-t ${
                   isActive
                     ? "border-white/20 dark:border-white/20 bg-white/5"
-                    : "border-border dark:border-gray-700 bg-surface dark:bg-gray-700/50"
+                    : "border-border dark:border-slate-700 bg-surface dark:bg-slate-700/50"
                 }`}
               >
                 <p

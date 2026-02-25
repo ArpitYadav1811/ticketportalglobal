@@ -42,7 +42,7 @@ export default function AttachmentsDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export default function AttachmentsDialog({
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-surface dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-1 hover:bg-surface dark:hover:bg-slate-700 rounded-lg transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5 text-foreground-secondary" />
@@ -80,7 +80,7 @@ export default function AttachmentsDialog({
                 {attachments.map((attachment) => (
                   <div
                     key={attachment.id}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-surface dark:hover:bg-gray-700/50 transition-colors group"
+                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-surface dark:hover:bg-slate-700/50 transition-colors group"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {getFileIcon(attachment.file_name)}
@@ -121,7 +121,7 @@ export default function AttachmentsDialog({
         <div className="px-6 py-4 border-t border-border flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-foreground bg-surface hover:bg-surface/80 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-surface hover:bg-surface/80 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg transition-colors"
           >
             Close
           </button>

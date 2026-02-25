@@ -222,12 +222,12 @@ export default function AdvancedTooltip({
   }
 
   const bgClass = variant === "dark" 
-    ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-700 dark:border-gray-600"
-    : "bg-white dark:bg-gray-100 text-gray-900 dark:text-gray-800 border-gray-200 dark:border-gray-300 shadow-xl"
+    ? "bg-slate-900 dark:bg-slate-700 text-white border-slate-700 dark:border-slate-600"
+    : "bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-800 border-slate-200 dark:border-slate-300 shadow-xl"
 
   const arrowBgClass = variant === "dark"
-    ? "bg-gray-900 dark:bg-gray-700 border-gray-700 dark:border-gray-600"
-    : "bg-white dark:bg-gray-100 border-gray-200 dark:border-gray-300"
+    ? "bg-gray-900 dark:bg-gray-700 border-slate-700 dark:border-slate-600"
+    : "bg-white dark:bg-slate-100 border-slate-200 dark:border-slate-300"
 
   return (
     <>
@@ -255,14 +255,14 @@ export default function AdvancedTooltip({
           <div className="p-3">
             {/* Header with title and close button */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-700 dark:border-gray-300">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-700 dark:border-slate-300">
                 {title && (
                   <h4 className="text-sm font-semibold">{title}</h4>
                 )}
                 {showCloseButton && (
                   <button
                     onClick={handleClose}
-                    className="ml-auto p-0.5 hover:bg-gray-800 dark:hover:bg-gray-200 rounded transition-colors"
+                    className="ml-auto p-0.5 hover:bg-slate-800 dark:hover:bg-slate-200 rounded transition-colors"
                     aria-label="Close"
                   >
                     <X className="w-3.5 h-3.5" />

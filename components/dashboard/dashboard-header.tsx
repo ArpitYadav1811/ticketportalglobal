@@ -10,14 +10,14 @@ export default function DashboardHeader() {
         {/* Left Section - Title with Icon */}
         <div className="flex items-start gap-4">
           {/* Icon Container */}
-          <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-100 dark:border-blue-900">
-            <LayoutDashboard className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800">
+            <LayoutDashboard className="w-5 h-5 text-slate-700 dark:text-slate-300" />
           </div>
           
           {/* Title and Description */}
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
                 Ticket Dashboard
               </h1>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-full">
@@ -34,7 +34,7 @@ export default function DashboardHeader() {
         {/* Right Section - Action Button */}
         <Link
           href="/tickets/create"
-          className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+          className="inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
         >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
           <span>Create Ticket</span>
