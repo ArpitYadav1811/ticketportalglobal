@@ -3,14 +3,16 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { BarChart3, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { BarChart3, CheckCircle, Clock, AlertCircle, TrendingUp } from "lucide-react"
 import { getDashboardStats } from "@/lib/actions/stats"
 
 interface StatCard {
   title: string
   value: string | number
   icon: React.ReactNode
-  color: string
+  bgColor: string
+  iconColor: string
+  borderColor: string
 }
 
 export default function QuickStats() {
@@ -41,49 +43,80 @@ export default function QuickStats() {
     {
       title: "Open Tickets",
       value: isLoading ? "..." : stats.open,
-      icon: <Clock className="w-6 h-6" />,
-      color: "blue",
+      icon: <Clock className="w-7 h-7" />,
+      bgColor: "bg-blue-50 dark:bg-blue-950/30",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      borderColor: "border-blue-100 dark:border-blue-900",
     },
     {
       title: "Closed Tickets",
       value: isLoading ? "..." : stats.closed,
-      icon: <CheckCircle className="w-6 h-6" />,
-      color: "green",
+      icon: <CheckCircle className="w-7 h-7" />,
+      bgColor: "bg-green-50 dark:bg-green-950/30",
+      iconColor: "text-green-600 dark:text-green-400",
+      borderColor: "border-green-100 dark:border-green-900",
     },
     {
       title: "On Hold",
       value: isLoading ? "..." : stats.hold,
-      icon: <AlertCircle className="w-6 h-6" />,
-      color: "yellow",
+      icon: <AlertCircle className="w-7 h-7" />,
+      bgColor: "bg-amber-50 dark:bg-amber-950/30",
+      iconColor: "text-amber-600 dark:text-amber-400",
+      borderColor: "border-amber-100 dark:border-amber-900",
     },
     {
       title: "Total Tickets",
       value: isLoading ? "..." : stats.total,
-      icon: <BarChart3 className="w-6 h-6" />,
-      color: "purple",
+      icon: <BarChart3 className="w-7 h-7" />,
+      bgColor: "bg-purple-50 dark:bg-purple-950/30",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      borderColor: "border-purple-100 dark:border-purple-900",
     },
   ]
 
-  const colorClasses = {
-    blue: "bg-blue-50 text-blue-700",
-    green: "bg-green-50 text-green-700",
-    yellow: "bg-yellow-50 text-yellow-700",
-    purple: "bg-purple-50 text-purple-700",
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {statCards.map((stat, idx) => (
-        <div key={idx} className={`p-6 rounded-xl bg-white border border-border card-hover`}>
-          <div
-            className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${colorClasses[stat.color as keyof typeof colorClasses]}`}
-          >
-            {stat.icon}
-          </div>
-          <p className="text-foreground-secondary text-sm mb-1">{stat.title}</p>
-          <p className="text-3xl font-poppins font-bold text-foreground">{stat.value}</p>
+    <div className="space-y-6">
+      {/* Section Header with Icon */}
+      <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800">
+          <TrendingUp className="w-6 h-6 text-slate-700 dark:text-slate-300" />
         </div>
-      ))}
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Statistics Overview
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+            Real-time ticket metrics and performance indicators
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {statCards.map((stat, idx) => (
+          <div
+            key={idx}
+            className={`${stat.bgColor} ${stat.borderColor} border-2 p-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer`}
+          >
+            {/* Icon Container */}
+            <div className="flex items-center justify-between mb-4">
+              <div className={`${stat.iconColor} transition-transform duration-300 hover:scale-110`}>
+                {stat.icon}
+              </div>
+            </div>
+
+            {/* Stats Content */}
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                {stat.title}
+              </p>
+              <p className="text-4xl font-bold text-slate-900 dark:text-white">
+                {stat.value}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

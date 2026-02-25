@@ -1,0 +1,85 @@
+/* Enhanced Ticket Form Styles */
+
+.ticket-form-section {
+  @apply bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm transition-all duration-300 hover:shadow-md;
+}
+
+.ticket-form-section-header {
+  @apply flex items-center gap-3 mb-5 pb-4 border-b-2 border-slate-200 dark:border-slate-700;
+}
+
+.ticket-form-icon-container {
+  @apply flex items-center justify-center w-10 h-10 rounded-lg border-2 flex-shrink-0;
+}
+
+.ticket-form-icon-blue {
+  @apply bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900;
+}
+
+.ticket-form-icon-purple {
+  @apply bg-purple-50 dark:bg-purple-950/30 border-purple-100 dark:border-purple-900;
+}
+
+.ticket-form-icon-green {
+  @apply bg-green-50 dark:bg-green-950/30 border-green-100 dark:border-green-900;
+}
+
+.ticket-form-icon-amber {
+  @apply bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-900;
+}
+
+.ticket-form-title {
+  @apply text-lg font-bold text-slate-900 dark:text-white;
+}
+
+.ticket-form-subtitle {
+  @apply text-xs text-slate-600 dark:text-slate-400 mt-0.5;
+}
+
+.ticket-form-label {
+  @apply block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2;
+}
+
+.ticket-form-input {
+  @apply w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 text-sm;
+}
+
+.ticket-form-textarea {
+  @apply w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 text-sm resize-none;
+}
+
+.ticket-form-radio-label {
+  @apply flex items-center gap-3 px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20;
+}
+
+.ticket-form-radio-label-active {
+  @apply border-blue-500 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30;
+}
+
+.ticket-form-radio {
+  @apply w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500/20;
+}
+
+.ticket-form-button-primary {
+  @apply px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2;
+}
+
+.ticket-form-button-secondary {
+  @apply px-6 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200;
+}
+
+.ticket-form-file-upload {
+  @apply flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300;
+}
+
+.ticket-form-attachment-item {
+  @apply flex items-center justify-between p-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600;
+}
+
+.ticket-form-error {
+  @apply p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-xl flex gap-3 animate-in slide-in-from-top-2 fade-in;
+}
+
+.ticket-form-success {
+  @apply bg-green-50 dark:bg-green-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl p-8 text-center animate-in zoom-in fade-in duration-500;
+}

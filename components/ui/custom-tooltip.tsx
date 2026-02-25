@@ -154,16 +154,16 @@ export default function CustomTooltip({
       {isVisible && (
         <div
           ref={tooltipRef}
-          className="fixed z-[99999] max-w-sm bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl border border-gray-700 dark:border-gray-600 transition-all duration-200"
+          className="fixed z-[99999] max-w-4xl bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl border border-gray-700 dark:border-gray-600 transition-all duration-200"
           style={{
             top: `${tooltipPosition.top}px`,
             left: `${tooltipPosition.left}px`,
-            maxWidth: isExpanded ? "32rem" : "20rem",
+            maxWidth: isExpanded ? "64rem" : "48rem",
           }}
           onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
-          <div className="p-3">
+          <div className="p-3 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 dark:hover:scrollbar-thumb-gray-500">
             <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
               {displayContent}
             </div>

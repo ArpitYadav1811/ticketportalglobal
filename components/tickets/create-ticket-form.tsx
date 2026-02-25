@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AlertCircle, CheckCircle, Plus, X, Paperclip } from "lucide-react"
+import { AlertCircle, CheckCircle, Plus, X, Paperclip, Users, Building2, Tag, FileText, Calendar, Clock, User, Sparkles, Target, Layers } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 import { createTicket, getUsers } from "@/lib/actions/tickets"
@@ -590,12 +590,12 @@ export default function CreateTicketForm() {
 
   if (success) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
-          <CheckCircle className="w-6 h-6 text-success" />
+      <div className="bg-green-50 dark:bg-green-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl p-8 text-center animate-in zoom-in fade-in duration-500">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4 animate-bounce">
+          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
-        <h3 className="text-lg font-poppins font-bold text-green-700 mb-2">Ticket Created Successfully</h3>
-        <p className="text-green-600">Redirecting you to the ticket list...</p>
+        <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">Ticket Created Successfully!</h3>
+        <p className="text-green-700 dark:text-green-400 font-medium">Redirecting you to the ticket list...</p>
       </div>
     )
   }
@@ -603,43 +603,36 @@ export default function CreateTicketForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-300 rounded-lg flex gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-red-700 text-sm font-medium">{error}</p>
+        <div className="p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-xl flex gap-3 animate-in slide-in-from-top-2 fade-in">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <p className="text-red-800 dark:text-red-300 text-sm font-semibold">{error}</p>
         </div>
       )}
 
       {/* Customer vs Internal Selection */}
       <div className="bg-white border border-border rounded-xl p-6 shadow-lg dark:bg-gray-800 dark:border-gray-600 dark:shadow-lg">
         <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Classification</h3>
-        <div className="space-y-4">
-          <div className="flex gap-4">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="isInternal"
+        <div className="space-y-4"><div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="flex items-center gap-3 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"><input type="radio" name="isInternal"
                 checked={!formData.isInternal}
                 onChange={() => handleInternalToggle(false)}
-                className="w-4 h-4"
+                className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500/20"
               />
-              <span className="text-foreground font-medium">Customer Ticket</span>
+              <span className="text-slate-900 dark:text-white font-semibold">Customer Ticket</span>
             </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="isInternal"
+            <label className="flex items-center gap-3 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"><input type="radio" name="isInternal"
                 checked={formData.isInternal}
                 onChange={() => handleInternalToggle(true)}
-                className="w-4 h-4"
+                className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500/20"
               />
-              <span className="text-foreground font-medium">Internal Ticket</span>
+              <span className="text-slate-900 dark:text-white font-semibold">Internal Ticket</span>
             </label>
           </div>
 
           {/* Organization dropdown - only shown when Internal Ticket is selected */}
           {formData.isInternal && (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Organization *
               </label>
               <Combobox
@@ -671,7 +664,7 @@ export default function CreateTicketForm() {
                 value={type}
                 checked={formData.ticketType === type}
                 onChange={handleInputChange}
-                className="w-4 h-4"
+                className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500/20"
               />
               <span className="text-foreground font-medium capitalize">
                 {type === "support" ? (formData.isInternal ? "Issue" : "Support Issue") : "New Requirement"}
@@ -688,7 +681,7 @@ export default function CreateTicketForm() {
         </h3>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
             {formData.isInternal ? "Target Business Group *" : "Group *"}
           </label>
           <Combobox
@@ -723,7 +716,7 @@ export default function CreateTicketForm() {
         {formData.ticketType === "requirement" ? (
           <>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Title *
               </label>
               <input
@@ -732,12 +725,12 @@ export default function CreateTicketForm() {
                 value={formData.title}
                 onChange={handleInputChange}
                 placeholder="Enter a descriptive title for this requirement"
-                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Description
               </label>
               <textarea
@@ -746,14 +739,14 @@ export default function CreateTicketForm() {
                 onChange={handleInputChange}
                 placeholder="Describe the requirement in detail..."
                 rows={6}
-                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 text-sm"
               />
             </div>
           </>
         ) : (
           <>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Category *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Category *</label>
               <Combobox
                 options={categories.map((cat) => ({
                   value: cat.id.toString(),
@@ -770,7 +763,7 @@ export default function CreateTicketForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Sub-Category *
               </label>
               <Combobox
@@ -793,7 +786,7 @@ export default function CreateTicketForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Description
               </label>
               <textarea
@@ -802,12 +795,12 @@ export default function CreateTicketForm() {
                 onChange={handleInputChange}
                 placeholder="Auto-filled based on category and sub-category selection. You can edit this."
                 rows={4}
-                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Estimated Duration
               </label>
               <input
@@ -827,7 +820,7 @@ export default function CreateTicketForm() {
         <h3 className="font-poppins font-semibold text-foreground">Assignment & Details</h3>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
             SPOC *
           </label>
           <Combobox
@@ -845,19 +838,19 @@ export default function CreateTicketForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
             Attachments
             {formData.attachments.length > 0 && (
-              <span className="text-xs text-foreground-secondary font-normal ml-2">
+              <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
                 ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
               </span>
             )}
           </label>
-          <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+          <label className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300 group">
             <div className="text-center">
-              <Paperclip className="w-6 h-6 text-foreground-secondary mx-auto mb-2" />
-              <span className="text-sm font-medium text-foreground">Click to upload or drag and drop</span>
-              <p className="text-xs text-foreground-secondary mt-1">Max file size: 5MB per file</p>
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 mb-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-950/30 transition-colors"><Paperclip className="w-6 h-6 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" /></div>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white block">Click to upload or drag and drop</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Max file size: 5MB per file</p>
             </div>
             <input type="file" multiple onChange={handleFileChange} className="hidden" />
           </label>
@@ -867,13 +860,13 @@ export default function CreateTicketForm() {
               {formData.attachments.map((file, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-surface border border-border rounded-lg"
+                  className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <Paperclip className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-foreground truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{file.name}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
                         {(file.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
@@ -897,18 +890,20 @@ export default function CreateTicketForm() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-3 border border-border rounded-lg text-foreground font-medium hover:bg-surface transition-colors"
+          className="px-6 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium hover:shadow-lg transition-all"
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Creating..." : "Create Ticket"}
+          <CheckCircle className="w-5 h-5" /><span>{isLoading ? "Creating..." : "Create Ticket"}</span>
         </button>
       </div>
     </form>
   )
 }
+
+

@@ -1,0 +1,203 @@
+/* Enhanced Tickets Table Styles */
+
+/* Table Container */
+.tickets-table-container {
+  @apply bg-white dark:bg-slate-900 rounded-xl shadow-sm border-2 border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-md;
+}
+
+/* Table Header */
+.tickets-table-header {
+  @apply bg-slate-100 dark:bg-slate-800 border-b-2 border-slate-200 dark:border-slate-700;
+}
+
+.tickets-table-header-cell {
+  @apply px-4 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider;
+}
+
+/* Table Rows */
+.tickets-table-row {
+  @apply border-b-2 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group hover:shadow-sm;
+}
+
+/* Table Cells */
+.tickets-table-cell {
+  @apply px-4 py-4 text-sm;
+}
+
+/* Ticket ID Badge */
+.ticket-id-badge {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-100 dark:border-blue-900 rounded-lg text-blue-700 dark:text-blue-400 font-bold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 hover:scale-105;
+}
+
+/* User Avatar */
+.user-avatar {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm;
+}
+
+.user-avatar-creator {
+  @apply bg-gradient-to-br from-purple-500 to-pink-500;
+}
+
+.user-avatar-assignee {
+  @apply bg-gradient-to-br from-blue-500 to-cyan-500;
+}
+
+/* Status Badges */
+.status-badge {
+  @apply inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border-2 shadow-sm transition-all duration-200 hover:shadow-md;
+}
+
+.status-badge-open {
+  @apply bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900;
+}
+
+.status-badge-hold {
+  @apply bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900;
+}
+
+.status-badge-resolved {
+  @apply bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900;
+}
+
+.status-badge-closed {
+  @apply bg-slate-50 dark:bg-slate-950/30 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-900;
+}
+
+.status-badge-returned {
+  @apply bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900;
+}
+
+.status-badge-deleted {
+  @apply bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900;
+}
+
+/* Type Badges */
+.type-badge {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-2;
+}
+
+.type-badge-support {
+  @apply bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400;
+}
+
+.type-badge-requirement {
+  @apply bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-400;
+}
+
+/* Action Buttons */
+.action-button {
+  @apply p-2 rounded-lg transition-all duration-200 group hover:scale-110 hover:shadow-md border-2 border-transparent;
+}
+
+.action-button-primary {
+  @apply hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-900;
+}
+
+.action-button-purple {
+  @apply hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:border-purple-200 dark:hover:border-purple-900;
+}
+
+.action-button-disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+
+/* Action Icons */
+.action-icon {
+  @apply w-4 h-4 text-slate-600 dark:text-slate-400 transition-colors;
+}
+
+.action-icon-hover-blue {
+  @apply group-hover:text-blue-600 dark:group-hover:text-blue-400;
+}
+
+.action-icon-hover-purple {
+  @apply group-hover:text-purple-600 dark:group-hover:text-purple-400;
+}
+
+/* Status Dropdown */
+.status-dropdown {
+  @apply text-xs px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-bold shadow-sm hover:shadow-md cursor-pointer;
+}
+
+/* Date Display */
+.date-display {
+  @apply flex flex-col;
+}
+
+.date-display-primary {
+  @apply text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.date-display-secondary {
+  @apply text-xs text-slate-600 dark:text-slate-400;
+}
+
+/* User Info Display */
+.user-info {
+  @apply flex items-center gap-2;
+}
+
+.user-info-name {
+  @apply text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.user-info-group {
+  @apply text-xs text-slate-600 dark:text-slate-400;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex items-center justify-center py-12;
+}
+
+.loading-spinner {
+  @apply w-8 h-8 text-blue-600 animate-spin;
+}
+
+.loading-text {
+  @apply ml-3 text-slate-600 dark:text-slate-400 font-medium;
+}
+
+/* Empty State */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-12 px-4;
+}
+
+.empty-state-icon-container {
+  @apply w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4;
+}
+
+.empty-state-icon {
+  @apply w-8 h-8 text-slate-400;
+}
+
+.empty-state-title {
+  @apply text-lg font-semibold text-slate-900 dark:text-white mb-1;
+}
+
+.empty-state-description {
+  @apply text-sm text-slate-600 dark:text-slate-400;
+}
+
+/* Footer */
+.table-footer {
+  @apply px-6 py-4 border-t-2 border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900;
+}
+
+.table-footer-text {
+  @apply text-sm font-medium text-slate-600 dark:text-slate-400;
+}
+
+/* Attachment Badge */
+.attachment-badge {
+  @apply absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center;
+}
+
+/* Hover Effects */
+.hover-lift {
+  @apply transition-transform duration-200 hover:-translate-y-0.5;
+}
+
+.hover-glow {
+  @apply transition-shadow duration-200 hover:shadow-lg;
+}

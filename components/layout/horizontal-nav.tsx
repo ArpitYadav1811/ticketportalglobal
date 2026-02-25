@@ -14,6 +14,8 @@ import {
   ChevronDown,
   Menu,
   X,
+  Settings,
+  User,
 } from "lucide-react"
 import NotificationsDropdown from "./notifications-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -104,107 +106,131 @@ export default function HorizontalNav() {
     : "U"
 
   return (
-    <header className="bg-white border-b border-border shadow-sm sticky top-0 z-50 dark:bg-gray-800 dark:shadow-gray-300">
+    <header className="bg-white dark:bg-slate-900 border-b-2 border-slate-200 dark:border-slate-800 shadow-sm sticky top-0 z-50">
       <div className="px-4 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Nav Items - Left Aligned */}
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <Image
-                src="/company-logo.svg"
-                alt="Company Logo"
-                width={40}
-                height={40}
-                className="w-10 h-10"
-              />
+          <div className="flex items-center gap-8">
+            {/* Logo */}
+            <Link href="/dashboard" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-100 dark:border-blue-900 flex items-center justify-center transition-transform group-hover:scale-105">
+                <Image
+                  src="/company-logo.svg"
+                  alt="Company Logo"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                />
+              </div>
               <div className="hidden sm:block">
-                <h1 className="font-poppins font-bold text-foreground text-xl leading-tight dark:text-white">
+                <h1 className="font-bold text-slate-900 dark:text-white text-lg leading-tight">
                   Ticket Portal
                 </h1>
               </div>
             </Link>
 
-            {/* Desktop Navigation - Now left-aligned next to logo */}
-            <nav className="hidden lg:flex items-center gap-1">
-            {filteredNavItems.map(({ href, label, icon: Icon }) => {
-              const isActive = pathname === href || pathname.startsWith(`${href}/`)
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-primary dark:bg-gray-600 text-white"
-                      : "text-foreground hover:bg-surface dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </Link>
-              )
-            })}
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-2">
+              {filteredNavItems.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href || pathname.startsWith(`${href}/`)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                      isActive
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
 
           {/* Right Section - User Info */}
-          <div className="flex items-center gap-3 ">
-            <ThemeToggle 
-            />
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle */}
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
+
+            {/* Notifications */}
             <NotificationsDropdown />
 
             {/* User Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 border-2 border-transparent hover:border-slate-200 dark:hover:border-slate-700"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-                  <span className="text-white font-poppins font-bold text-xs">
+                {/* Avatar */}
+                <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-sm">
                     {initials}
                   </span>
                 </div>
+                
+                {/* User Info */}
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-foreground leading-tight">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
                     {user?.full_name || "User"}
                   </p>
-                  <p className="text-xs text-foreground-secondary leading-tight">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
                     {user?.group_name || user?.role || ""}
                   </p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-foreground-secondary hidden md:block" />
+                
+                <ChevronDown className={`w-4 h-4 text-slate-600 dark:text-slate-400 hidden md:block transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
 
               {/* User Dropdown Menu */}
               {showUserMenu && (
                 <>
                   <div
-                    className="fixed inset-0 z-40 "
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowUserMenu(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-600 rounded-lg shadow-lg border border-border py-2 z-50">
-                    <div className="px-4 py-2 border-b border-border md:hidden ">
-                      <p className="text-sm font-medium text-foreground">
-                        {user?.full_name || "User"}
-                      </p>
-                      <p className="text-xs text-foreground-secondary">
-                        {user?.group_name || user?.role || ""}
-                      </p>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border-2 border-slate-200 dark:border-slate-700 py-2 z-50 overflow-hidden">
+                    {/* User Info Header (Mobile) */}
+                    <div className="px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 md:hidden bg-slate-50 dark:bg-slate-900">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">{initials}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {user?.full_name || "User"}
+                          </p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            {user?.group_name || user?.role || ""}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <Link
-                      href="/settings"
-                      onClick={() => setShowUserMenu(false)}
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-surface dark:hover:bg-gray-900"
-                    >
-                      Settings
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50
-                      dark:hover:bg-gray-900 flex items-center gap-2 dark:text-gray-100"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
+
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      <Link
+                        href="/settings"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </Link>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -213,12 +239,12 @@ export default function HorizontalNav() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 hover:bg-surface rounded-lg"
+              className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
               {mobileMenuOpen ? (
-                <X className="w-5 h-5 text-foreground" />
+                <X className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               ) : (
-                <Menu className="w-5 h-5 text-foreground" />
+                <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               )}
             </button>
           </div>
@@ -226,8 +252,8 @@ export default function HorizontalNav() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-1">
+          <nav className="lg:hidden py-4 border-t-2 border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col gap-2">
               {filteredNavItems.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href || pathname.startsWith(`${href}/`)
                 return (
@@ -235,10 +261,10 @@ export default function HorizontalNav() {
                     key={href}
                     href={href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       isActive
-                        ? "bg-primary text-white"
-                        : "text-foreground hover:bg-surface"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -246,6 +272,14 @@ export default function HorizontalNav() {
                   </Link>
                 )
               })}
+              
+              {/* Theme Toggle in Mobile Menu */}
+              <div className="sm:hidden px-4 py-3 border-t-2 border-slate-200 dark:border-slate-800 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Theme</span>
+                  <ThemeToggle />
+                </div>
+              </div>
             </div>
           </nav>
         )}

@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
-import { Eye, Edit, Download, Paperclip, FileDown, UserPlus, FileText, History } from "lucide-react"
+import { Eye, Edit, Download, Paperclip, FileDown, UserPlus, FileText, History, Search, Filter, RefreshCw, Loader2, AlertCircle } from "lucide-react"
+import CustomTooltip from "@/components/ui/custom-tooltip"
 import {
   getTickets,
   getTicketById,
@@ -438,12 +439,12 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
   }
 
   const statusColor = {
-    open: "bg-blue-100 text-blue-700",
-    "on-hold": "bg-yellow-100 text-yellow-700",
-    resolved: "bg-purple-100 text-purple-700",
-    closed: "bg-green-100 text-green-700",
-    returned: "bg-orange-100 text-orange-700",
-    deleted: "bg-gray-100 text-gray-700",
+    open: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900",
+    "on-hold": "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900",
+    resolved: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900",
+    closed: "bg-slate-50 dark:bg-slate-950/30 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-900",
+    returned: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900",
+    deleted: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900",
   }
 
   const handleExport = () => {
@@ -632,15 +633,49 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                       </td>
 
                       {/* Description Truncated */}
-                      <td className="px-3 py-2.5">
-                        <p
-                          className="text-sm text-foreground max-w-[200px] truncate cursor-pointer hover:text-primary"
-                          onClick={() => router.push(`/tickets/${ticket.id}`)}
-                          title={ticket.description || ticket.title}
+                      <td className="px-4 py-4">
+                        <CustomTooltip
+                          content={
+                            <div className="max-w-4xl">
+                              <div className="font-semibold text-base mb-2 pb-2 border-b border-gray-600">
+                                {ticket.title}
+                              </div>
+                              {ticket.description && (
+                                <div className="mt-2">
+                                  <div className="text-xs font-medium opacity-80 mb-1">Description:</div>
+                                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                                    {ticket.description}
+                                  </div>
+                                </div>
+                              )}
+                              {ticket.category_name && (
+                                <div className="mt-3 pt-2 border-t border-gray-600">
+                                  <div className="text-xs opacity-80">
+                                    <span className="font-medium">Category:</span> {ticket.category_name}
+                                    {ticket.subcategory_name && ` > ${ticket.subcategory_name}`}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          }
+                          position="top"
+                          maxLength={300}
+                          showMoreButton={true}
                         >
-                          {ticket.description || ticket.title || "-"}
-                        </p>
-                        {ticket.is_deleted && <span className="text-xs text-red-600">(Deleted)</span>}
+                          <div className="max-w-[200px]">
+                            <p
+                              className="text-sm font-medium text-slate-900 dark:text-white truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              onClick={() => router.push(`/tickets/${ticket.id}`)}
+                            >
+                              {ticket.description || ticket.title || "-"}
+                            </p>
+                            {ticket.is_deleted && (
+                              <span className="text-xs text-red-600 dark:text-red-400 font-semibold mt-0.5 block">
+                                (Deleted)
+                              </span>
+                            )}
+                          </div>
+                        </CustomTooltip>
                       </td>
 
                       {/* SPOC */}
@@ -717,9 +752,9 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                         <div className="flex items-center justify-center gap-1">
                           {/* Project - Always visible, disabled for non-requirement tickets */}
                           <button
-                            className={`p-1.5 rounded transition-colors group ${
+                            className={`p-2 rounded-lg transition-all duration-200 group border-2 border-transparent hover:shadow-md ${
                               ticket.ticket_type === "requirement" && canEditProject(ticket)
-                                ? "hover:bg-purple-100 dark:hover:bg-purple-900/30 cursor-pointer"
+                                ? "hover:bg-purple-50 dark:hover:bg-purple-950/30 cursor-pointer hover:scale-110 hover:border-purple-200 dark:hover:border-purple-900"
                                 : "cursor-not-allowed opacity-50"
                             }`}
                             onClick={() => {
@@ -747,30 +782,32 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                           
                           {/* Files/Attachments - Always visible */}
                           <button
-                            className="p-1.5 hover:bg-primary/10 rounded transition-colors group"
+                            className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover:shadow-md border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
                             onClick={() => openAttachmentsDialog(ticket)}
                             title={ticket.attachment_count > 0 ? `${ticket.attachment_count} attachment(s) - Click to view` : "No attachments"}
                           >
-                            <Paperclip className="w-4 h-4 text-foreground-secondary group-hover:text-primary" />
+                            <div className="relative">
+                              <Paperclip className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                            </div>
                           </button>
                           
                           {/* Activity History - Always visible */}
                           <TicketHistoryTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
                             <button
-                              className="p-1.5 hover:bg-primary/10 rounded transition-colors group"
+                              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover:shadow-md border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
                               title="Activity History (Hover to view)"
                             >
-                              <History className="w-4 h-4 text-foreground-secondary group-hover:text-primary" />
+                              <History className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                             </button>
                           </TicketHistoryTooltip>
                           
                           {/* Edit - Always visible */}
                           <button
-                            className="p-1.5 hover:bg-primary/10 rounded transition-colors group"
+                            className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover:shadow-md border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
                             title="Edit"
                             onClick={() => router.push(`/tickets/${ticket.id}/edit`)}
                           >
-                            <Edit className="w-4 h-4 text-foreground-secondary group-hover:text-primary" />
+                            <Edit className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                           </button>
                           
                         </div>
@@ -781,8 +818,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
         </table>
       </div>
 
-      <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-surface/50 dark:bg-gray-700/50">
-        <p className="text-sm text-foreground-secondary">
+      <div className="px-6 py-4 border-t-2 border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
           Showing {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}
         </p>
       </div>
