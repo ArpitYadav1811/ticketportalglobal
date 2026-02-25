@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
-import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
-import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/lib/r2"
+import { uploadToVercelBlob, deleteFromVercelBlob } from "@/lib/vercel-blob-storage"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -162,22 +161,22 @@ export async function POST(request: NextRequest) {
       .substring(0, 100) // Limit length
     const fileName = `tickets/${ticketIdNum}/${timestamp}-${randomSuffix}-${sanitizedName}`
 
-    // Upload to R2
+    // Upload to Vercel Blob Storage
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    await r2Client.send(
-      new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: fileName,
-        Body: buffer,
-        ContentType: file.type,
-        ContentLength: file.size,
-      })
+    const { url: fileUrl, error: uploadError } = await uploadToVercelBlob(
+      fileName,
+      buffer,
+      file.type
     )
 
-    // Generate public URL
-    const fileUrl = `${R2_PUBLIC_URL}/${fileName}`
+    if (uploadError || !fileUrl) {
+      return NextResponse.json(
+        { error: "Failed to upload file to storage" },
+        { status: 500 }
+      )
+    }
 
     // Save to database
     const result = await sql`
@@ -231,20 +230,11 @@ export async function DELETE(request: NextRequest) {
     const ticketId = attachment[0].ticket_id
     const fileUrl = attachment[0].file_url
 
-    // Extract filename from URL
-    const fileName = fileUrl.replace(`${R2_PUBLIC_URL}/`, "")
-
-    // Delete from R2
-    try {
-      await r2Client.send(
-        new DeleteObjectCommand({
-          Bucket: R2_BUCKET_NAME,
-          Key: fileName,
-        })
-      )
-    } catch (r2Error) {
-      console.error("Error deleting from R2:", r2Error)
-      // Continue even if R2 delete fails
+    // Delete from Vercel Blob Storage
+    const { error: deleteError } = await deleteFromVercelBlob(fileUrl)
+    if (deleteError) {
+      console.error("Error deleting from Vercel Blob:", deleteError)
+      // Continue even if delete fails - we'll still remove from database
     }
 
     // Delete from database

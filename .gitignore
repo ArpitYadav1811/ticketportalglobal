@@ -230,3 +230,6 @@ tmp/
 
 # Local Netlify folder
 .netlify
+
+# Local file uploads (development only)
+public/uploads/
