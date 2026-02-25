@@ -191,7 +191,7 @@ async function withRetry<T>(
       if (isLikelyColdStart) {
         console.warn(`[DB Retry] Cold start detected (attempt ${attempt}/${maxRetries}). Waiting ${Math.round(waitTime)}ms for database to wake up...`)
       } else {
-        console.warn(`[DB Retry] Attempt ${attempt}/${maxRetries} failed (${errorMessage}). Retrying in ${Math.round(waitTime)}ms...`)
+      console.warn(`[DB Retry] Attempt ${attempt}/${maxRetries} failed (${errorMessage}). Retrying in ${Math.round(waitTime)}ms...`)
       }
       
       await new Promise(resolve => setTimeout(resolve, waitTime))

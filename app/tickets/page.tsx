@@ -30,10 +30,17 @@ export default function TicketsPage() {
 
   const handleFilterChange = (newFilters: any) => {
     // Add isInternal filter based on active tab
-    setFilters({
+    // If myTeam is false, explicitly clear team-related fields
+    const cleanedFilters = {
       ...newFilters,
       isInternal: activeTab === "internal",
-    })
+      // Clear team-related fields when myTeam is false
+      ...(newFilters.myTeam === false && {
+        userId: undefined,
+        teamMemberIds: undefined,
+      }),
+    }
+    setFilters(cleanedFilters)
   }
 
   const handleTabChange = (value: string) => {

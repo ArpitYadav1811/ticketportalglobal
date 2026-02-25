@@ -1,11 +1,10 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import { Eye, Edit, Download, Paperclip, FileDown, UserPlus, FileText, History, Search, Filter, RefreshCw, Loader2, AlertCircle } from "lucide-react"
-import CustomTooltip from "@/components/ui/custom-tooltip"
 import {
   getTickets,
   getTicketById,
@@ -148,57 +147,38 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
     }
   }, [sessionStatus, session])
 
+  // Use refs to store latest values for interval callback (prevents stale closures)
+  const filtersRef = useRef(filters)
+  const currentUserRef = useRef(currentUser)
+  
+  // Update refs when values change
   useEffect(() => {
-    loadTickets()
-    loadUsers()
+    filtersRef.current = filters
+    currentUserRef.current = currentUser
   }, [filters, currentUser])
 
-  // Auto-refresh tickets every 5 seconds
-  useEffect(() => {
-    if (!currentUser) return
-
-    const intervalId = setInterval(() => {
-      loadTickets()
-    }, 5000) // 5 seconds
-
-    // Cleanup interval on unmount or when dependencies change
-    return () => clearInterval(intervalId)
-  }, [filters, currentUser])
-
-  // Expose export function to parent
-  useEffect(() => {
-    if (onExportReady) {
-      onExportReady(handleExport)
-    }
-  }, [tickets])
-
-  const canEditTicket = (ticket: Ticket) => {
-    if (!currentUser) return false
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
-    const isInitiator = currentUser.id === ticket.created_by
-    const isAssignee = currentUser.id === ticket.assigned_to
-    const isSPOC = currentUser.id === ticket.spoc_user_id
-    return isAdmin || isInitiator || isAssignee || isSPOC
-  }
-
-  const loadTickets = async () => {
-    // Don't load tickets until current user is available (prevents showing all tickets first)
-    if (!currentUser) {
+  // Memoize loadTickets to prevent unnecessary re-renders and ensure it uses latest filters
+  const loadTicketsMemo = useCallback(async () => {
+    const user = currentUserRef.current
+    const currentFilters = filtersRef.current
+    
+    // Don't load tickets until current user is available
+    if (!user) {
       setIsLoading(false)
       return
     }
 
     setIsLoading(true)
-    const result = await getTickets(filters)
+    const result = await getTickets(currentFilters)
     if (result.success && result.data) {
       let ticketsData = result.data as Ticket[]
 
       // Filter tickets based on user role and team settings
-      if (currentUser && currentUser.role?.toLowerCase() !== "admin") {
-        const userId = Number(currentUser.id)
+      if (user && user.role?.toLowerCase() !== "admin") {
+        const userId = Number(user.id)
 
         // If "My Team" filter is active, include team members' tickets
-        if (filters?.myTeam) {
+        if (currentFilters?.myTeam) {
           // Fetch team members
           const teamResult = await getMyTeamMembers(userId)
           const teamMemberIds = teamResult.success && teamResult.data
@@ -236,7 +216,49 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
       }
     }
     setIsLoading(false)
+  }, [onTicketsChange])
+
+  // Memoize filters key to prevent unnecessary re-fetches
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters])
+
+  // Load tickets when filters or user changes
+  useEffect(() => {
+    if (!currentUser) {
+      setIsLoading(false)
+      return
+    }
+    loadTicketsMemo()
+    loadUsers()
+  }, [filtersKey, currentUser?.id, loadTicketsMemo])
+
+  // Auto-refresh tickets every 30 seconds (reduced frequency to prevent constant refreshing)
+  useEffect(() => {
+    if (!currentUser) return
+
+    const intervalId = setInterval(() => {
+      loadTicketsMemo()
+    }, 30000) // 30 seconds - less aggressive refresh
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId)
+  }, [currentUser?.id, loadTicketsMemo]) // Only recreate when user changes
+
+  // Expose export function to parent
+  useEffect(() => {
+    if (onExportReady) {
+      onExportReady(handleExport)
+    }
+  }, [tickets])
+
+  const canEditTicket = (ticket: Ticket) => {
+    if (!currentUser) return false
+    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const isInitiator = currentUser.id === ticket.created_by
+    const isAssignee = currentUser.id === ticket.assigned_to
+    const isSPOC = currentUser.id === ticket.spoc_user_id
+    return isAdmin || isInitiator || isAssignee || isSPOC
   }
+
 
   const loadUsers = async () => {
     const result = await getUsers()
@@ -271,7 +293,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
   const handleAssigneeChange = async (ticketId: number, newAssigneeId: number | null) => {
     const result = await updateTicketAssignee(ticketId, newAssigneeId || 0)
     if (result.success) {
-      loadTickets()
+      loadTicketsMemo()
     } else {
       alert("Failed to update assignee")
     }
@@ -297,7 +319,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
     if (selectedTicketForProject) {
       const result = await updateTicketProject(selectedTicketForProject.id, projectId)
       if (result.success) {
-        loadTickets()
+        loadTicketsMemo()
       } else {
         alert("Failed to update project")
       }
@@ -411,7 +433,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
       setSelectedTicketForStatusChange(null)
       setSelectedNewStatus("")
       // Reload tickets to get updated status
-      loadTickets()
+      loadTicketsMemo()
     } else {
       alert("Failed to update status: " + (result.error || "Unknown error"))
     }
@@ -633,49 +655,15 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                       </td>
 
                       {/* Description Truncated */}
-                      <td className="px-4 py-4">
-                        <CustomTooltip
-                          content={
-                            <div className="max-w-4xl">
-                              <div className="font-semibold text-base mb-2 pb-2 border-b border-gray-600">
-                                {ticket.title}
-                              </div>
-                              {ticket.description && (
-                                <div className="mt-2">
-                                  <div className="text-xs font-medium opacity-80 mb-1">Description:</div>
-                                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                                    {ticket.description}
-                                  </div>
-                                </div>
-                              )}
-                              {ticket.category_name && (
-                                <div className="mt-3 pt-2 border-t border-gray-600">
-                                  <div className="text-xs opacity-80">
-                                    <span className="font-medium">Category:</span> {ticket.category_name}
-                                    {ticket.subcategory_name && ` > ${ticket.subcategory_name}`}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          }
-                          position="top"
-                          maxLength={300}
-                          showMoreButton={true}
+                      <td className="px-3 py-2.5">
+                        <p
+                          className="text-sm text-foreground max-w-[200px] truncate cursor-pointer hover:text-primary"
+                          onClick={() => router.push(`/tickets/${ticket.id}`)}
+                          title={ticket.description || ticket.title}
                         >
-                          <div className="max-w-[200px]">
-                            <p
-                              className="text-sm font-medium text-slate-900 dark:text-white truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                              onClick={() => router.push(`/tickets/${ticket.id}`)}
-                            >
-                              {ticket.description || ticket.title || "-"}
-                            </p>
-                            {ticket.is_deleted && (
-                              <span className="text-xs text-red-600 dark:text-red-400 font-semibold mt-0.5 block">
-                                (Deleted)
-                              </span>
-                            )}
-                          </div>
-                        </CustomTooltip>
+                          {ticket.description || ticket.title || "-"}
+                        </p>
+                        {ticket.is_deleted && <span className="text-xs text-red-600">(Deleted)</span>}
                       </td>
 
                       {/* SPOC */}

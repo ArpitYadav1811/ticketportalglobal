@@ -196,10 +196,12 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
         teamMemberIds: teamMemberIds,
       })
     } else {
-      // Turning OFF "My Team" filter - clear team-related filters
+      // Turning OFF "My Team" filter - clear ALL team-related filters
       onFilterChange({
         ...newFilters,
+        userId: undefined,
         teamMemberIds: undefined,
+        myTeam: false, // Explicitly set to false
       })
     }
   }
