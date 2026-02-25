@@ -102,6 +102,9 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (err) {
           console.error("jwt callback DB hydration error:", err)
+          // Don't throw - allow auth to continue with cached token data
+          // This prevents auth failures during temporary DB outages or cold starts
+          // The token will retain any previously hydrated values
         }
       }
 

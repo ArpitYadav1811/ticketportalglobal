@@ -88,6 +88,25 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
     }
   }, [isInternal])
 
+  // Reset filters when switching between internal/external tabs
+  useEffect(() => {
+    const resetFilters = {
+      status: "all",
+      dateFrom: "",
+      dateTo: "",
+      assignee: "",
+      spoc: "",
+      type: "all",
+      search: "",
+      myTeam: false,
+      targetBusinessGroup: "",
+      initiator: "",
+      initiatorGroup: "",
+      project: "",
+    }
+    setFilters(resetFilters)
+  }, [isInternal])
+
   const loadUsers = async () => {
     const result = await getUsers()
     if (result.success && result.data) {
@@ -145,7 +164,10 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
       project: "",
     }
     setFilters(resetFilters)
-    onFilterChange(resetFilters)
+    onFilterChange({
+      ...resetFilters,
+      teamMemberIds: undefined,
+    })
   }
 
   const handleSearchChange = (value: string) => {

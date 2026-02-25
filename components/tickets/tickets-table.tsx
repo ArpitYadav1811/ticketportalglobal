@@ -152,6 +152,18 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
     loadUsers()
   }, [filters, currentUser])
 
+  // Auto-refresh tickets every 5 seconds
+  useEffect(() => {
+    if (!currentUser) return
+
+    const intervalId = setInterval(() => {
+      loadTickets()
+    }, 5000) // 5 seconds
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => clearInterval(intervalId)
+  }, [filters, currentUser])
+
   // Expose export function to parent
   useEffect(() => {
     if (onExportReady) {

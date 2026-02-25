@@ -104,12 +104,30 @@ export function getDatabaseUrl(): string {
   if (!sslMode) {
     console.warn(`⚠️  ${s(12)} No sslmode param found.`);
     console.warn(`   ${s(13)} Cloud DBs (Neon, Supabase, Railway) need ?sslmode=require`);
+    console.log(`   ${s(14)} Auto-adding sslmode=require for security`);
+    parsed.searchParams.set("sslmode", "require");
   } else {
     console.log(`✅ ${s(12)} sslmode: ${sslMode}`);
   }
 
-  console.log(`✅ ${s(13)} All checks passed. Returning database URL.\n`);
-  return databaseUrl;
+  // ── 13. Connection timeout ──────────────────────────────────────────
+  // Automatically add connect_timeout=30 to prevent Neon cold start timeouts
+  const connectTimeout = parsed.searchParams.get("connect_timeout");
+  if (!connectTimeout) {
+    console.log(`✅ ${s(13)} No connect_timeout found - auto-adding connect_timeout=30 for Neon cold start handling`);
+    parsed.searchParams.set("connect_timeout", "30");
+  } else {
+    console.log(`✅ ${s(13)} connect_timeout: ${connectTimeout}`);
+  }
+
+  // Reconstruct URL with ensured parameters
+  // Build the URL string manually to preserve all components including password
+  const searchParams = parsed.searchParams.toString();
+  const port = parsed.port ? `:${parsed.port}` : '';
+  const finalUrl = `${parsed.protocol}//${parsed.username}:${parsed.password}@${parsed.hostname}${port}${parsed.pathname}${searchParams ? `?${searchParams}` : ''}`;
+
+  console.log(`✅ ${s(14)} All checks passed. Returning optimized database URL.\n`);
+  return finalUrl;
 }
 
 export function validateDatabaseConfig(): boolean {

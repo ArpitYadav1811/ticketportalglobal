@@ -38,10 +38,24 @@ export default function TicketsPage() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as "customer" | "internal")
-    // Reset filters and tickets when switching tabs
-    setFilters({
+    // Reset ALL filters and tickets when switching tabs
+    const resetFilters = {
+      status: "all",
+      dateFrom: "",
+      dateTo: "",
+      assignee: "",
+      spoc: "",
+      type: "all",
+      search: "",
+      myTeam: false,
+      teamMemberIds: undefined,
+      targetBusinessGroup: "",
+      initiator: "",
+      initiatorGroup: "",
+      project: "",
       isInternal: value === "internal",
-    })
+    }
+    setFilters(resetFilters)
     setCurrentTickets([])
   }
 
