@@ -63,18 +63,33 @@ export async function getRecentTickets(limit = 5) {
   }
 }
 
-export async function getAnalyticsData() {
+export async function getAnalyticsData(daysFilter: number = 30) {
   try {
-    const ticketsByBU = await sql`
-      SELECT
-        bu.name as business_unit,
-        COUNT(t.id) as ticket_count
-      FROM tickets t
-      LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
-      WHERE bu.name IS NOT NULL
-      GROUP BY bu.name
-      ORDER BY ticket_count DESC
-    `
+    const daysInterval = daysFilter > 0 ? daysFilter : 30
+    
+    // Build queries conditionally based on daysFilter
+    const ticketsByBU = daysFilter > 0
+      ? await sql`
+          SELECT
+            bu.name as business_unit,
+            COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+          WHERE bu.name IS NOT NULL 
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY bu.name
+          ORDER BY ticket_count DESC
+        `
+      : await sql`
+          SELECT
+            bu.name as business_unit,
+            COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+          WHERE bu.name IS NOT NULL
+          GROUP BY bu.name
+          ORDER BY ticket_count DESC
+        `
 
     const ticketsByCategory = await sql`
       SELECT
@@ -101,14 +116,46 @@ export async function getAnalyticsData() {
       LIMIT 10
     `
 
-    const ticketsByStatus = await sql`
-      SELECT
-        status,
-        COUNT(*) as count
-      FROM tickets
-      GROUP BY status
-      ORDER BY count DESC
-    `
+    const ticketsByStatus = daysFilter > 0
+      ? await sql`
+          SELECT
+            status,
+            COUNT(*) as count
+          FROM tickets
+          WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY status
+          ORDER BY count DESC
+        `
+      : await sql`
+          SELECT
+            status,
+            COUNT(*) as count
+          FROM tickets
+          GROUP BY status
+          ORDER BY count DESC
+        `
+
+    // Get summary stats for the date range
+    const summaryStats = daysFilter > 0
+      ? await sql`
+          SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'open') as open,
+            COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE status = 'closed') as closed,
+            COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
+          FROM tickets
+          WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+        `
+      : await sql`
+          SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'open') as open,
+            COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE status = 'closed') as closed,
+            COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
+          FROM tickets
+        `
 
     const ticketsByType = await sql`
       SELECT
@@ -128,15 +175,24 @@ export async function getAnalyticsData() {
       ORDER BY count DESC
     `
 
-    const ticketTrend = await sql`
-      SELECT
-        DATE(created_at) as date,
-        COUNT(*) as count
-      FROM tickets
-      WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `
+    const ticketTrend = daysFilter > 0
+      ? await sql`
+          SELECT
+            DATE(created_at) as date,
+            COUNT(*) as count
+          FROM tickets
+          WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY DATE(created_at)
+          ORDER BY date ASC
+        `
+      : await sql`
+          SELECT
+            DATE(created_at) as date,
+            COUNT(*) as count
+          FROM tickets
+          GROUP BY DATE(created_at)
+          ORDER BY date ASC
+        `
 
     const teamPerformance = await sql`
       SELECT
@@ -182,6 +238,7 @@ export async function getAnalyticsData() {
         teamPerformance: teamPerformance || [],
         avgResolutionTime: Number(avgResolutionTime[0]?.avg_hours || 0).toFixed(1),
         ticketsByMonth: ticketsByMonth || [],
+        summaryStats: summaryStats[0] || { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
       },
     }
   } catch (error) {
@@ -200,6 +257,7 @@ export async function getAnalyticsData() {
         teamPerformance: [],
         avgResolutionTime: "0",
         ticketsByMonth: [],
+        summaryStats: { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
       },
     }
   }

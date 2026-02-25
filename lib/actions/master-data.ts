@@ -343,6 +343,41 @@ export async function getTicketClassificationMappings() {
 }
 
 /**
+ * Get business groups where a user is assigned as SPOC
+ */
+export async function getBusinessGroupsForSpoc(userId: number) {
+  try {
+    const result = await sql`
+      SELECT DISTINCT tbg.id, tbg.name 
+      FROM ticket_classification_mapping tcm
+      JOIN target_business_groups tbg ON tcm.target_business_group_id = tbg.id
+      WHERE tcm.spoc_user_id = ${userId}
+    `
+    return { success: true, data: result || [] }
+  } catch (error) {
+    console.error("Error fetching business groups for SPOC:", error)
+    return { success: false, error: "Failed to fetch business groups", data: [] }
+  }
+}
+
+/**
+ * Check if a user is a SPOC for any business group
+ */
+export async function isUserSpoc(userId: number) {
+  try {
+    const result = await sql`
+      SELECT COUNT(*) as count
+      FROM ticket_classification_mapping
+      WHERE spoc_user_id = ${userId}
+    `
+    return (result[0]?.count || 0) > 0
+  } catch (error) {
+    console.error("Error checking if user is SPOC:", error)
+    return false
+  }
+}
+
+/**
  * Get SPOC user ID for a target business group from ticket_classification_mapping
  * Returns the most common SPOC for the group, or the first one found
  */

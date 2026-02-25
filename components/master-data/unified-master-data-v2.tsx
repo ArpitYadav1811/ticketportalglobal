@@ -22,14 +22,23 @@ import {
   createTicketClassificationMapping,
   updateTicketClassificationMapping,
   deleteTicketClassificationMapping,
+  getBusinessGroupsForSpoc,
 } from "@/lib/actions/master-data"
 import { getUsers } from "@/lib/actions/tickets"
 import EditDialog from "./edit-dialog"
 import ProjectNamesTab from "./project-names-tab"
 import TargetBusinessGroupMappingsTab from "./target-business-group-mappings-tab"
 
-export default function UnifiedMasterDataV2() {
+interface UnifiedMasterDataV2Props {
+  userId?: number
+  userRole?: string
+}
+
+export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterDataV2Props) {
   const [activeTab, setActiveTab] = useState("business-groups")
+  const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
+  const [selectedBusinessGroupFilter, setSelectedBusinessGroupFilter] = useState<string>("")
+  const isAdmin = userRole === "admin"
 
   // Data states
   const [targetBusinessGroups, setTargetBusinessGroups] = useState<any[]>([])
@@ -72,7 +81,18 @@ export default function UnifiedMasterDataV2() {
 
   useEffect(() => {
     loadData()
-  }, [])
+    if (userId && !isAdmin) {
+      loadSpocBusinessGroups()
+    }
+  }, [userId, isAdmin])
+
+  const loadSpocBusinessGroups = async () => {
+    if (!userId) return
+    const result = await getBusinessGroupsForSpoc(userId)
+    if (result.success) {
+      setSpocBusinessGroups(result.data.map((bg: any) => bg.id))
+    }
+  }
 
   const toggleCategory = (catId: number) => {
     const newExpanded = new Set(expandedCategories)
@@ -90,6 +110,34 @@ export default function UnifiedMasterDataV2() {
 
   const getMappingsForSubcategory = (subcategoryId: number) => {
     return mappings.filter((m) => m.subcategory_id === subcategoryId)
+  }
+
+  // Filter categories based on SPOC permissions and business group filter
+  const getFilteredCategories = () => {
+    let filtered = categories
+
+    // If user is SPOC (not admin), filter to categories linked to their business groups
+    if (!isAdmin && spocBusinessGroups.length > 0) {
+      const categoryIds = new Set(
+        mappings
+          .filter((m) => spocBusinessGroups.includes(m.target_business_group_id))
+          .map((m) => m.category_id)
+      )
+      filtered = filtered.filter((cat) => categoryIds.has(cat.id))
+    }
+
+    // Apply business group filter if selected
+    if (selectedBusinessGroupFilter) {
+      const filterGroupId = Number(selectedBusinessGroupFilter)
+      const categoryIds = new Set(
+        mappings
+          .filter((m) => m.target_business_group_id === filterGroupId)
+          .map((m) => m.category_id)
+      )
+      filtered = filtered.filter((cat) => categoryIds.has(cat.id))
+    }
+
+    return filtered
   }
 
   // Business Group handlers
@@ -303,13 +351,30 @@ export default function UnifiedMasterDataV2() {
             </Button>
           </div>
 
+          {/* Business Group Filter */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-foreground mb-2">Filter by Business Group</label>
+            <select
+              value={selectedBusinessGroupFilter}
+              onChange={(e) => setSelectedBusinessGroupFilter(e.target.value)}
+              className="w-full md:w-64 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">All Business Groups</option>
+              {targetBusinessGroups.map((tbg) => (
+                <option key={tbg.id} value={tbg.id}>
+                  {tbg.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="space-y-2">
-            {categories.length === 0 ? (
+            {getFilteredCategories().length === 0 ? (
               <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
-                <p className="text-foreground-secondary">No categories yet. Click "Add Category" to create one.</p>
+                <p className="text-foreground-secondary">No categories found. {isAdmin ? 'Click "Add Category" to create one.' : 'No categories available for your assigned business groups.'}</p>
               </div>
             ) : (
-              categories.map((category) => {
+              getFilteredCategories().map((category) => {
                 const subcats = getSubcategoriesForCategory(category.id)
 
                 return (

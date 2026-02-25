@@ -23,15 +23,17 @@ const COLORS = ["#530093", "#A21094", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"
 export default function AnalyticsCharts() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [daysFilter, setDaysFilter] = useState(30)
 
   useEffect(() => {
     loadData()
     const interval = setInterval(loadData, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [daysFilter])
 
   const loadData = async () => {
-    const result = await getAnalyticsData()
+    setLoading(true)
+    const result = await getAnalyticsData(daysFilter)
     if (result.success) {
       setData(result.data)
     }
@@ -48,6 +50,58 @@ export default function AnalyticsCharts() {
 
   return (
     <div className="space-y-6">
+      {/* Date Filter */}
+      <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-4">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-foreground">Filter by days:</label>
+          <select
+            value={daysFilter}
+            onChange={(e) => setDaysFilter(Number(e.target.value))}
+            className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={60}>Last 60 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={0}>All time</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Summary Boxes */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
+          <p className="text-sm text-foreground-secondary mb-2">Total</p>
+          <p className="text-3xl font-poppins font-bold text-foreground">
+            {data.summaryStats?.total || 0}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
+          <p className="text-sm text-foreground-secondary mb-2">Open</p>
+          <p className="text-3xl font-poppins font-bold text-blue-600 dark:text-blue-400">
+            {data.summaryStats?.open || 0}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
+          <p className="text-sm text-foreground-secondary mb-2">Resolved</p>
+          <p className="text-3xl font-poppins font-bold text-green-600 dark:text-green-400">
+            {data.summaryStats?.resolved || 0}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
+          <p className="text-sm text-foreground-secondary mb-2">Closed</p>
+          <p className="text-3xl font-poppins font-bold text-gray-600 dark:text-gray-400">
+            {data.summaryStats?.closed || 0}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
+          <p className="text-sm text-foreground-secondary mb-2">On-Hold</p>
+          <p className="text-3xl font-poppins font-bold text-amber-600 dark:text-amber-400">
+            {data.summaryStats?.on_hold || 0}
+          </p>
+        </div>
+      </div>
+
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
@@ -55,7 +109,7 @@ export default function AnalyticsCharts() {
           <p className="text-3xl font-poppins font-bold text-foreground">{data.avgResolutionTime}h</p>
         </div>
         <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
-          <p className="text-sm text-foreground-secondary mb-2">Total Tickets (30 days)</p>
+          <p className="text-sm text-foreground-secondary mb-2">Total Tickets ({daysFilter === 0 ? 'All time' : `Last ${daysFilter} days`})</p>
           <p className="text-3xl font-poppins font-bold text-foreground">
             {data.ticketTrend.reduce((sum: number, item: any) => sum + Number(item.count), 0)}
           </p>

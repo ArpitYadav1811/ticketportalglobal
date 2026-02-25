@@ -65,7 +65,7 @@ export default function HorizontalNav() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/tickets", label: "Tickets", icon: TicketIcon },
-    { href: "/analytics", label: "Reports", icon: BarChart3, adminOnly: true },
+    { href: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
     { href: "/master-data", label: "Master Settings", icon: Database, adminOnly: true },
   ]
 
@@ -180,7 +180,7 @@ export default function HorizontalNav() {
                     {user?.full_name || "User"}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
-                    {user?.group_name || user?.role || ""}
+                    {user?.email || ""}
                   </p>
                 </div>
                 
@@ -206,7 +206,7 @@ export default function HorizontalNav() {
                             {user?.full_name || "User"}
                           </p>
                           <p className="text-xs text-slate-600 dark:text-slate-400">
-                            {user?.group_name || user?.role || ""}
+                            {user?.email || ""}
                           </p>
                         </div>
                       </div>
@@ -220,7 +220,7 @@ export default function HorizontalNav() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Settings className="w-4 h-4" />
-                        Settings
+                        User Settings
                       </Link>
                       
                       <button

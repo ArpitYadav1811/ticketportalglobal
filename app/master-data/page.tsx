@@ -11,27 +11,42 @@ export default function MasterDataPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (!userData) {
-      router.push("/login")
-      return
-    }
+    const checkAccess = async () => {
+      const userData = localStorage.getItem("user")
+      if (!userData) {
+        router.push("/login")
+        return
+      }
 
-    const parsedUser = JSON.parse(userData)
-    const userRole = parsedUser.role?.toLowerCase()
+      const parsedUser = JSON.parse(userData)
+      const userRole = parsedUser.role?.toLowerCase()
 
-    // Only admins can access this page
-    if (userRole !== "admin") {
+      // Admins have full access
+      if (userRole === "admin") {
+        setUser(parsedUser)
+        setIsLoading(false)
+        return
+      }
+
+      // Check if user is a SPOC
+      const { isUserSpoc } = await import("@/lib/actions/master-data")
+      const isSpoc = await isUserSpoc(parsedUser.id)
+      
+      if (isSpoc) {
+        setUser(parsedUser)
+        setIsLoading(false)
+        return
+      }
+
+      // Not admin or SPOC - redirect
       router.push("/dashboard")
-      return
     }
 
-    setUser(parsedUser)
-    setIsLoading(false)
+    checkAccess()
   }, [router])
 
   // Show loading or nothing while checking permissions
-  if (isLoading || !user || user.role?.toLowerCase() !== "admin") {
+  if (isLoading || !user) {
     return null
   }
 
@@ -47,7 +62,7 @@ export default function MasterDataPage() {
           </p>
         </div>
 
-        <UnifiedMasterDataV2 />
+        <UnifiedMasterDataV2 userId={user.id} userRole={user.role?.toLowerCase()} />
       </div>
     </DashboardLayout>
   )

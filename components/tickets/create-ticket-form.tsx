@@ -821,7 +821,7 @@ export default function CreateTicketForm() {
 
         <div>
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-            SPOC *
+            SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Target Business Group)</span>
           </label>
           <Combobox
             options={assignees.map((user) => ({
@@ -831,9 +831,10 @@ export default function CreateTicketForm() {
             }))}
             value={formData.spocId}
             onChange={(value) => setFormData((prev) => ({ ...prev, spocId: value }))}
-            placeholder="Select SPOC..."
+            placeholder={formData.targetBusinessGroupId ? "Auto-selected..." : "Select Target Business Group first"}
             searchPlaceholder="Search team members..."
             emptyText="No team members found"
+            disabled={!!formData.targetBusinessGroupId}
           />
         </div>
 

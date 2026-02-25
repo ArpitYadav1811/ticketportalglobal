@@ -245,7 +245,12 @@ export default function EditTicketPage() {
           <button onClick={() => router.back()} className="p-2 hover:bg-surface rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-poppins font-bold text-foreground">Edit Ticket</h1>
+          <h1 className="text-2xl font-poppins font-bold text-foreground">
+            Edit Ticket{" "}
+            {originalTicket.ticket_id && (
+              <span className="font-mono text-lg text-foreground-secondary">- {originalTicket.ticket_id}</span>
+            )}
+          </h1>
         </div>
 
         {/* Info Banner */}
@@ -286,12 +291,6 @@ export default function EditTicketPage() {
             {isSupportTicket ? (
               /* Support Ticket Layout */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Title</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
-                    {originalTicket.title || "-"}
-                  </div>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground-secondary mb-1">Status</label>
                   <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
