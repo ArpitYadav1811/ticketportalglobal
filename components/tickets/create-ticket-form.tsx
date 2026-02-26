@@ -131,10 +131,17 @@ export default function CreateTicketForm() {
 
     if (buResult.success) setBusinessUnitGroups(buResult.data || [])
     if (orgResult.success) {
-      console.log("[v0] Setting organizations:", orgResult.data?.length || 0, "items")
+      const orgCount = orgResult.data?.length || 0
+      console.log("[v0] Setting organizations:", orgCount, "items")
       setOrganizations(orgResult.data || [])
+      
+      // Show warning if table is empty or doesn't exist
+      if (orgCount === 0 && orgResult.error) {
+        console.warn("[v0] Organizations not available:", orgResult.error)
+        // You could show a toast notification here if needed
+      }
     } else {
-      console.error("[v0] Failed to load organizations:", orgResult.error)
+      console.warn("[v0] Failed to load organizations:", orgResult.error)
       setOrganizations([])
     }
     if (catResult.success) setCategories(catResult.data || [])
@@ -244,8 +251,12 @@ export default function CreateTicketForm() {
     if (selectedGroup) {
       // Get SPOC from ticket_classification_mapping using target business group
       const spocResult = await getSpocForTargetBusinessGroup(Number(value))
+      console.log("[v0] SPOC result for target business group:", spocResult)
       if (spocResult.success && spocResult.data) {
         spocId = spocResult.data.id.toString()
+        console.log("[v0] Auto-selected SPOC:", spocId, spocResult.data.full_name)
+      } else {
+        console.warn("[v0] No SPOC found for target business group:", value, selectedGroup.name)
       }
     }
 
@@ -365,7 +376,8 @@ export default function CreateTicketForm() {
 
     let durationText = ""
     let descriptionText = ""
-    let spocId = formData.spocId
+    // Preserve existing SPOC if already set, otherwise try to get from mapping
+    let spocId = formData.spocId || ""
 
     if (mappingResult.success && mappingResult.data) {
       // Use mapping data for auto-fill
@@ -381,8 +393,12 @@ export default function CreateTicketForm() {
       }
 
       descriptionText = mapping.description || selectedSubcat.input_template || ""
+      // Only update SPOC from mapping if it's provided, otherwise keep existing
       if (mapping.spoc_user_id) {
         spocId = mapping.spoc_user_id.toString()
+        console.log("[v0] SPOC from mapping:", spocId)
+      } else if (!spocId) {
+        console.warn("[v0] No SPOC in mapping and no existing SPOC")
       }
     } else {
       // No mapping found - check if "Others" category/subcategory exists and use it
@@ -412,8 +428,12 @@ export default function CreateTicketForm() {
           }
 
           descriptionText = othersMapping.description || ""
+          // Only update SPOC from "Others" mapping if it's provided, otherwise keep existing
           if (othersMapping.spoc_user_id) {
             spocId = othersMapping.spoc_user_id.toString()
+            console.log("[v0] SPOC from 'Others' mapping:", spocId)
+          } else if (!spocId) {
+            console.warn("[v0] No SPOC in 'Others' mapping and no existing SPOC")
           }
         }
 
@@ -494,24 +514,53 @@ export default function CreateTicketForm() {
       console.log("[v0] Submitting ticket with data:", formData)
 
       // Validate based on ticket type
+      console.log("[v0] Validation - formData:", {
+        ticketType: formData.ticketType,
+        isInternal: formData.isInternal,
+        organizationId: formData.organizationId,
+        targetBusinessGroupId: formData.targetBusinessGroupId,
+        categoryId: formData.categoryId,
+        subcategoryId: formData.subcategoryId,
+        spocId: formData.spocId,
+        title: formData.title,
+      })
+
       if (formData.ticketType === "requirement") {
         if (formData.isInternal && !formData.organizationId) {
           throw new Error("Please select a Functional Area")
         }
-        if (!formData.targetBusinessGroupId || !formData.title || !formData.spocId) {
+        if (!formData.targetBusinessGroupId || !formData.title || !formData.spocId || formData.spocId === "") {
           throw new Error("Please fill in all required fields (Target Business Group, Title, SPOC)")
         }
       } else {
         if (formData.isInternal && !formData.organizationId) {
           throw new Error("Please select a Functional Area")
         }
-        if (
-          !formData.targetBusinessGroupId ||
-          !formData.categoryId ||
-          !formData.subcategoryId ||
-          !formData.spocId
-        ) {
-          throw new Error("Please fill in all required fields (Target Business Group, Category, Sub-Category, SPOC)")
+        
+        // Detailed validation with specific error messages
+        const missingFields: string[] = []
+        if (!formData.targetBusinessGroupId || formData.targetBusinessGroupId === "") {
+          missingFields.push("Target Business Group")
+        }
+        if (!formData.categoryId || formData.categoryId === "") {
+          missingFields.push("Category")
+        }
+        if (!formData.subcategoryId || formData.subcategoryId === "") {
+          missingFields.push("Sub-Category")
+        }
+        if (!formData.spocId || formData.spocId === "") {
+          missingFields.push("SPOC")
+        }
+        
+        if (missingFields.length > 0) {
+          console.error("[v0] Missing required fields:", missingFields)
+          console.error("[v0] Current formData values:", {
+            targetBusinessGroupId: formData.targetBusinessGroupId,
+            categoryId: formData.categoryId,
+            subcategoryId: formData.subcategoryId,
+            spocId: formData.spocId,
+          })
+          throw new Error(`Please fill in all required fields: ${missingFields.join(", ")}`)
         }
       }
 
@@ -836,12 +885,24 @@ export default function CreateTicketForm() {
               subtitle: user.email,
             }))}
             value={formData.spocId}
-            onChange={(value) => setFormData((prev) => ({ ...prev, spocId: value }))}
-            placeholder={formData.targetBusinessGroupId ? "Auto-selected..." : "Select Target Business Group first"}
+            onChange={(value) => {
+              console.log("[v0] SPOC manually changed to:", value)
+              setFormData((prev) => ({ ...prev, spocId: value }))
+            }}
+            placeholder={
+              formData.targetBusinessGroupId 
+                ? (formData.spocId ? "SPOC auto-selected" : "No SPOC found - please select manually") 
+                : "Select Target Business Group first"
+            }
             searchPlaceholder="Search team members..."
             emptyText="No team members found"
-            disabled={!!formData.targetBusinessGroupId}
+            disabled={!!formData.spocId && !!formData.targetBusinessGroupId} // Only disable if SPOC is auto-selected
           />
+          {formData.targetBusinessGroupId && !formData.spocId && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              ⚠️ No SPOC found for this Target Business Group. Please select a SPOC manually or configure one in Master Data.
+            </p>
+          )}
         </div>
 
         <div>
