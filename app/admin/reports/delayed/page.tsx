@@ -243,8 +243,7 @@ export default function DelayedTicketsReportPage() {
                   {delayedTickets.map((ticket) => (
                     <tr
                       key={ticket.id}
-                      className="hover:bg-surface dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                      onClick={() => router.push(`/tickets/${ticket.id}`)}
+                      className="hover:bg-surface dark:hover:bg-gray-700 transition-colors"
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-foreground">

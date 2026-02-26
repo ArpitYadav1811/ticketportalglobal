@@ -607,29 +607,20 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  ticket.is_deleted ? "opacity-50 bg-slate-50 dark:bg-slate-900/50" : ""
  }`}
  >
- {/* Initiator Name and Group */}
- <td
- className="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-primary"
- onClick={() => router.push(`/tickets/${ticket.id}`)}
- >
+              {/* Initiator Name and Group */}
+              <td className="px-3 py-2.5 whitespace-nowrap">
  <div className="text-sm font-medium text-foreground">{ticket.creator_name || "Unknown"}</div>
  <div className="text-xs text-foreground-secondary">{ticket.initiator_group_name || "No Group"}</div>
  </td>
 
- {/* Date - Compact format */}
- <td
- className="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-primary"
- onClick={() => router.push(`/tickets/${ticket.id}`)}
- >
+              {/* Date - Compact format */}
+              <td className="px-3 py-2.5 whitespace-nowrap">
  <div className="text-sm text-foreground">{format(new Date(ticket.created_at), "dd MMM yyyy")}</div>
  <div className="text-xs text-foreground-secondary">{format(new Date(ticket.created_at), "hh:mm a")}</div>
  </td>
 
- {/* Type + Row Number */}
- <td
- className="px-3 py-2.5 whitespace-nowrap cursor-pointer"
- onClick={() => router.push(`/tickets/${ticket.id}`)}
- >
+              {/* Type + Row Number */}
+              <td className="px-3 py-2.5 whitespace-nowrap">
  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
  ticket.ticket_type === "requirement"
  ? "bg-purple-100 text-purple-700"
@@ -640,11 +631,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  <div className="text-xs text-foreground-secondary mt-0.5 font-mono">#{ticket.ticket_number}</div>
  </td>
 
- {/* Title (for Requirements) or Category/Subcategory (for Support) */}
- <td
- className="px-3 py-2.5 cursor-pointer hover:text-primary"
- onClick={() => router.push(`/tickets/${ticket.id}`)}
- >
+              {/* Title (for Requirements) or Category/Subcategory (for Support) */}
+              <td className="px-3 py-2.5">
  {ticket.ticket_type === "requirement" ? (
  <div className="text-sm font-medium text-foreground">{ticket.title || "Untitled"}</div>
  ) : (
@@ -662,13 +650,12 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  )}
  </td>
 
- {/* Description Truncated */}
- <td className="px-3 py-2.5">
- <p
- className="text-sm text-foreground max-w-[200px] truncate cursor-pointer hover:text-primary"
- onClick={() => router.push(`/tickets/${ticket.id}`)}
- title={ticket.description || ticket.title}
- >
+              {/* Description Truncated */}
+              <td className="px-3 py-2.5">
+                <p
+                  className="text-sm text-foreground max-w-[200px] truncate"
+                  title={ticket.description || ticket.title}
+                >
  {ticket.description || ticket.title || "-"}
  </p>
  {ticket.is_deleted && <span className="text-xs text-red-600">(Deleted)</span>}

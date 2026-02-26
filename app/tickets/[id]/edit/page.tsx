@@ -11,7 +11,6 @@ import { ArrowLeft, Save, Paperclip, Download, Trash2, FileText, Plus, X, Upload
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 import { getTicketById, addComment } from "@/lib/actions/tickets"
 import { getTargetBusinessGroups, getSpocForTargetBusinessGroup } from "@/lib/actions/master-data"
-import { Button } from "@/components/ui/button"
 import RedirectModal from "@/components/tickets/redirect-modal"
 
 export default function EditTicketPage() {
@@ -240,7 +239,7 @@ export default function EditTicketPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl">
+      <div className="w-full max-w-full">
         <div className="flex items-center gap-4 mb-6">
           <button onClick={() => router.back()} className="p-2 hover:bg-surface rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -268,13 +267,13 @@ export default function EditTicketPage() {
           <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-poppins font-semibold text-foreground">Redirect Ticket</h3>
-              <Button
+              <button
                 onClick={() => setIsRedirectModalOpen(true)}
-                className="bg-gradient-to-r from-primary to-secondary"
+                className="px-4 py-2 bg-black hover:bg-gray-700 text-white rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={redirecting}
               >
                 {redirecting ? "Redirecting..." : "Redirect Ticket"}
-              </Button>
+              </button>
             </div>
             <p className="text-sm text-foreground-secondary">
               As the SPOC for this ticket, you can redirect it to another Target Business Group.
@@ -419,14 +418,14 @@ export default function EditTicketPage() {
                 rows={4}
                 className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm resize-none"
               />
-              <Button
+              <button
                 type="button"
                 onClick={handleAddComment}
                 disabled={!comment.trim() || addingComment}
-                className="bg-gradient-to-r from-primary to-secondary"
+                className="px-4 py-2 bg-black hover:bg-gray-700 text-white rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {addingComment ? "Adding..." : "Add Comment"}
-              </Button>
+              </button>
             </div>
           </div>
 
@@ -542,13 +541,21 @@ export default function EditTicketPage() {
           </div>
 
           <div className="flex gap-3 justify-end">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-all duration-200"
+            >
               Cancel
-            </Button>
-            <Button type="submit" disabled={saving || uploading} className="bg-gradient-to-r from-primary to-secondary">
-              <Save className="w-4 h-4 mr-2" />
+            </button>
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="px-6 py-2.5 bg-black hover:bg-gray-700 text-white rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
               {saving || uploading ? "Saving..." : "Save Attachments"}
-            </Button>
+            </button>
           </div>
         </form>
 

@@ -126,16 +126,30 @@ export async function getTickets(filters?: {
       filteredTickets = filteredTickets.filter(t => t.assigned_to === assigneeId)
     }
 
-    if (filters?.search) {
-      const searchLower = filters.search.toLowerCase()
-      filteredTickets = filteredTickets.filter(t =>
-        t.title?.toLowerCase().includes(searchLower) ||
-        t.ticket_id?.toLowerCase().includes(searchLower) ||
-        t.description?.toLowerCase().includes(searchLower) ||
-        t.creator_name?.toLowerCase().includes(searchLower) ||
-        t.assignee_name?.toLowerCase().includes(searchLower) ||
-        t.category_name?.toLowerCase().includes(searchLower)
-      )
+    if (filters?.search && filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase().trim()
+      filteredTickets = filteredTickets.filter(t => {
+        // Search across multiple fields
+        const searchableFields = [
+          t.title,
+          t.ticket_id,
+          t.description,
+          t.creator_name,
+          t.assignee_name,
+          t.category_name,
+          t.subcategory_name,
+          t.spoc_name,
+          t.target_business_group_name,
+          t.project_name,
+          t.initiator_group_name,
+          t.assignee_group_name,
+          t.ticket_number?.toString(),
+        ].filter(Boolean) // Remove null/undefined values
+        
+        return searchableFields.some(field => 
+          field?.toLowerCase().includes(searchLower)
+        )
+      })
     }
 
     if (filters?.dateFrom) {
