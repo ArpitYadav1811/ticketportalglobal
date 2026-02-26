@@ -21,16 +21,78 @@ async function addAuditLog(params: {
   `
 }
 
-// Get audit log for a ticket
+// Get audit log for a ticket (includes both audit log entries and comments)
 export async function getTicketAuditLog(ticketId: number) {
   try {
-    const result = await sql`
-      SELECT *
+    // Fetch audit log entries
+    const auditLog = await sql`
+      SELECT 
+        id,
+        ticket_id,
+        action_type,
+        old_value,
+        new_value,
+        performed_by,
+        performed_by_name,
+        notes,
+        created_at,
+        'audit' as entry_type
       FROM ticket_audit_log
       WHERE ticket_id = ${ticketId}
-      ORDER BY created_at DESC
     `
-    return { success: true, data: result }
+
+    // Fetch comments (check if is_edited column exists)
+    const commentsTableInfo = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'comments' AND column_name = 'is_edited'
+    `
+    
+    const hasEditTracking = commentsTableInfo.length > 0
+    
+    const comments = hasEditTracking 
+      ? await sql`
+          SELECT 
+            c.id,
+            c.ticket_id,
+            'comment' as action_type,
+            NULL as old_value,
+            c.content as new_value,
+            c.user_id as performed_by,
+            u.full_name as performed_by_name,
+            CASE 
+              WHEN c.is_edited = TRUE THEN CONCAT('Edited', CASE WHEN c.updated_at IS NOT NULL THEN CONCAT(' at ', TO_CHAR(c.updated_at, 'Mon DD, YYYY at HH24:MI')) ELSE '' END)
+              ELSE NULL 
+            END as notes,
+            c.created_at,
+            'comment' as entry_type
+          FROM comments c
+          LEFT JOIN users u ON c.user_id = u.id
+          WHERE c.ticket_id = ${ticketId}
+        `
+      : await sql`
+          SELECT 
+            c.id,
+            c.ticket_id,
+            'comment' as action_type,
+            NULL as old_value,
+            c.content as new_value,
+            c.user_id as performed_by,
+            u.full_name as performed_by_name,
+            NULL as notes,
+            c.created_at,
+            'comment' as entry_type
+          FROM comments c
+          LEFT JOIN users u ON c.user_id = u.id
+          WHERE c.ticket_id = ${ticketId}
+        `
+
+    // Combine and sort by created_at
+    const combined = [...auditLog, ...comments].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+
+    return { success: true, data: combined }
   } catch (error) {
     console.error("[v0] Error fetching ticket audit log:", error)
     return { success: false, error: "Failed to fetch audit log", data: [] }

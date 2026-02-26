@@ -763,16 +763,21 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  }`} />
  </button>
  
- {/* Files/Attachments - Always visible */}
- <button
- className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover: border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
- onClick={() => openAttachmentsDialog(ticket)}
- title={ticket.attachment_count > 0 ? `${ticket.attachment_count} attachment(s) - Click to view` : "No attachments"}
- >
- <div className="relative">
- <Paperclip className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
- </div>
- </button>
+              {/* Files/Attachments - Always visible */}
+              <button
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover: border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+                onClick={() => openAttachmentsDialog(ticket)}
+                title={ticket.attachment_count > 0 ? `${ticket.attachment_count} attachment(s) - Click to view` : "No attachments"}
+              >
+                <div className="relative">
+                  <Paperclip className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                  {ticket.attachment_count > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-blue-600 rounded-full">
+                      {ticket.attachment_count}
+                    </span>
+                  )}
+                </div>
+              </button>
  
  {/* Activity History - Always visible */}
  <TicketHistoryTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>

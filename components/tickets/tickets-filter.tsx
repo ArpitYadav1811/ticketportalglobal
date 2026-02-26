@@ -170,7 +170,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  })
  }
 
-  const handleSearchChange = (value: string) => {
+ const handleSearchChange = (value: string) => {
     const newFilters = { ...filters, search: value }
     setFilters(newFilters)
     // Apply search filter immediately
@@ -183,12 +183,12 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
       userId: newFilters.myTeam ? userId : undefined,
       teamMemberIds: teamMemberIds,
     })
-  }
+ }
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleApplyFilters()
-  }
+ const handleSearchSubmit = (e: React.FormEvent) => {
+ e.preventDefault()
+ handleApplyFilters()
+ }
 
  const handleMyTeamToggle = () => {
  const newMyTeamValue = !filters.myTeam
@@ -246,10 +246,10 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  onChange={(e) => handleSearchChange(e.target.value)}
  className="w-full px-4 py-2.5 pl-10 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
  />
-                {filters.search && (
-                  <button
-                    type="button"
-                    onClick={() => {
+ {filters.search && (
+ <button
+ type="button"
+ onClick={() => {
                       const newFilters = { ...filters, search: "" }
                       setFilters(newFilters)
                       const teamMemberIds = newFilters.myTeam && teamMembers.length > 0
@@ -260,12 +260,12 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
                         userId: newFilters.myTeam ? userId : undefined,
                         teamMemberIds: teamMemberIds,
                       })
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+ }}
+ className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground"
+ >
+ <X className="w-4 h-4" />
+ </button>
+ )}
  </div>
  </form>
 

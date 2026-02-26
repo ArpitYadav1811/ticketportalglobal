@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
       tenantId: process.env.MICROSOFT_TENANT_ID || "common",
       authorization: {
         params: {
-          scope: "openid profile email",
+          scope: "openid profile email User.Read",
         },
       },
     }),
@@ -84,6 +84,11 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email
       }
 
+      // Store access token for Microsoft Graph API calls
+      if (account?.access_token) {
+        token.accessToken = account.access_token
+      }
+
       const shouldHydrate =
         (user != null && account?.provider === "azure-ad") ||
         trigger === "update" ||
@@ -121,6 +126,8 @@ export const authOptions: NextAuthOptions = {
         group_name:              token.group_name ?? undefined,
         auth_provider:           token.auth_provider ?? "microsoft",
       }
+      // Store access token in session for API calls
+      session.accessToken = token.accessToken as string | undefined
       return session
     },
   },

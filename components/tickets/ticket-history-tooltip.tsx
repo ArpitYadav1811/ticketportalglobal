@@ -246,7 +246,11 @@ export default function TicketHistoryTooltip({
                 let iconBg = "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                 let actionText = ""
 
-                if (log.action_type === 'created') {
+                if (log.action_type === 'comment') {
+                  icon = <MessageSquare className="w-3 h-3" />
+                  iconBg = "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                  actionText = "commented"
+                } else if (log.action_type === 'created') {
                   icon = <PlusCircle className="w-3 h-3" />
                   iconBg = "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                   actionText = "created this ticket"
@@ -324,8 +328,16 @@ export default function TicketHistoryTooltip({
                       <p className="text-xs text-foreground-secondary mt-0.5">
                         {format(new Date(log.created_at), "MMM dd, yyyy 'at' HH:mm")}
                       </p>
-                      {log.notes && log.action_type !== 'redirection' && (
+                      {log.action_type === 'comment' && log.new_value && (
+                        <p className="text-xs text-foreground mt-1 bg-gray-50 dark:bg-gray-700/50 p-2 rounded border border-border/50">
+                          {log.new_value}
+                        </p>
+                      )}
+                      {log.notes && log.action_type !== 'redirection' && log.action_type !== 'comment' && (
                         <p className="text-xs text-foreground-secondary mt-0.5 italic">{log.notes}</p>
+                      )}
+                      {log.action_type === 'comment' && log.notes && (
+                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5 italic">{log.notes}</p>
                       )}
                     </div>
                   </div>

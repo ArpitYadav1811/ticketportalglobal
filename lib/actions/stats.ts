@@ -81,15 +81,15 @@ export async function getAnalyticsData(daysFilter: number = 30) {
           ORDER BY ticket_count DESC
         `
       : await sql`
-          SELECT
-            bu.name as business_unit,
-            COUNT(t.id) as ticket_count
-          FROM tickets t
-          LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
-          WHERE bu.name IS NOT NULL
-          GROUP BY bu.name
-          ORDER BY ticket_count DESC
-        `
+      SELECT
+        bu.name as business_unit,
+        COUNT(t.id) as ticket_count
+      FROM tickets t
+      LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+      WHERE bu.name IS NOT NULL
+      GROUP BY bu.name
+      ORDER BY ticket_count DESC
+    `
 
     const ticketsByCategory = await sql`
       SELECT
@@ -127,13 +127,13 @@ export async function getAnalyticsData(daysFilter: number = 30) {
           ORDER BY count DESC
         `
       : await sql`
-          SELECT
-            status,
-            COUNT(*) as count
-          FROM tickets
-          GROUP BY status
-          ORDER BY count DESC
-        `
+      SELECT
+        status,
+        COUNT(*) as count
+      FROM tickets
+      GROUP BY status
+      ORDER BY count DESC
+    `
 
     // Get summary stats for the date range
     const summaryStats = daysFilter > 0
@@ -186,13 +186,13 @@ export async function getAnalyticsData(daysFilter: number = 30) {
           ORDER BY date ASC
         `
       : await sql`
-          SELECT
-            DATE(created_at) as date,
-            COUNT(*) as count
-          FROM tickets
-          GROUP BY DATE(created_at)
-          ORDER BY date ASC
-        `
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM tickets
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `
 
     const teamPerformance = await sql`
       SELECT

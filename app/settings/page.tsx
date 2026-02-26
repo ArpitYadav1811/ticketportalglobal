@@ -311,12 +311,22 @@ export default function SettingsPage() {
  </p>
  </div>
 
- {/* Tabs - cleaner design */}
- <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
- <TabsList className="mb-4">
- <TabsTrigger value="my-team">My Team</TabsTrigger>
- <TabsTrigger value="business-group">Business Group</TabsTrigger>
- </TabsList>
+      {/* Tabs - styled like navbar */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-1 bg-white border-0 m-2 gap-2 ">
+          <TabsTrigger 
+            value="my-team"
+            className="px-4 py-4 rounded-lg text-sm font-semibold transition-all duration-200 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-black data-[state=inactive]:bg-transparent dark:data-[state=inactive]:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            My Team
+          </TabsTrigger>
+          <TabsTrigger 
+            value="business-group"
+            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-black data-[state=inactive]:bg-transparent dark:data-[state=inactive]:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Business Group
+          </TabsTrigger>
+        </TabsList>
 
  {/* My Team Tab */}
  <TabsContent value="my-team" className="mt-6">

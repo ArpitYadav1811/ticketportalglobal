@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import NotificationsDropdown from "./notifications-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserAvatar } from "@/components/ui/user-avatar"
 
 interface UserData {
   id: number
@@ -168,11 +169,12 @@ export default function HorizontalNav() {
                 className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 border-2 border-transparent hover:border-slate-200 dark:hover:border-slate-700"
               >
                 {/* Avatar */}
-                <div className="w-9 h-9 bg-black rounded-lg flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-sm">
-                    {initials}
-                  </span>
-                </div>
+                <UserAvatar 
+                  userName={user?.full_name || "User"} 
+                  userEmail={user?.email}
+                  size="md"
+                  className="shadow-sm"
+                />
                 
                 {/* User Info */}
                 <div className="hidden md:block text-left">

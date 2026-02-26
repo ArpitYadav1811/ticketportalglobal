@@ -33,9 +33,18 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSSOLoading, setIsSSOLoading] = useState(false)
 
-  // Force light mode on login page
+  // Force light mode on login page only
   useEffect(() => {
+    // Save current theme
+    const savedTheme = localStorage.getItem("theme")
     setTheme("light")
+    
+    // Cleanup: restore theme when component unmounts (user navigates away)
+    return () => {
+      if (savedTheme && savedTheme !== "light") {
+        setTheme(savedTheme)
+      }
+    }
   }, [setTheme])
 
   // Check for error in URL query parameters (from NextAuth redirects)
@@ -120,16 +129,16 @@ export function LoginForm() {
         <div className="relative p-8 sm:p-10">
           {/* Logo and Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-blue-600 rounded-2xl shadow-lg">
+            <div className="inline-flex items-center justify-center mb-4">
               <Image
-                src="/company-logo.svg"
-                alt="Company Logo"
-                width={40}
-                height={40}
-                className="w-10 h-10"
+                src="/mFilterIt_Logo _Login.svg"
+                alt="mFilterIt Logo"
+                width={200}
+                height={80}
+                className="w-auto h-20"
               />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
               Welcome Back
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm">

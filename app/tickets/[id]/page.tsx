@@ -8,7 +8,6 @@ import { ArrowLeft, Edit, MessageSquare, Paperclip, Clock, User, Calendar, Tag, 
 import { getTicketById, updateTicketStatus, addComment, getTicketAuditLog, redirectTicket } from "@/lib/actions/tickets"
 import { getSubcategoryDetails } from "@/lib/actions/master-data"
 import { format } from "date-fns"
-import { Button } from "@/components/ui/button"
 import RedirectModal from "@/components/tickets/redirect-modal"
 import StatusChangeModal from "@/components/tickets/status-change-modal"
 import AttachmentsDialog from "@/components/tickets/attachments-dialog"
@@ -222,9 +221,12 @@ export default function TicketDetailPage() {
       <DashboardLayout>
         <div className="text-center py-12">
           <p className="text-foreground-secondary">Ticket not found</p>
-          <Button onClick={() => router.push("/tickets")} className="mt-4">
+          <button 
+            onClick={() => router.push("/tickets")} 
+            className="mt-4 px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200"
+          >
             Back to Tickets
-          </Button>
+          </button>
         </div>
       </DashboardLayout>
     )
@@ -247,13 +249,13 @@ export default function TicketDetailPage() {
             </div>
             <p className="text-foreground-secondary mt-1">{ticket.title}</p>
           </div>
-          <Button
+          <button
             onClick={() => router.push(`/tickets/${ticketId}/edit`)}
-            className="bg-gradient-to-r from-primary to-secondary"
+            className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200 flex items-center gap-2"
           >
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="w-4 h-4" />
             Edit Ticket
-          </Button>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
@@ -304,13 +306,13 @@ export default function TicketDetailPage() {
                   className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm resize-none"
                   rows={3}
                 />
-                <Button
+                <button
                   onClick={handleAddComment}
                   disabled={!newComment.trim() || addingComment}
-                  className="bg-gradient-to-r from-primary to-secondary"
+                  className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingComment ? "Adding..." : "Add Comment"}
-                </Button>
+                </button>
               </div>
             </div>
 
@@ -414,41 +416,38 @@ export default function TicketDetailPage() {
                   const isCurrentStatus = ticket.status === status
 
                   return (
-                    <Button
+                    <button
                       key={status}
                       onClick={() => openStatusChangeModal(status)}
-                      variant="outline"
-                      className={`w-full justify-start ${
+                      className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
                         status === "deleted" 
-                          ? "border-red-500 hover:border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                          : "dark:hover:bg-primary/20"
-                      }`}
+                          ? "border border-red-500 hover:border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                          : "border border-gray-300 hover:border-gray-400 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      } ${isCurrentStatus || changingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
                       disabled={isCurrentStatus || changingStatus}
                     >
-                      {Icon && <Icon className="w-4 h-4 mr-2" />}
+                      {Icon && <Icon className="w-4 h-4" />}
                       {statusInfo.label}
-                    </Button>
+                    </button>
                   )
                 })}
                 {canRedirect && (
-                  <Button
+                  <button
                     onClick={() => setIsRedirectModalOpen(true)}
-                    variant="outline"
-                    className="w-full justify-start border-green-500 hover:border-black text-green-600 hover:bg-primary dark:hover:bg-primary/20 dark:hover:text-black"
+                    className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 border border-green-500 hover:border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                   >
-                    <ArrowRightLeft className="w-4 h-4 mr-2" />
+                    <ArrowRightLeft className="w-4 h-4" />
                     Redirect
-                  </Button>
+                  </button>
                 )}
                 {canCreateSubTicket && (
-                  <Button
+                  <button
                     onClick={handleCreateSubTicket}
-                    variant="outline"
-                    className="w-full justify-start border-green-500 hover:border-black text-green-600 hover:bg-primary dark:hover:bg-primary/20 dark:hover:text-black"
+                    className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 border border-green-500 hover:border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                   >
-                    <GitBranch className="w-4 h-4 mr-2" />
+                    <GitBranch className="w-4 h-4" />
                     Create Sub-ticket
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
@@ -549,7 +548,11 @@ export default function TicketDetailPage() {
                     let iconBg = "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                     let actionText = ""
 
-                    if (log.action_type === 'created') {
+                    if (log.action_type === 'comment') {
+                      icon = <MessageSquare className="w-4 h-4" />
+                      iconBg = "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                      actionText = "commented"
+                    } else if (log.action_type === 'created') {
                       icon = <PlusCircle className="w-4 h-4" />
                       iconBg = "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                       actionText = "created this ticket"
@@ -624,6 +627,14 @@ export default function TicketDetailPage() {
                           <p className="text-xs text-foreground-secondary mt-0.5">
                             {format(new Date(log.created_at), "MMM dd, yyyy 'at' HH:mm")}
                           </p>
+                          {log.action_type === 'comment' && log.new_value && (
+                            <p className="text-sm text-foreground mt-2 bg-gray-50 dark:bg-gray-700/50 p-3 rounded border border-border/50">
+                              {log.new_value}
+                            </p>
+                          )}
+                          {log.action_type === 'comment' && log.notes && (
+                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 italic">{log.notes}</p>
+                          )}
                         </div>
                       </div>
                     )
