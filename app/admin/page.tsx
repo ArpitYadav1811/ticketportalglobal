@@ -98,7 +98,7 @@ export default function AdminPage() {
               </div>
               <div>
                 <h3 className="font-sans font-semibold text-lg text-foreground">Teams Management</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">Create and manage your organization teams</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Create and manage your functional area teams</p>
               </div>
             </div>
             <Button onClick={handleAddTeam} size="sm" className="bg-gradient-to-r from-primary to-secondary">

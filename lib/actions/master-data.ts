@@ -21,7 +21,7 @@ export async function getTargetBusinessGroups(organizationId?: number) {
   try {
     let result
     if (organizationId) {
-      // Filter by organization if provided
+      // Filter by functional area if provided
       result = await sql`
         SELECT DISTINCT tbg.*
         FROM target_business_groups tbg
@@ -43,17 +43,38 @@ export async function getTargetBusinessGroups(organizationId?: number) {
   }
 }
 
-// Organizations
+// Organizations (Functional Areas)
 export async function getOrganizations() {
   try {
+    // First check if table exists
+    const tableCheck = await sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'organizations'
+      )
+    `
+    
+    if (!tableCheck[0]?.exists) {
+      console.error("[getOrganizations] Organizations table does not exist. Please run migration script 019-add-organizations.sql")
+      return { success: false, error: "Organizations table does not exist. Please run the database migration.", data: [] }
+    }
+
     const result = await sql`
       SELECT * FROM organizations
       ORDER BY name ASC
     `
-    return { success: true, data: result }
+    console.log("[getOrganizations] Fetched organizations:", result.length, "records")
+    
+    if (result.length === 0) {
+      console.warn("[getOrganizations] Organizations table is empty. Please run seed script 021-seed-organization-mappings.sql")
+    }
+    
+    return { success: true, data: result || [] }
   } catch (error) {
     console.error("Error fetching organizations:", error)
-    return { success: false, error: "Failed to fetch organizations", data: [] }
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    return { success: false, error: `Failed to fetch organizations: ${errorMessage}`, data: [] }
   }
 }
 
@@ -68,7 +89,7 @@ export async function getTargetBusinessGroupsByOrganization(organizationId: numb
     `
     return { success: true, data: result }
   } catch (error) {
-    console.error("Error fetching target business groups by organization:", error)
+    console.error("Error fetching target business groups by functional area:", error)
     return { success: false, error: "Failed to fetch target business groups", data: [] }
   }
 }

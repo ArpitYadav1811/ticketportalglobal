@@ -289,7 +289,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
             <div>
               <h2 className="font-poppins font-bold text-foreground text-lg">Business Groups</h2>
               <p className="text-sm text-foreground-secondary mt-1">
-                Manage organizational business groups
+                Manage functional area business groups
               </p>
             </div>
             <Button

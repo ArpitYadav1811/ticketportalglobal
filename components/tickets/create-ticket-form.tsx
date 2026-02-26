@@ -23,7 +23,7 @@ import { Combobox } from "@/components/ui/combobox"
 interface FormData {
   isInternal: boolean
   ticketType: "support" | "requirement"
-  organizationId: string // New field for Organization
+  organizationId: string // New field for Functional Area
   targetBusinessGroupId: string
   projectId: string
   estimatedReleaseDate: string
@@ -130,13 +130,19 @@ export default function CreateTicketForm() {
     console.log("[v0] Users:", usersResult)
 
     if (buResult.success) setBusinessUnitGroups(buResult.data || [])
-    if (orgResult.success) setOrganizations(orgResult.data || [])
+    if (orgResult.success) {
+      console.log("[v0] Setting organizations:", orgResult.data?.length || 0, "items")
+      setOrganizations(orgResult.data || [])
+    } else {
+      console.error("[v0] Failed to load organizations:", orgResult.error)
+      setOrganizations([])
+    }
     if (catResult.success) setCategories(catResult.data || [])
     if (usersResult.success) setAssignees(usersResult.data || [])
 
     // Load target business groups based on ticket type
     if (formData.isInternal) {
-      // For internal tickets, only load if organization is selected
+      // For internal tickets, only load if functional area is selected
       if (formData.organizationId) {
         const tbgResult = await getTargetBusinessGroupsByOrganization(Number(formData.organizationId))
         if (tbgResult.success) setTargetBusinessGroups(tbgResult.data || [])
@@ -256,7 +262,7 @@ export default function CreateTicketForm() {
     setFormData((prev) => ({
       ...prev,
       isInternal,
-      organizationId: "", // Reset organization selection
+      organizationId: "", // Reset functional area selection
       targetBusinessGroupId: "", // Reset target business group selection
       categoryId: "",
       subcategoryId: "",
@@ -306,13 +312,13 @@ export default function CreateTicketForm() {
     setFormData((prev) => ({
       ...prev,
       organizationId: value,
-      targetBusinessGroupId: "", // Reset target business group when organization changes
+      targetBusinessGroupId: "", // Reset target business group when functional area changes
       categoryId: "",
       subcategoryId: "",
       spocId: "",
     }))
 
-    // Load target business groups for the selected organization
+    // Load target business groups for the selected functional area
     if (value) {
       const result = await getTargetBusinessGroupsByOrganization(Number(value))
       if (result.success) {
@@ -490,14 +496,14 @@ export default function CreateTicketForm() {
       // Validate based on ticket type
       if (formData.ticketType === "requirement") {
         if (formData.isInternal && !formData.organizationId) {
-          throw new Error("Please select an Organization")
+          throw new Error("Please select a Functional Area")
         }
         if (!formData.targetBusinessGroupId || !formData.title || !formData.spocId) {
           throw new Error("Please fill in all required fields (Target Business Group, Title, SPOC)")
         }
       } else {
         if (formData.isInternal && !formData.organizationId) {
-          throw new Error("Please select an Organization")
+          throw new Error("Please select a Functional Area")
         }
         if (
           !formData.targetBusinessGroupId ||
@@ -629,23 +635,23 @@ export default function CreateTicketForm() {
             </label>
           </div>
 
-          {/* Organization dropdown - only shown when Internal Ticket is selected */}
+          {/* Functional Area dropdown - only shown when Internal Ticket is selected */}
           {formData.isInternal && (
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                Organization *
+                Functional Area *
               </label>
               <Combobox
-                options={organizations.map((org) => ({
+                options={organizations && organizations.length > 0 ? organizations.map((org) => ({
                   value: org.id.toString(),
                   label: org.name,
                   subtitle: org.description,
-                }))}
+                })) : []}
                 value={formData.organizationId}
                 onChange={handleOrganizationChange}
-                placeholder="Select organization..."
-                searchPlaceholder="Search organizations..."
-                emptyText="No organizations found"
+                placeholder={organizations.length === 0 ? "Loading functional areas..." : "Select functional area..."}
+                searchPlaceholder="Search functional areas..."
+                emptyText={organizations.length === 0 ? "No functional areas available. Please ensure the organizations table is seeded." : "No functional areas found"}
               />
             </div>
           )}
@@ -700,13 +706,13 @@ export default function CreateTicketForm() {
             }
             value={formData.targetBusinessGroupId}
             onChange={handleTargetBusinessGroupChange}
-            placeholder={
-              formData.isInternal
-                ? formData.organizationId
-                  ? "Select target business group..."
-                  : "Select organization first..."
-                : "Select target business group..."
-            }
+                placeholder={
+                  formData.isInternal
+                    ? formData.organizationId
+                      ? "Select target business group..."
+                      : "Select functional area first..."
+                    : "Select target business group..."
+                }
             searchPlaceholder="Search target business groups..."
             emptyText="No target business groups found"
             disabled={formData.isInternal && !formData.organizationId}
