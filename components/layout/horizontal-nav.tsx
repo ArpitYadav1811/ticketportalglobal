@@ -108,22 +108,22 @@ export default function HorizontalNav() {
   return (
     <header className="bg-white dark:bg-slate-900 border-b-2 border-slate-200 dark:border-slate-800 shadow-sm sticky top-0 z-50">
       <div className="px-4 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo and Nav Items - Left Aligned */}
           <div className="flex items-center gap-8">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-transform group-hover:scale-105">
+              <div>
                 <Image
-                  src="/company-logo.svg"
+                  src="/mfilterit-logo.png"
                   alt="Company Logo"
                   width={24}
                   height={24}
-                  className="w-6 h-6"
+                  className="w-12 h-12"
                 />
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">
+                <h1 className="font-poppins font-bold text-slate-900 dark:text-white text-2xl leading-tight">
                   Ticket Portal
                 </h1>
               </div>
@@ -139,8 +139,8 @@ export default function HorizontalNav() {
                     href={href}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       isActive
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-black text-white shadow-md"
+                        : "text-black dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -217,7 +217,7 @@ export default function HorizontalNav() {
                       <Link
                         href="/settings"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        className="flex items-center gap-3 px-4 py-4.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Settings className="w-4 h-4" />
                         User Settings
@@ -225,7 +225,7 @@ export default function HorizontalNav() {
                       
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-4.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
@@ -263,7 +263,7 @@ export default function HorizontalNav() {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       isActive
-                        ? "bg-blue-600 text-white shadow-md"
+                        ? "bg-black text-white shadow-md"
                         : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >

@@ -96,7 +96,7 @@ export default function ProjectNamesTab() {
           <Button
             size="sm"
             onClick={() => setEditItem({ id: null, name: "", estimated_release_date: "" })}
-            className="bg-gradient-to-r from-primary to-secondary"
+            className="bg-black hover:bg-gray-800"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add New

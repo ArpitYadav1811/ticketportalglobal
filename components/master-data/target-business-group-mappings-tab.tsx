@@ -172,7 +172,7 @@ export default function TargetBusinessGroupMappingsTab() {
                 description: "",
               })
             }
-            className="bg-gradient-to-r from-primary to-secondary"
+            className="bg-black hover:bg-gray-800"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add New Mapping
@@ -470,7 +470,7 @@ function TargetBusinessGroupMappingDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="bg-gradient-to-r from-primary to-secondary">
+            <Button type="submit" disabled={saving} className="bg-black hover:bg-gray-800">
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>

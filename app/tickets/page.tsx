@@ -10,108 +10,108 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { CheckCircle } from "lucide-react"
 
 export default function TicketsPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [showSuccess, setShowSuccess] = useState(!!searchParams.get("created"))
-  const [activeTab, setActiveTab] = useState<"customer" | "internal">("customer")
-  const [filters, setFilters] = useState({})
-  const [exportFn, setExportFn] = useState<(() => void) | null>(null)
-  const [currentTickets, setCurrentTickets] = useState<any[]>([])
+ const router = useRouter()
+ const searchParams = useSearchParams()
+ const [showSuccess, setShowSuccess] = useState(!!searchParams.get("created"))
+ const [activeTab, setActiveTab] = useState<"customer" | "internal">("customer")
+ const [filters, setFilters] = useState({})
+ const [exportFn, setExportFn] = useState<(() => void) | null>(null)
+ const [currentTickets, setCurrentTickets] = useState<any[]>([])
 
-  useEffect(() => {
-    if (showSuccess) {
-      setTimeout(() => setShowSuccess(false), 3000)
-    }
-  }, [showSuccess])
+ useEffect(() => {
+ if (showSuccess) {
+ setTimeout(() => setShowSuccess(false), 3000)
+ }
+ }, [showSuccess])
 
-  const handleExportReady = (fn: () => void) => {
-    setExportFn(() => fn)
-  }
+ const handleExportReady = (fn: () => void) => {
+ setExportFn(() => fn)
+ }
 
-  const handleFilterChange = (newFilters: any) => {
-    // Add isInternal filter based on active tab
-    // If myTeam is false, explicitly clear team-related fields
-    const cleanedFilters = {
-      ...newFilters,
-      isInternal: activeTab === "internal",
-      // Clear team-related fields when myTeam is false
-      ...(newFilters.myTeam === false && {
-        userId: undefined,
-        teamMemberIds: undefined,
-      }),
-    }
-    setFilters(cleanedFilters)
-  }
+ const handleFilterChange = (newFilters: any) => {
+ // Add isInternal filter based on active tab
+ // If myTeam is false, explicitly clear team-related fields
+ const cleanedFilters = {
+ ...newFilters,
+ isInternal: activeTab === "internal",
+ // Clear team-related fields when myTeam is false
+ ...(newFilters.myTeam === false && {
+ userId: undefined,
+ teamMemberIds: undefined,
+ }),
+ }
+ setFilters(cleanedFilters)
+ }
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value as "customer" | "internal")
-    // Reset ALL filters and tickets when switching tabs
-    const resetFilters = {
-      status: "all",
-      dateFrom: "",
-      dateTo: "",
-      assignee: "",
-      spoc: "",
-      type: "all",
-      search: "",
-      myTeam: false,
-      teamMemberIds: undefined,
-      targetBusinessGroup: "",
-      initiator: "",
-      initiatorGroup: "",
-      project: "",
-      isInternal: value === "internal",
-    }
-    setFilters(resetFilters)
-    setCurrentTickets([])
-  }
+ const handleTabChange = (value: string) => {
+ setActiveTab(value as "customer" | "internal")
+ // Reset ALL filters and tickets when switching tabs
+ const resetFilters = {
+ status: "all",
+ dateFrom: "",
+ dateTo: "",
+ assignee: "",
+ spoc: "",
+ type: "all",
+ search: "",
+ myTeam: false,
+ teamMemberIds: undefined,
+ targetBusinessGroup: "",
+ initiator: "",
+ initiatorGroup: "",
+ project: "",
+ isInternal: value === "internal",
+ }
+ setFilters(resetFilters)
+ setCurrentTickets([])
+ }
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6 bg-card dark:bg-gray-800 p-4 shadow-lg rounded-md w-full border border-border">
-        {showSuccess && (
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex gap-3 animate-in fade-in slide-in-from-top">
-            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-            <p className="text-green-700 dark:text-green-300 text-sm">Ticket created successfully: {searchParams.get("created")}</p>
-          </div>
-        )}
-        <TicketsHeader />
-        
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="customer">Customer Tickets</TabsTrigger>
-            <TabsTrigger value="internal">Internal Tickets</TabsTrigger>
-          </TabsList>
+ return (
+ <DashboardLayout>
+ <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
+ {showSuccess && (
+ <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex gap-3 animate-in fade-in slide-in-from-top">
+ <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+ <p className="text-green-700 dark:text-green-300 text-sm">Ticket created successfully: {searchParams.get("created")}</p>
+ </div>
+ )}
+ <TicketsHeader />
+ 
+ <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+ <TabsList className="mb-4">
+ <TabsTrigger value="customer">Customer Tickets</TabsTrigger>
+ <TabsTrigger value="internal">Internal Tickets</TabsTrigger>
+ </TabsList>
 
-          <TabsContent value="customer" className="space-y-4">
-            <TicketsFilter 
-              onFilterChange={handleFilterChange} 
-              onExport={exportFn || undefined}
-              isInternal={false}
-              tickets={currentTickets}
-            />
-            <TicketsTable 
-              filters={filters} 
-              onExportReady={handleExportReady}
-              onTicketsChange={setCurrentTickets}
-            />
-          </TabsContent>
+ <TabsContent value="customer" className="space-y-4">
+ <TicketsFilter 
+ onFilterChange={handleFilterChange} 
+ onExport={exportFn || undefined}
+ isInternal={false}
+ tickets={currentTickets}
+ />
+ <TicketsTable 
+ filters={filters} 
+ onExportReady={handleExportReady}
+ onTicketsChange={setCurrentTickets}
+ />
+ </TabsContent>
 
-          <TabsContent value="internal" className="space-y-4">
-            <TicketsFilter 
-              onFilterChange={handleFilterChange} 
-              onExport={exportFn || undefined}
-              isInternal={true}
-              tickets={currentTickets}
-            />
-            <TicketsTable 
-              filters={filters} 
-              onExportReady={handleExportReady}
-              onTicketsChange={setCurrentTickets}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </DashboardLayout>
-  )
+ <TabsContent value="internal" className="space-y-4">
+ <TicketsFilter 
+ onFilterChange={handleFilterChange} 
+ onExport={exportFn || undefined}
+ isInternal={true}
+ tickets={currentTickets}
+ />
+ <TicketsTable 
+ filters={filters} 
+ onExportReady={handleExportReady}
+ onTicketsChange={setCurrentTickets}
+ />
+ </TabsContent>
+ </Tabs>
+ </div>
+ </DashboardLayout>
+ )
 }

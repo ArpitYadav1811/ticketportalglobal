@@ -47,7 +47,7 @@ export default function TeamsHeader({ onAddTeamMember, onRefresh }: TeamsHeaderP
           </button>
           <button
             onClick={onAddTeamMember}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg transition-all"
           >
             <Plus className="w-5 h-5" />
             Add Team Member

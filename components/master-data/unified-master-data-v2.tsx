@@ -295,7 +295,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
             <Button
               size="sm"
               onClick={() => setEditBG({ id: null, name: "", description: "", spoc_name: "" })}
-              className="bg-gradient-to-r from-primary to-secondary"
+              className="bg-black hover:bg-gray-800"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Business Group
@@ -344,7 +344,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
             <Button
               size="sm"
               onClick={() => setEditCategory({ id: null, name: "", description: "" })}
-              className="bg-gradient-to-r from-primary to-secondary"
+              className="bg-black hover:bg-gray-800"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Category

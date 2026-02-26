@@ -101,7 +101,7 @@ export default function CategoriesTab() {
           <Button
             size="sm"
             onClick={() => setEditItem({ id: null, name: "", description: "" })}
-            className="bg-gradient-to-r from-primary to-secondary"
+            className="bg-black hover:bg-gray-800"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add New
