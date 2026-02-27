@@ -190,6 +190,21 @@ export async function POST(request: NextRequest) {
       UPDATE tickets SET has_attachments = TRUE WHERE id = ${ticketIdNum}
     `
 
+    // Get uploader name for audit log
+    let uploaderName = 'Unknown User'
+    if (uploadedBy) {
+      const userResult = await sql`
+        SELECT full_name FROM users WHERE id = ${Number(uploadedBy)}
+      `
+      uploaderName = userResult[0]?.full_name || 'Unknown User'
+    }
+
+    // Log attachment upload to audit trail
+    await sql`
+      INSERT INTO ticket_audit_log (ticket_id, action_type, old_value, new_value, performed_by, performed_by_name, notes)
+      VALUES (${ticketIdNum}, ${'attachment_added'}, ${null}, ${file.name}, ${uploadedBy ? Number(uploadedBy) : null}, ${uploaderName}, ${`File size: ${(file.size / 1024).toFixed(2)} KB`})
+    `
+
     return NextResponse.json({
       success: true,
       data: result[0],
@@ -220,7 +235,10 @@ export async function DELETE(request: NextRequest) {
 
     // Get attachment info
     const attachment = await sql`
-      SELECT * FROM attachments WHERE id = ${attachmentIdNum}
+      SELECT a.*, u.full_name as uploader_name 
+      FROM attachments a
+      LEFT JOIN users u ON a.uploaded_by = u.id
+      WHERE a.id = ${attachmentIdNum}
     `
 
     if (attachment.length === 0) {
@@ -229,6 +247,9 @@ export async function DELETE(request: NextRequest) {
 
     const ticketId = attachment[0].ticket_id
     const fileUrl = attachment[0].file_url
+    const fileName = attachment[0].file_name
+    const uploadedBy = attachment[0].uploaded_by
+    const uploaderName = attachment[0].uploader_name || 'Unknown User'
 
     // Delete from Vercel Blob Storage
     const { error: deleteError } = await deleteFromVercelBlob(fileUrl)
@@ -248,6 +269,12 @@ export async function DELETE(request: NextRequest) {
     if (Number(remainingAttachments[0].count) === 0) {
       await sql`UPDATE tickets SET has_attachments = FALSE WHERE id = ${ticketId}`
     }
+
+    // Log attachment deletion to audit trail
+    await sql`
+      INSERT INTO ticket_audit_log (ticket_id, action_type, old_value, new_value, performed_by, performed_by_name, notes)
+      VALUES (${ticketId}, ${'attachment_removed'}, ${fileName}, ${null}, ${uploadedBy}, ${uploaderName}, ${null})
+    `
 
     return NextResponse.json({ success: true })
   } catch (error) {

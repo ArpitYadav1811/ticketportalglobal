@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { History, RefreshCw, PlusCircle, CheckCircle2, PauseCircle, PlayCircle, UserPlus, FolderKanban, ArrowRightLeft, UserCheck, MessageSquare } from "lucide-react"
+import { History, RefreshCw, PlusCircle, CheckCircle2, PauseCircle, PlayCircle, UserPlus, FolderKanban, ArrowRightLeft, UserCheck, MessageSquare, Paperclip, Trash2 } from "lucide-react"
 import { getTicketAuditLog } from "@/lib/actions/tickets"
 import { format } from "date-fns"
 
@@ -308,6 +308,14 @@ export default function TicketHistoryTooltip({
                   icon = <MessageSquare className="w-3 h-3" />
                   iconBg = "bg-cyan-100 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400"
                   actionText = `edited a comment`
+                } else if (log.action_type === 'attachment_added') {
+                  icon = <Paperclip className="w-3 h-3" />
+                  iconBg = "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                  actionText = `added attachment "${log.new_value}"`
+                } else if (log.action_type === 'attachment_removed') {
+                  icon = <Trash2 className="w-3 h-3" />
+                  iconBg = "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                  actionText = `removed attachment "${log.old_value}"`
                 } else {
                   actionText = `${log.action_type}: ${log.new_value || ''}`
                 }
