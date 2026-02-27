@@ -556,7 +556,7 @@ export async function getClassificationMappingByTargetBusinessGroup(
             s.name as subcategory_name,
             u.full_name as spoc_name
           FROM ticket_classification_mapping tcm
-          JOIN target_business_groups tbg ON tcm.target_business_group_id = tbg.id
+          JOIN business_unit_groups tbg ON tcm.target_business_group_id = tbg.id
           JOIN categories c ON tcm.category_id = c.id
           JOIN subcategories s ON tcm.subcategory_id = s.id
           LEFT JOIN users u ON tcm.spoc_user_id = u.id
@@ -572,7 +572,7 @@ export async function getClassificationMappingByTargetBusinessGroup(
             s.name as subcategory_name,
             u.full_name as spoc_name
           FROM ticket_classification_mapping tcm
-          JOIN target_business_groups tbg ON tcm.target_business_group_id = tbg.id
+          JOIN business_unit_groups tbg ON tcm.target_business_group_id = tbg.id
           JOIN categories c ON tcm.category_id = c.id
           JOIN subcategories s ON tcm.subcategory_id = s.id
           LEFT JOIN users u ON tcm.spoc_user_id = u.id
@@ -641,7 +641,7 @@ export async function bulkUploadTicketClassificationMappings(
     const results = []
     for (const item of data) {
       // Get IDs from names
-      const tbgResult = await sql`SELECT id FROM target_business_groups WHERE name = ${item.targetBusinessGroup}`
+      const tbgResult = await sql`SELECT id FROM business_unit_groups WHERE name = ${item.targetBusinessGroup}`
       const catResult = await sql`SELECT id FROM categories WHERE name = ${item.category}`
       const subcatResult = await sql`
         SELECT id FROM subcategories 

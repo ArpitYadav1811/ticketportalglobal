@@ -145,7 +145,7 @@ export async function getTickets(filters?: {
       LEFT JOIN categories c ON t.category_id = c.id
       LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
       LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
-      LEFT JOIN target_business_groups tbg ON t.target_business_group_id = tbg.id
+      LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
       LEFT JOIN business_unit_groups assignee_bug ON t.assignee_group_id = assignee_bug.id
       LEFT JOIN business_unit_groups initiator_bug ON u.business_unit_group_id = initiator_bug.id
       LEFT JOIN projects p ON t.project_id = p.id
@@ -313,7 +313,7 @@ export async function getTicketById(id: number) {
       LEFT JOIN users a ON t.assigned_to = a.id
       LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
       LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
-      LEFT JOIN target_business_groups tbg ON t.target_business_group_id = tbg.id
+      LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
       LEFT JOIN business_unit_groups assignee_bug ON t.assignee_group_id = assignee_bug.id
       LEFT JOIN users c ON t.closed_by = c.id
       WHERE t.id = ${id}
@@ -923,7 +923,7 @@ export async function redirectTicket(
         tbg.name as current_target_business_group_name,
         spoc.full_name as current_spoc_name
       FROM tickets t
-      LEFT JOIN target_business_groups tbg ON t.target_business_group_id = tbg.id
+      LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
       LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
       WHERE t.id = ${ticketId}
     `
@@ -944,7 +944,7 @@ export async function redirectTicket(
 
     // Get new target business group and SPOC names for audit trail
     const newGroupResult = await sql`
-      SELECT name FROM target_business_groups WHERE id = ${newTargetBusinessGroupId}
+      SELECT name FROM business_unit_groups WHERE id = ${newTargetBusinessGroupId}
     `
     const newSpocResult = await sql`
       SELECT full_name FROM users WHERE id = ${newSpocUserId}
