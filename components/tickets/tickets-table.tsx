@@ -41,7 +41,7 @@ interface Ticket {
  assigned_to: number | null
  spoc_name: string | null
  spoc_user_id: number | null
- estimated_duration: string
+  estimated_duration: number | null // Changed from string to number (hours)
  is_deleted: boolean
  attachment_count: number
  business_unit_group_id: number
@@ -347,9 +347,9 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  )
  }
 
- const canEditStatus = (ticket: Ticket) => {
- if (!currentUser) return false
- if (ticket.is_deleted || ticket.status === "deleted") return false
+  const canEditStatus = (ticket: Ticket) => {
+    if (!currentUser) return false
+    if (ticket.is_deleted) return false // Soft deleted tickets cannot have status changed
  const userId = Number(currentUser.id)
  const isAdmin = currentUser.role?.toLowerCase() === "admin"
  const isInitiator = userId === ticket.created_by
@@ -656,9 +656,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                   className="text-sm text-foreground max-w-[200px] truncate"
                   title={ticket.description || ticket.title}
                 >
- {ticket.description || ticket.title || "-"}
- </p>
- {ticket.is_deleted && <span className="text-xs text-red-600">(Deleted)</span>}
+                  {ticket.description || ticket.title || "-"}
+                </p>
  </td>
 
  {/* SPOC */}
@@ -704,31 +703,37 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  )}
  </td>
 
- {/* Status */}
- <td className="px-3 py-2.5 whitespace-nowrap">
- {canEditStatus(ticket) ? (
- <select
- value={ticket.status}
- onChange={(e) => {
- const newStatus = e.target.value
- if (newStatus !== ticket.status) {
- openStatusChangeModal(ticket, newStatus)
- }
- }}
- className={`px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${getStatusColorWithDark(ticket.status)}`}
- >
- {getAvailableStatusOptions(ticket).map((status) => (
- <option key={status} value={status}>
- {status === "on-hold" ? "On-Hold" : status === "deleted" ? "Delete" : status.charAt(0).toUpperCase() + status.slice(1)}
- </option>
- ))}
- </select>
- ) : (
- <span className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${getStatusColorWithDark(ticket.status)}`}>
- {ticket.status === "on-hold" ? "On-Hold" : ticket.status === "deleted" ? "Deleted" : ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
- </span>
- )}
- </td>
+              {/* Status */}
+              <td className="px-3 py-2.5 whitespace-nowrap">
+                <div className="flex flex-col gap-1">
+                  {canEditStatus(ticket) ? (
+                    <select
+                      value={ticket.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value
+                        if (newStatus !== ticket.status) {
+                          openStatusChangeModal(ticket, newStatus)
+                        }
+                      }}
+                      className={`px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${getStatusColorWithDark(ticket.status)}`}
+                      disabled={ticket.is_deleted}
+                    >
+                      {getAvailableStatusOptions(ticket).map((status) => (
+                        <option key={status} value={status}>
+                          {status === "on-hold" ? "On-Hold" : status === "deleted" ? "Delete" : status.charAt(0).toUpperCase() + status.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${getStatusColorWithDark(ticket.status)}`}>
+                      {ticket.status === "on-hold" ? "On-Hold" : ticket.status === "deleted" ? "Deleted" : ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                    </span>
+                  )}
+                  {ticket.is_deleted && (
+                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">(Deleted)</span>
+                  )}
+                </div>
+              </td>
 
  {/* Actions */}
  <td className="px-3 py-2.5">

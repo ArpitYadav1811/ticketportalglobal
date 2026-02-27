@@ -43,7 +43,7 @@ export interface Ticket {
   estimated_release_date: string | null
 
   // Duration and timing
-  estimated_duration: string | null
+  estimated_duration: number | null // Changed from string to number (hours)
   created_at: Date | string
   updated_at: Date | string
   resolved_at: Date | string | null
@@ -109,7 +109,7 @@ export interface CreateTicketInput {
   subcategoryId: number | null
   title: string
   description: string
-  estimatedDuration: string
+  estimatedDuration: number // Changed from string to number (hours)
   spocId: number
   productReleaseName?: string
   estimatedReleaseDate?: string | null

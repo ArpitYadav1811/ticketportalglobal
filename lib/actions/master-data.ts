@@ -16,23 +16,23 @@ export async function getBusinessUnitGroups() {
   }
 }
 
-// Target Business Groups
+// Target Business Groups (now uses business_unit_groups after merger)
 export async function getTargetBusinessGroups(organizationId?: number) {
   try {
     let result
     if (organizationId) {
       // Filter by functional area if provided
       result = await sql`
-        SELECT DISTINCT tbg.*
-        FROM target_business_groups tbg
-        INNER JOIN organization_target_business_group_mapping otbgm ON tbg.id = otbgm.target_business_group_id
-        WHERE otbgm.organization_id = ${organizationId}
-        ORDER BY tbg.name ASC
+        SELECT DISTINCT bug.*
+        FROM business_unit_groups bug
+        INNER JOIN functional_area_business_group_mapping fabgm ON bug.id = fabgm.target_business_group_id
+        WHERE fabgm.functional_area_id = ${organizationId}
+        ORDER BY bug.name ASC
       `
     } else {
-      // Get all target business groups
+      // Get all target business groups (same as business_unit_groups after merger)
       result = await sql`
-        SELECT * FROM target_business_groups
+        SELECT * FROM business_unit_groups
         ORDER BY name ASC
       `
     }
@@ -43,52 +43,46 @@ export async function getTargetBusinessGroups(organizationId?: number) {
   }
 }
 
-// Organizations (Functional Areas)
+// Functional Areas (formerly Organizations)
 export async function getOrganizations() {
   try {
-    // First check if table exists
-    const tableCheck = await sql`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'organizations'
-      )
-    `
-    
-    if (!tableCheck[0]?.exists) {
-      console.warn("[getOrganizations] Organizations table does not exist. Please run migration script 019-add-organizations.sql or seed-functional-areas-complete.sql")
-      return { success: true, data: [], error: "Organizations table does not exist. Please run the database migration." }
-    }
-
+    // Directly query the table - if it doesn't exist, the catch block will handle it
     const result = await sql`
-      SELECT * FROM organizations
+      SELECT * FROM functional_areas
       ORDER BY name ASC
     `
-    console.log("[getOrganizations] Fetched organizations:", result.length, "records")
+    
+    console.log("[getOrganizations] Fetched functional areas:", result.length, "records")
     
     if (result.length === 0) {
-      console.warn("[getOrganizations] Organizations table is empty. Please run seed script seed-functional-areas-complete.sql")
-      return { success: true, data: [], error: "Organizations table is empty. Please run the seed script." }
+      console.warn("[getOrganizations] Functional Areas table is empty. Please run seed script 027-seed-functional-areas-updated.sql")
+      return { success: true, data: [], error: "Functional Areas table is empty. Please run the seed script." }
     }
     
     return { success: true, data: result || [] }
   } catch (error) {
-    console.error("[getOrganizations] Error fetching organizations:", error)
+    console.error("[getOrganizations] Error fetching functional areas:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    
+    // Check if it's a "table doesn't exist" error
+    if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+      console.warn("[getOrganizations] Functional Areas table does not exist in database")
+      return { success: true, data: [], error: "Functional Areas table does not exist. Please run the seed script." }
+    }
+    
     // Return success: true with empty data so the form doesn't break
-    // The error message can be checked if needed
-    return { success: true, data: [], error: `Failed to fetch organizations: ${errorMessage}` }
+    return { success: true, data: [], error: `Failed to fetch functional areas: ${errorMessage}` }
   }
 }
 
 export async function getTargetBusinessGroupsByOrganization(organizationId: number) {
   try {
     const result = await sql`
-      SELECT DISTINCT tbg.*
-      FROM target_business_groups tbg
-      INNER JOIN organization_target_business_group_mapping otbgm ON tbg.id = otbgm.target_business_group_id
-      WHERE otbgm.organization_id = ${organizationId}
-      ORDER BY tbg.name ASC
+      SELECT DISTINCT bug.*
+      FROM business_unit_groups bug
+      INNER JOIN functional_area_business_group_mapping fabgm ON bug.id = fabgm.target_business_group_id
+      WHERE fabgm.functional_area_id = ${organizationId}
+      ORDER BY bug.name ASC
     `
     return { success: true, data: result }
   } catch (error) {
@@ -309,7 +303,7 @@ export async function deleteSubcategory(id: number) {
       SELECT COUNT(*) as count FROM tickets WHERE subcategory_id = ${id}
     `
 
-    const ticketCount = ticketsCheck.rows?.[0]?.count || 0
+    const ticketCount = Number(ticketsCheck[0]?.count || 0)
 
     if (ticketCount > 0) {
       return {
@@ -324,7 +318,7 @@ export async function deleteSubcategory(id: number) {
       SELECT COUNT(*) as count FROM ticket_classification_mapping WHERE subcategory_id = ${id}
     `
 
-    const mappingCount = mappingsCheck.rows?.[0]?.count || 0
+    const mappingCount = Number(mappingsCheck[0]?.count || 0)
 
     if (mappingCount > 0) {
       return {
@@ -348,12 +342,12 @@ export async function getTicketClassificationMappings() {
     const result = await sql`
       SELECT 
         tcm.*,
-        tbg.name as target_business_group_name,
+        bug.name as target_business_group_name,
         c.name as category_name,
         s.name as subcategory_name,
         u.full_name as spoc_name
       FROM ticket_classification_mapping tcm
-      JOIN target_business_groups tbg ON tcm.target_business_group_id = tbg.id
+      JOIN business_unit_groups bug ON tcm.target_business_group_id = bug.id
       JOIN categories c ON tcm.category_id = c.id
       JOIN subcategories s ON tcm.subcategory_id = s.id
       LEFT JOIN users u ON tcm.spoc_user_id = u.id
@@ -372,9 +366,9 @@ export async function getTicketClassificationMappings() {
 export async function getBusinessGroupsForSpoc(userId: number) {
   try {
     const result = await sql`
-      SELECT DISTINCT tbg.id, tbg.name 
+      SELECT DISTINCT bug.id, bug.name 
       FROM ticket_classification_mapping tcm
-      JOIN target_business_groups tbg ON tcm.target_business_group_id = tbg.id
+      JOIN business_unit_groups bug ON tcm.target_business_group_id = bug.id
       WHERE tcm.spoc_user_id = ${userId}
     `
     return { success: true, data: result || [] }
@@ -447,20 +441,10 @@ export async function getSpocForTargetBusinessGroup(targetBusinessGroupId: numbe
  * Kept for backward compatibility
  */
 export async function getSpocForBusinessUnitGroup(businessUnitGroupId: number) {
-  // Try to find matching target business group by name
+  // After table merger, business_unit_groups and target_business_groups are the same
+  // So we can directly use the businessUnitGroupId
   try {
-    const bugResult = await sql`
-      SELECT name FROM business_unit_groups WHERE id = ${businessUnitGroupId}
-    `
-    if (bugResult.length > 0) {
-      const tbgResult = await sql`
-        SELECT id FROM target_business_groups WHERE name = ${bugResult[0].name}
-      `
-      if (tbgResult.length > 0) {
-        return getSpocForTargetBusinessGroup(tbgResult[0].id)
-      }
-    }
-    return { success: false, error: "No matching target business group found", data: null }
+    return getSpocForTargetBusinessGroup(businessUnitGroupId)
   } catch (error) {
     console.error("Error fetching SPOC for business unit group:", error)
     return { success: false, error: "Failed to fetch SPOC", data: null }

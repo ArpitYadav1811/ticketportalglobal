@@ -364,7 +364,7 @@ export async function createTicket(data: {
   subcategoryId: number | null
   title: string
   description: string
-  estimatedDuration: string
+  estimatedDuration: number // Changed from string to number (hours)
   spocId: number
   productReleaseName?: string
   estimatedReleaseDate?: string | null
@@ -554,9 +554,9 @@ export async function updateTicketStatus(ticketId: number, status: string, reaso
       }
     }
 
-    // Don't allow status changes if ticket is deleted
-    if (ticket.is_deleted || ticket.status === "deleted") {
-      return { success: false, error: "Cannot change status of a deleted ticket" }
+    // Don't allow status changes if ticket is soft deleted
+    if (ticket.is_deleted) {
+      return { success: false, error: "Cannot change status of a deleted ticket. Please restore it first." }
     }
 
     // Update ticket status with appropriate fields
@@ -791,7 +791,7 @@ export async function updateTicket(
     categoryId: number
     subcategoryId: number | null
     assigneeId: number
-    estimatedDuration: string
+    estimatedDuration: number // Changed from string to number (hours)
   },
 ) {
   try {
@@ -856,21 +856,20 @@ export async function softDeleteTicket(ticketId: number) {
       return { success: false, error: "Only the ticket initiator or admin can delete this ticket" }
     }
 
-    // Virtual delete: set is_deleted flag and status to 'deleted'
+    // Soft delete: set is_deleted flag ONLY, keep status unchanged
     await sql`
       UPDATE tickets
-      SET is_deleted = TRUE, 
-          status = 'deleted',
+      SET is_deleted = TRUE,
           deleted_at = CURRENT_TIMESTAMP
       WHERE id = ${ticketId}
     `
 
     // Log deletion to audit trail
-    const deletionNote = isAdmin ? 'Ticket deleted by admin' : 'Ticket deleted by initiator'
+    const deletionNote = isAdmin ? 'Ticket soft deleted by admin' : 'Ticket soft deleted by initiator'
     await addAuditLog({
       ticketId,
-      actionType: 'status_change',
-      oldValue: ticket[0].status || 'open',
+      actionType: 'soft_delete',
+      oldValue: 'active',
       newValue: 'deleted',
       performedBy: currentUser.id,
       performedByName: currentUser.full_name || currentUser.email,

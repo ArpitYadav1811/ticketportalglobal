@@ -15,7 +15,8 @@ export async function getMyTeamMembers(userId: number) {
         u.email,
         u.business_unit_group_id,
         bug.name as group_name,
-        mtm.id as team_member_id
+        mtm.id as team_member_id,
+        mtm.role
       FROM my_team_members mtm
       JOIN users u ON mtm.member_user_id = u.id
       LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
@@ -27,22 +28,23 @@ export async function getMyTeamMembers(userId: number) {
     // If table doesn't exist, create it
     if (error.message?.includes("relation") && error.message?.includes("does not exist")) {
       await sql`
-        CREATE TABLE IF NOT EXISTS my_team_members (
-          id SERIAL PRIMARY KEY,
-          lead_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          UNIQUE(lead_user_id, member_user_id)
-        )
-      `
-      return { success: true, data: [] }
+      CREATE TABLE IF NOT EXISTS my_team_members (
+        id SERIAL PRIMARY KEY,
+        lead_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'member' NOT NULL CHECK (role IN ('lead', 'member')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(lead_user_id, member_user_id)
+      )
+    `
+    return { success: true, data: [] }
     }
     console.error("Error fetching my team members:", error)
     return { success: false, error: "Failed to fetch team members", data: [] }
   }
 }
 
-export async function addMyTeamMember(leadUserId: number, memberUserId: number) {
+export async function addMyTeamMember(leadUserId: number, memberUserId: number, role: 'lead' | 'member' = 'member') {
   try {
     // Ensure table exists first
     await sql`
@@ -50,6 +52,7 @@ export async function addMyTeamMember(leadUserId: number, memberUserId: number) 
         id SERIAL PRIMARY KEY,
         lead_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'member' NOT NULL CHECK (role IN ('lead', 'member')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(lead_user_id, member_user_id)
       )
@@ -66,8 +69,8 @@ export async function addMyTeamMember(leadUserId: number, memberUserId: number) 
     }
 
     const result = await sql`
-      INSERT INTO my_team_members (lead_user_id, member_user_id)
-      VALUES (${leadUserId}, ${memberUserId})
+      INSERT INTO my_team_members (lead_user_id, member_user_id, role)
+      VALUES (${leadUserId}, ${memberUserId}, ${role})
       RETURNING id
     `
 
@@ -108,6 +111,7 @@ export async function getAvailableUsersForMyTeam(userId: number) {
         id SERIAL PRIMARY KEY,
         lead_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'member' NOT NULL CHECK (role IN ('lead', 'member')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(lead_user_id, member_user_id)
       )
@@ -137,5 +141,63 @@ export async function getAvailableUsersForMyTeam(userId: number) {
   } catch (error) {
     console.error("Error fetching available users:", error)
     return { success: false, error: "Failed to fetch users", data: [] }
+  }
+}
+
+/**
+ * Update the role of a team member
+ */
+export async function updateMyTeamMemberRole(leadUserId: number, memberUserId: number, role: 'lead' | 'member') {
+  try {
+    const result = await sql`
+      UPDATE my_team_members
+      SET role = ${role}
+      WHERE lead_user_id = ${leadUserId} AND member_user_id = ${memberUserId}
+      RETURNING id
+    `
+
+    if (result.length === 0) {
+      return { success: false, error: "Team member not found" }
+    }
+
+    return { success: true, data: result[0] }
+  } catch (error) {
+    console.error("Error updating team member role:", error)
+    return { success: false, error: "Failed to update team member role" }
+  }
+}
+
+/**
+ * Check if a user is a lead of another user
+ */
+export async function isUserLeadOf(leadUserId: number, memberUserId: number): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM my_team_members
+      WHERE lead_user_id = ${leadUserId} 
+      AND member_user_id = ${memberUserId}
+      AND role = 'lead'
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error("Error checking lead status:", error)
+    return false
+  }
+}
+
+/**
+ * Get all team members (any role) for a lead user
+ */
+export async function getAllTeamMembersForLead(leadUserId: number) {
+  try {
+    const result = await sql`
+      SELECT member_user_id, role
+      FROM my_team_members
+      WHERE lead_user_id = ${leadUserId}
+    `
+    return result.map(r => ({ userId: r.member_user_id, role: r.role }))
+  } catch (error) {
+    console.error("Error fetching team members for lead:", error)
+    return []
   }
 }

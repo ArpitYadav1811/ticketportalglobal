@@ -21,20 +21,20 @@ import {
 import { Combobox } from "@/components/ui/combobox"
 
 interface FormData {
- isInternal: boolean
- ticketType: "support" | "requirement"
- organizationId: string // New field for Functional Area
- targetBusinessGroupId: string
- projectId: string
- estimatedReleaseDate: string
- categoryId: string
- subcategoryId: string
- title: string
- description: string
- estimatedDuration: string
- spocId: string
- productReleaseName: string
- attachments: File[]
+  isInternal: boolean
+  ticketType: "support" | "requirement"
+  organizationId: string // New field for Functional Area
+  targetBusinessGroupId: string
+  projectId: string
+  estimatedReleaseDate: string
+  categoryId: string
+  subcategoryId: string
+  title: string
+  description: string
+  estimatedDuration: string // Will be converted to number before submission
+  spocId: string
+  productReleaseName: string
+  attachments: File[]
 }
 
 export default function CreateTicketForm() {
@@ -585,7 +585,7 @@ export default function CreateTicketForm() {
  subcategoryId: formData.subcategoryId && formData.subcategoryId !== "N/A" ? Number(formData.subcategoryId) : null,
  title: ticketTitle,
  description: formData.description || "",
- estimatedDuration: formData.estimatedDuration || "",
+      estimatedDuration: Number(formData.estimatedDuration) || 0, // Convert string to number (hours)
  spocId: Number(formData.spocId),
  productReleaseName: formData.productReleaseName,
  estimatedReleaseDate: formData.estimatedReleaseDate || null,
@@ -656,7 +656,7 @@ export default function CreateTicketForm() {
  }
 
  return (
- <form onSubmit={handleSubmit} className="space-y-6">
+ <form onSubmit={handleSubmit} className="space-y-6 p-8">
  {error && (
  <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg flex gap-3 animate-in slide-in-from-top-2 fade-in">
  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -854,18 +854,24 @@ export default function CreateTicketForm() {
  />
  </div>
 
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- Estimated Duration
- </label>
- <input
- type="text"
- value={formData.estimatedDuration}
- readOnly
- className="w-full px-4 py-2.5 border border-border rounded-lg bg-surface text-foreground cursor-not-allowed text-sm"
- placeholder="Auto-populated based on classification mapping"
- />
- </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Estimated Duration (Hours) *
+                </label>
+                <input
+                  type="number"
+                  name="estimatedDuration"
+                  value={formData.estimatedDuration}
+                  onChange={handleInputChange}
+                  min="1"
+                  step="1"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+                  placeholder="Enter estimated hours (e.g., 2, 8, 16)"
+                />
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Enter the estimated duration in hours (e.g., 2 hours, 8 hours for 1 day, 40 hours for 1 week)
+                </p>
+              </div>
  </>
  )}
  </div>
