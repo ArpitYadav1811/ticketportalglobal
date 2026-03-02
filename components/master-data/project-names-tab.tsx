@@ -9,6 +9,7 @@ import {
   createProjectName,
   updateProjectName,
   deleteProjectName,
+  getBusinessUnitGroups,
 } from "@/lib/actions/master-data"
 import EditDialog from "./edit-dialog"
 
@@ -38,16 +39,26 @@ export default function ProjectNamesTab() {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState<any>(null)
+  const [businessGroups, setBusinessGroups] = useState<any[]>([])
 
   const loadData = async () => {
     setLoading(true)
-    const result = await getProjectNames()
-    if (result.success && result.data) {
-      setData(result.data)
+    const [projectsResult, bgResult] = await Promise.all([
+      getProjectNames(),
+      getBusinessUnitGroups(),
+    ])
+
+    if (projectsResult.success && projectsResult.data) {
+      setData(projectsResult.data)
     } else {
+      // If projects fail to load, just show empty state
       setData([])
-      // eslint-disable-next-line no-console
-      console.error("Failed to load projects:", result.error)
+    }
+
+    if (bgResult.success && bgResult.data) {
+      setBusinessGroups(bgResult.data)
+    } else {
+      setBusinessGroups([])
     }
     setLoading(false)
   }
@@ -56,8 +67,8 @@ export default function ProjectNamesTab() {
     loadData()
   }, [])
 
-  const handleCreate = async (name: string, estimatedReleaseDate?: string) => {
-    const result = await createProjectName(name, estimatedReleaseDate)
+  const handleCreate = async (name: string, estimatedReleaseDate?: string, businessUnitGroupId?: number | null) => {
+    const result = await createProjectName(name, estimatedReleaseDate, businessUnitGroupId)
     if (result.success) {
       await loadData()
       return true
@@ -65,8 +76,8 @@ export default function ProjectNamesTab() {
     return false
   }
 
-  const handleUpdate = async (id: number, name: string, estimatedReleaseDate?: string) => {
-    const result = await updateProjectName(id, name, estimatedReleaseDate)
+  const handleUpdate = async (id: number, name: string, estimatedReleaseDate?: string, businessUnitGroupId?: number | null) => {
+    const result = await updateProjectName(id, name, estimatedReleaseDate, businessUnitGroupId)
     if (result.success) {
       await loadData()
       setEditItem(null)
@@ -109,6 +120,7 @@ export default function ProjectNamesTab() {
           <thead>
             <tr className="border-b border-border bg-surface/50 dark:bg-slate-700/50">
               <th className="text-left py-3 px-4 font-semibold text-foreground">Project Name</th>
+              <th className="text-left py-3 px-4 font-semibold text-foreground">Group</th>
               <th className="text-left py-3 px-4 font-semibold text-foreground">Estimated Release Date</th>
               <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
             </tr>
@@ -118,6 +130,9 @@ export default function ProjectNamesTab() {
               data.map((item) => (
                 <tr key={item.id} className="border-b border-border hover:bg-surface dark:hover:bg-slate-700">
                   <td className="py-3 px-4">{item.name}</td>
+                  <td className="py-3 px-4 text-foreground-secondary">
+                    {item.business_group_name || "Not mapped"}
+                  </td>
                   <td className="py-3 px-4 text-foreground-secondary">
                     {formatDateForDisplay(item.estimated_release_date)}
                   </td>
@@ -138,7 +153,7 @@ export default function ProjectNamesTab() {
               ))
             ) : (
               <tr>
-                <td colSpan={3} className="py-6 text-center text-foreground-secondary">
+                <td colSpan={4} className="py-6 text-center text-foreground-secondary">
                   No projects found. Click "Add New" to create one.
                 </td>
               </tr>
@@ -148,20 +163,35 @@ export default function ProjectNamesTab() {
       </div>
 
       {editItem && (
-        <EditDialog
-          title={editItem.id ? "Edit Project" : "Add Project"}
-          fields={[
-            { name: "name", label: "Project Name", type: "text", required: true },
-            { name: "estimated_release_date", label: "Estimated Release Date", type: "date" },
-          ]}
-          initialData={editItem}
-          onSave={(data) =>
-            editItem.id
-              ? handleUpdate(editItem.id, data.name, data.estimated_release_date)
-              : handleCreate(data.name, data.estimated_release_date)
-          }
-          onClose={() => setEditItem(null)}
-        />
+          <EditDialog
+            title={editItem.id ? "Edit Project" : "Add Project"}
+            fields={[
+              { name: "name", label: "Project Name", type: "text", required: true },
+              {
+                name: "business_unit_group_id",
+                label: "Group",
+                type: "select",
+                options: businessGroups.map((bg) => ({ value: bg.id, label: bg.name })),
+              },
+              { name: "estimated_release_date", label: "Estimated Release Date", type: "date" },
+            ]}
+            initialData={editItem}
+            onSave={(data) =>
+              editItem.id
+                ? handleUpdate(
+                    editItem.id,
+                    data.name,
+                    data.estimated_release_date,
+                    data.business_unit_group_id ? Number(data.business_unit_group_id) : null,
+                  )
+                : handleCreate(
+                    data.name,
+                    data.estimated_release_date,
+                    data.business_unit_group_id ? Number(data.business_unit_group_id) : null,
+                  )
+            }
+            onClose={() => setEditItem(null)}
+          />
       )}
     </div>
   )

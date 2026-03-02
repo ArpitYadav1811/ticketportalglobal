@@ -27,7 +27,6 @@ import {
 import { getUsers } from "@/lib/actions/tickets"
 import EditDialog from "./edit-dialog"
 import ProjectNamesTab from "./project-names-tab"
-import TargetBusinessGroupMappingsTab from "./target-business-group-mappings-tab"
 
 interface UnifiedMasterDataV2Props {
   userId?: number
@@ -145,6 +144,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const result = await createBusinessUnitGroup(name, description, spocName)
     if (result.success) {
       await loadData()
+      setEditBG(null)
       return true
     }
     return false
@@ -174,6 +174,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const result = await createCategory(name, description)
     if (result.success) {
       await loadData()
+      setEditCategory(null)
       return true
     }
     return false
@@ -203,6 +204,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const result = await createSubcategory(categoryId, name, description)
     if (result.success) {
       await loadData()
+      setEditSubcategory(null)
       return true
     }
     return false
@@ -240,6 +242,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     )
     if (result.success) {
       await loadData()
+      setEditMapping(null)
       return true
     }
     return false
@@ -276,10 +279,9 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   return (
     <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="business-groups">Business Groups</TabsTrigger>
           <TabsTrigger value="categories">Categories & Sub categories</TabsTrigger>
-          <TabsTrigger value="target-bg-mappings">Target BG Mappings</TabsTrigger>
           <TabsTrigger value="project-names">Project Names</TabsTrigger>
         </TabsList>
 
@@ -524,11 +526,6 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               })
             )}
           </div>
-        </TabsContent>
-
-        {/* Target Business Group Mappings Tab */}
-        <TabsContent value="target-bg-mappings" className="mt-6">
-          <TargetBusinessGroupMappingsTab />
         </TabsContent>
 
         {/* Project Names Tab */}

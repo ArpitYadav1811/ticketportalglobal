@@ -9,14 +9,14 @@ import { AlertCircle, CheckCircle, Plus, X, Paperclip, Users, Building2, Tag, Fi
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 import { createTicket, getUsers } from "@/lib/actions/tickets"
 import {
- getTargetBusinessGroups,
- getBusinessUnitGroups,
- getCategories,
- getSubcategories,
- getSpocForTargetBusinessGroup,
- getClassificationMappingByTargetBusinessGroup,
- getOrganizations,
- getTargetBusinessGroupsByOrganization,
+  getTargetBusinessGroups,
+  getBusinessUnitGroups,
+  getCategories,
+  getSubcategories,
+  getSpocForTargetBusinessGroup,
+  getClassificationMappingByTargetBusinessGroup,
+  getOrganizations,
+  getTargetBusinessGroupsByOrganization,
 } from "@/lib/actions/master-data"
 import { Combobox } from "@/components/ui/combobox"
 
@@ -147,59 +147,12 @@ export default function CreateTicketForm() {
  if (catResult.success) setCategories(catResult.data || [])
  if (usersResult.success) setAssignees(usersResult.data || [])
 
- // Load target business groups based on ticket type
- if (formData.isInternal) {
- // For internal tickets, only load if functional area is selected
+ // Load target business groups based on selected functional area
  if (formData.organizationId) {
  const tbgResult = await getTargetBusinessGroupsByOrganization(Number(formData.organizationId))
  if (tbgResult.success) setTargetBusinessGroups(tbgResult.data || [])
  } else {
  setTargetBusinessGroups([])
- }
- } else {
- // For customer tickets, filter to show only specific target business groups
- // Sales and Others: show TD Apps, TD Web, TD Brand, TD BM, TD RMN
- // Other groups: show only their mapped target group
- const userBug = businessUnitGroups.find(bug => bug.id.toString() === userGroupId)
- const allTbgResult = await getTargetBusinessGroups()
- 
- if (allTbgResult.success && allTbgResult.data) {
- const allTargetGroups = allTbgResult.data
- 
- if (userBug) {
- const userGroupName = userBug.name
- 
- // Customer ticket mappings
- const customerMappings: Record<string, string> = {
- 'CS Apps': 'TD Apps',
- 'CS Web': 'TD Web',
- 'CS Brand': 'TD Brand',
- 'CS BM': 'TD BM',
- 'CS RMN': 'TD RMN',
- }
- 
- // Groups that should see all 5 target groups
- const showAllGroups = ['Sales', 'Others']
- 
- if (showAllGroups.includes(userGroupName)) {
- // Show TD Apps, TD Web, TD Brand, TD BM, TD RMN
- const allowedGroups = ['TD Apps', 'TD Web', 'TD Brand', 'TD BM', 'TD RMN']
- setTargetBusinessGroups(allTargetGroups.filter(tbg => allowedGroups.includes(tbg.name)))
- } else if (customerMappings[userGroupName]) {
- // Show only the mapped target group
- const mappedGroup = customerMappings[userGroupName]
- setTargetBusinessGroups(allTargetGroups.filter(tbg => tbg.name === mappedGroup))
- } else {
- // Default: show all 5 target groups
- const allowedGroups = ['TD Apps', 'TD Web', 'TD Brand', 'TD BM', 'TD RMN']
- setTargetBusinessGroups(allTargetGroups.filter(tbg => allowedGroups.includes(tbg.name)))
- }
- } else {
- // No user group found, show all 5 target groups
- const allowedGroups = ['TD Apps', 'TD Web', 'TD Brand', 'TD BM', 'TD RMN']
- setTargetBusinessGroups(allTargetGroups.filter(tbg => allowedGroups.includes(tbg.name)))
- }
- }
  }
 
  // If duplicating, load dependent data
@@ -244,30 +197,30 @@ export default function CreateTicketForm() {
  setFormData((prev) => ({ ...prev, [name]: value }))
  }
 
- const handleTargetBusinessGroupChange = async (value: string) => {
- const selectedGroup = targetBusinessGroups.find((tbg) => tbg.id.toString() === value)
- let spocId = ""
+const handleTargetBusinessGroupChange = async (value: string) => {
+  const selectedGroup = targetBusinessGroups.find((tbg) => tbg.id.toString() === value)
+  let spocId = ""
 
- if (selectedGroup) {
- // Get SPOC from ticket_classification_mapping using target business group
- const spocResult = await getSpocForTargetBusinessGroup(Number(value))
- console.log("[v0] SPOC result for target business group:", spocResult)
- if (spocResult.success && spocResult.data) {
- spocId = spocResult.data.id.toString()
- console.log("[v0] Auto-selected SPOC:", spocId, spocResult.data.full_name)
- } else {
- console.warn("[v0] No SPOC found for target business group:", value, selectedGroup.name)
- }
- }
+  if (selectedGroup) {
+    // Get SPOC based only on Group configuration from Master Settings (Business Groups tab)
+    const spocResult = await getSpocForTargetBusinessGroup(Number(value))
+    console.log("[v0] SPOC result for group:", spocResult)
+    if (spocResult.success && spocResult.data) {
+      spocId = spocResult.data.id.toString()
+      console.log("[v0] Auto-selected SPOC from group:", spocId, spocResult.data.full_name)
+    } else {
+      console.warn("[v0] No group-level SPOC found for target business group:", value, selectedGroup.name)
+    }
+  }
 
- setFormData((prev) => ({
- ...prev,
- targetBusinessGroupId: value,
- categoryId: "",
- subcategoryId: "",
- spocId: spocId,
- }))
- }
+  setFormData((prev) => ({
+    ...prev,
+    targetBusinessGroupId: value,
+    categoryId: "",
+    subcategoryId: "",
+    spocId,
+  }))
+}
 
  const handleInternalToggle = async (isInternal: boolean) => {
  setFormData((prev) => ({
@@ -526,21 +479,21 @@ export default function CreateTicketForm() {
  })
 
  if (formData.ticketType === "requirement") {
- if (formData.isInternal && !formData.organizationId) {
+ if (!formData.organizationId) {
  throw new Error("Please select a Functional Area")
  }
  if (!formData.targetBusinessGroupId || !formData.title || !formData.spocId || formData.spocId === "") {
- throw new Error("Please fill in all required fields (Target Business Group, Title, SPOC)")
+ throw new Error("Please fill in all required fields (Group, Title, SPOC)")
  }
  } else {
- if (formData.isInternal && !formData.organizationId) {
+ if (!formData.organizationId) {
  throw new Error("Please select a Functional Area")
  }
  
  // Detailed validation with specific error messages
  const missingFields: string[] = []
  if (!formData.targetBusinessGroupId || formData.targetBusinessGroupId === "") {
- missingFields.push("Target Business Group")
+ missingFields.push("Group")
  }
  if (!formData.categoryId || formData.categoryId === "") {
  missingFields.push("Category")
@@ -664,49 +617,6 @@ export default function CreateTicketForm() {
  </div>
  )}
 
- {/* Customer vs Internal Selection */}
- <div className="bg-white border border-border rounded-lg p-6 dark:bg-slate-800 dark:border-slate-600 dark:">
- <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Classification</h3>
- <div className="space-y-4"><div className="grid grid-cols-1 md:grid-cols-2 gap-3">
- <label className="flex items-center gap-3 px-3 py-2 border rounded-lg cursor-pointer transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-blue-950/20"><input type="radio" name="isInternal"
- checked={!formData.isInternal}
- onChange={() => handleInternalToggle(false)}
- className="w-4 h-4 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
- />
- <span className="text-slate-900 dark:text-white font-semibold">Customer Ticket</span>
- </label>
- <label className="flex items-center gap-3 px-3 py-2 border rounded-lg cursor-pointer transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-blue-950/20"><input type="radio" name="isInternal"
- checked={formData.isInternal}
- onChange={() => handleInternalToggle(true)}
- className="w-4 h-4 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
- />
- <span className="text-slate-900 dark:text-white font-semibold">Internal Ticket</span>
- </label>
- </div>
-
- {/* Functional Area dropdown - only shown when Internal Ticket is selected */}
- {formData.isInternal && (
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- Functional Area *
- </label>
- <Combobox
- options={organizations && organizations.length > 0 ? organizations.map((org) => ({
- value: org.id.toString(),
- label: org.name,
- subtitle: org.description,
- })) : []}
- value={formData.organizationId}
- onChange={handleOrganizationChange}
- placeholder={organizations.length === 0 ? "Loading functional areas..." : "Select functional area..."}
- searchPlaceholder="Search functional areas..."
- emptyText={organizations.length === 0 ? "No functional areas available. Please ensure the organizations table is seeded." : "No functional areas found"}
- />
- </div>
- )}
- </div>
- </div>
-
  {/* Ticket Type Selection (Issue vs Requirement) */}
  <div className="bg-white border border-border rounded-lg p-6 dark:bg-slate-800 dark:border-slate-600 dark:">
  <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Type</h3>
@@ -722,49 +632,61 @@ export default function CreateTicketForm() {
  className="w-4 h-4 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
  />
  <span className="text-foreground font-medium capitalize">
- {type === "support" ? (formData.isInternal ? "Issue" : "Support Issue") : "New Requirement"}
+ {type === "support" ? "Support Issue" : "New Requirement"}
  </span>
  </label>
  ))}
  </div>
  </div>
 
+ {/* Functional Area Selection */}
+ <div className="bg-white border border-border rounded-lg p-6 dark:bg-slate-800 dark:border-slate-600 dark:">
+ {/* <h3 className="font-poppins font-semibold text-foreground mb-4">Functional Area</h3> */}
+ <div>
+ <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ Ticket Functional Area *
+ </label>
+ <Combobox
+ options={organizations && organizations.length > 0 ? organizations.map((org) => ({
+ value: org.id.toString(),
+ label: org.name,
+ subtitle: org.description,
+ })) : []}
+ value={formData.organizationId}
+ onChange={handleOrganizationChange}
+ placeholder={organizations.length === 0 ? "Loading functional areas..." : "Select functional area..."}
+ searchPlaceholder="Search functional areas..."
+ emptyText={organizations.length === 0 ? "No functional areas available. Please ensure the organizations table is seeded." : "No functional areas found"}
+ />
+ </div>
+ </div>
+
  {/* Ticket Classification */}
  <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
  <h3 className="font-poppins font-semibold text-foreground">
- {formData.isInternal ? "Target Business Group" : "Ticket Classification"}
+ Group
  </h3>
 
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- {formData.isInternal ? "Target Business Group *" : "Group *"}
+ Group *
  </label>
  <Combobox
- options={
- formData.isInternal
- ? targetBusinessGroups.map((tbg) => ({
+ options={targetBusinessGroups.map((tbg) => ({
  value: tbg.id.toString(),
  label: tbg.name,
  subtitle: tbg.description,
- }))
- : targetBusinessGroups.map((tbg) => ({
- value: tbg.id.toString(),
- label: tbg.name,
- subtitle: tbg.description,
- }))
- }
+ }))}
  value={formData.targetBusinessGroupId}
  onChange={handleTargetBusinessGroupChange}
  placeholder={
- formData.isInternal
- ? formData.organizationId
- ? "Select target business group..."
+ formData.organizationId
+ ? "Select group..."
  : "Select functional area first..."
- : "Select target business group..."
  }
- searchPlaceholder="Search target business groups..."
- emptyText="No target business groups found"
- disabled={formData.isInternal && !formData.organizationId}
+ searchPlaceholder="Search groups..."
+ emptyText="No groups found"
+ disabled={!formData.organizationId}
  />
  </div>
 
@@ -882,33 +804,35 @@ export default function CreateTicketForm() {
 
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Target Business Group)</span>
+ SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Group)</span>
  </label>
- <Combobox
- options={assignees.map((user) => ({
- value: user.id.toString(),
- label: user.full_name || user.name,
- subtitle: user.email,
- }))}
- value={formData.spocId}
- onChange={(value) => {
- console.log("[v0] SPOC manually changed to:", value)
- setFormData((prev) => ({ ...prev, spocId: value }))
- }}
- placeholder={
- formData.targetBusinessGroupId 
- ? (formData.spocId ? "SPOC auto-selected" : "No SPOC found - please select manually") 
- : "Select Target Business Group first"
- }
- searchPlaceholder="Search team members..."
- emptyText="No team members found"
- disabled={!!formData.spocId && !!formData.targetBusinessGroupId} // Only disable if SPOC is auto-selected
- />
- {formData.targetBusinessGroupId && !formData.spocId && (
- <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
- ⚠️ No SPOC found for this Target Business Group. Please select a SPOC manually or configure one in Master Data.
- </p>
- )}
+      <Combobox
+        options={assignees.map((user) => ({
+          value: user.id.toString(),
+          label: user.full_name || user.name,
+          subtitle: user.email,
+        }))}
+        value={formData.spocId}
+        onChange={(value) => {
+          console.log("[v0] SPOC manually changed to:", value)
+          setFormData((prev) => ({ ...prev, spocId: value }))
+        }}
+        placeholder={
+          formData.targetBusinessGroupId
+            ? formData.spocId
+              ? "SPOC auto-selected"
+              : "No SPOC found - please select manually"
+            : "Select Group first"
+        }
+        searchPlaceholder="Search team members..."
+        emptyText="No team members found"
+        disabled={!!formData.spocId && !!formData.targetBusinessGroupId} // Only disable if SPOC is auto-selected
+      />
+      {formData.targetBusinessGroupId && !formData.spocId && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+          ⚠️ No SPOC found for this Group. Please select a SPOC manually or configure one in Master Settings &gt; Groups.
+        </p>
+      )}
  </div>
 
  <div>

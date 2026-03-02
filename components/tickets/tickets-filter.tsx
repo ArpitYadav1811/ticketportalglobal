@@ -421,10 +421,10 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  </select>
  </div>
 
- {/* Target Business Group Filter (Internal Tickets Only) */}
+ {/* Group Filter (Internal Tickets Only) */}
  {isInternal && (
  <div>
- <label className="block text-sm font-medium text-foreground mb-2">Target Business Group</label>
+ <label className="block text-sm font-medium text-foreground mb-2">Group</label>
  <select
  value={filters.targetBusinessGroup}
  onChange={(e) => setFilters({ ...filters, targetBusinessGroup: e.target.value })}

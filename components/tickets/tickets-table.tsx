@@ -585,7 +585,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  </th>
  {filters?.isInternal && (
  <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
- Target Business Group
+ Group
  </th>
  )}
  <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
@@ -593,6 +593,9 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  </th>
  <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
  Status
+ </th>
+ <th className="px-3 py-2.5 text-center text-xs font-semibold text-foreground whitespace-nowrap">
+ Project
  </th>
  <th className="px-3 py-2.5 text-center text-xs font-semibold text-foreground whitespace-nowrap w-24">
  Actions
@@ -735,39 +738,51 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
                 </div>
               </td>
 
- {/* Actions */}
- <td className="px-3 py-2.5">
- <div className="flex items-center justify-center gap-1">
- {/* Project - Always visible, disabled for non-requirement tickets */}
+ {/* Project */}
+ <td className="px-3 py-2.5 whitespace-nowrap">
+ {ticket.ticket_type === "requirement" ? (
  <button
- className={`p-2 rounded-lg transition-all duration-200 group border-2 border-transparent hover: ${
- ticket.ticket_type === "requirement" && canEditProject(ticket)
- ? "hover:bg-purple-50 dark:hover:bg-purple-950/30 cursor-pointer hover:scale-110 hover:border-purple-200 dark:hover:border-purple-900"
+ className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 group border-2 border-transparent ${
+ canEditProject(ticket)
+ ? "hover:bg-purple-50 dark:hover:bg-purple-950/30 cursor-pointer hover:border-purple-200 dark:hover:border-purple-900"
  : "cursor-not-allowed opacity-50"
  }`}
  onClick={() => {
- if (ticket.ticket_type === "requirement" && canEditProject(ticket)) {
+ if (canEditProject(ticket)) {
  openProjectModal(ticket)
  }
  }}
- disabled={ticket.ticket_type !== "requirement"}
  title={
- ticket.ticket_type !== "requirement"
- ? "Project assignment only for requirement tickets"
- : ticket.project_name
+ ticket.project_name
  ? `Project: ${ticket.project_name}${ticket.estimated_release_date ? `\nRelease: ${format(new Date(ticket.estimated_release_date), "dd MMM yyyy")}` : ""}`
  : canEditProject(ticket)
  ? "Assign to Project"
  : "No permission to assign project"
  }
  >
- <FolderKanban className={`w-4 h-4 ${
- ticket.ticket_type === "requirement" && ticket.project_name
+ <FolderKanban className={`w-4 h-4 flex-shrink-0 ${
+ ticket.project_name
  ? canEditProject(ticket) ? "text-purple-600 group-hover:text-purple-700" : "text-purple-400"
  : "text-muted-foreground"
  }`} />
+ {ticket.project_name ? (
+ <span className={`text-sm font-medium ${
+ canEditProject(ticket) ? "text-purple-600 dark:text-purple-400" : "text-purple-400 dark:text-purple-500"
+ }`}>
+ {ticket.project_name}
+ </span>
+ ) : (
+ <span className="text-xs text-muted-foreground">Not assigned</span>
+ )}
  </button>
- 
+ ) : (
+ <span className="text-xs text-muted-foreground px-3">N/A</span>
+ )}
+ </td>
+
+ {/* Actions */}
+ <td className="px-3 py-2.5">
+ <div className="flex items-center justify-center gap-1">
               {/* Files/Attachments - Always visible */}
               <button
                 className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover: border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
@@ -830,17 +845,18 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  ticketBusinessUnitGroupId={selectedTicketForAssignment?.business_unit_group_id || null}
  />
 
- {/* Project Modal */}
- <ProjectModal
- isOpen={isProjectModalOpen}
- onClose={() => {
- setIsProjectModalOpen(false)
- setSelectedTicketForProject(null)
- }}
- onSelect={handleProjectSelect}
- currentProjectId={selectedTicketForProject?.project_id || null}
- ticketTitle={selectedTicketForProject?.title || ""}
- />
+  {/* Project Modal */}
+  <ProjectModal
+    isOpen={isProjectModalOpen}
+    onClose={() => {
+      setIsProjectModalOpen(false)
+      setSelectedTicketForProject(null)
+    }}
+    onSelect={handleProjectSelect}
+    currentProjectId={selectedTicketForProject?.project_id || null}
+    ticketTitle={selectedTicketForProject?.title || ""}
+    ticketBusinessUnitGroupId={selectedTicketForProject?.business_unit_group_id || null}
+  />
 
  {/* Activity History is now shown in tooltip, no modal needed */}
 

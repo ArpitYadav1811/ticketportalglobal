@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { X, Search, FolderKanban, Check, Calendar } from "lucide-react"
-import { getProjectNames } from "@/lib/actions/master-data"
+import { getProjects } from "@/lib/actions/master-data"
 import { format } from "date-fns"
 
 interface Project {
@@ -17,6 +17,7 @@ interface ProjectModalProps {
   onSelect: (projectId: number | null) => void
   currentProjectId: number | null
   ticketTitle: string
+  ticketBusinessUnitGroupId: number | null
 }
 
 export default function ProjectModal({
@@ -25,6 +26,7 @@ export default function ProjectModal({
   onSelect,
   currentProjectId,
   ticketTitle,
+  ticketBusinessUnitGroupId,
 }: ProjectModalProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -37,11 +39,11 @@ export default function ProjectModal({
       setSelectedProjectId(currentProjectId)
       setSearchTerm("")
     }
-  }, [isOpen, currentProjectId])
+  }, [isOpen, currentProjectId, ticketBusinessUnitGroupId])
 
   const loadProjects = async () => {
     setLoading(true)
-    const result = await getProjectNames()
+    const result = await getProjects(ticketBusinessUnitGroupId ?? undefined)
 
     if (result.success && result.data) {
       setProjects(result.data)

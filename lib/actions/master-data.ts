@@ -395,33 +395,25 @@ export async function isUserSpoc(userId: number) {
   }
 }
 
-/**
- * Get SPOC user ID for a target business group from ticket_classification_mapping
- * Returns the most common SPOC for the group, or the first one found
- */
 export async function getSpocForTargetBusinessGroup(targetBusinessGroupId: number) {
   try {
     const result = await sql`
       SELECT 
-        tcm.spoc_user_id,
+        bug.spoc_name,
         u.id,
         u.full_name,
-        u.email,
-        COUNT(*) as mapping_count
-      FROM ticket_classification_mapping tcm
-      LEFT JOIN users u ON tcm.spoc_user_id = u.id
-      WHERE tcm.target_business_group_id = ${targetBusinessGroupId}
-        AND tcm.spoc_user_id IS NOT NULL
-      GROUP BY tcm.spoc_user_id, u.id, u.full_name, u.email
-      ORDER BY mapping_count DESC, u.id ASC
+        u.email
+      FROM business_unit_groups bug
+      LEFT JOIN users u ON u.full_name = bug.spoc_name
+      WHERE bug.id = ${targetBusinessGroupId}
       LIMIT 1
     `
     
-    if (result.length > 0 && result[0].spoc_user_id) {
+    if (result.length > 0 && result[0].id) {
       return {
         success: true,
         data: {
-          id: result[0].spoc_user_id,
+          id: result[0].id,
           full_name: result[0].full_name,
           email: result[0].email,
         },
@@ -699,12 +691,16 @@ export async function getProjects(businessUnitGroupId?: number) {
   }
 }
 
-// Project Names (for release planning)
+// Project Names (for release planning / master settings)
 export async function getProjectNames() {
   try {
     const result = await sql`
-      SELECT * FROM projects
-      ORDER BY name ASC
+      SELECT 
+        p.*,
+        bug.name AS business_group_name
+      FROM projects p
+      LEFT JOIN business_unit_groups bug ON p.business_unit_group_id = bug.id
+      ORDER BY p.name ASC
     `
     return { success: true, data: result }
   } catch (error) {
@@ -713,12 +709,16 @@ export async function getProjectNames() {
   }
 }
 
-export async function createProjectName(name: string, estimatedReleaseDate?: string) {
+export async function createProjectName(
+  name: string,
+  estimatedReleaseDate?: string,
+  businessUnitGroupId?: number | null,
+) {
   try {
     const trimmedName = name.trim()
     const result = await sql`
-      INSERT INTO projects (name, estimated_release_date)
-      VALUES (${trimmedName}, ${estimatedReleaseDate || null})
+      INSERT INTO projects (name, estimated_release_date, business_unit_group_id)
+      VALUES (${trimmedName}, ${estimatedReleaseDate || null}, ${businessUnitGroupId || null})
       RETURNING *
     `
     if (!result || result.length === 0) {
@@ -734,12 +734,21 @@ export async function createProjectName(name: string, estimatedReleaseDate?: str
   }
 }
 
-export async function updateProjectName(id: number, name: string, estimatedReleaseDate?: string) {
+export async function updateProjectName(
+  id: number,
+  name: string,
+  estimatedReleaseDate?: string,
+  businessUnitGroupId?: number | null,
+) {
   try {
     const trimmedName = name.trim()
     const result = await sql`
       UPDATE projects
-      SET name = ${trimmedName}, estimated_release_date = ${estimatedReleaseDate || null}, updated_at = CURRENT_TIMESTAMP
+      SET 
+        name = ${trimmedName},
+        estimated_release_date = ${estimatedReleaseDate || null},
+        business_unit_group_id = ${businessUnitGroupId || null},
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
     `

@@ -126,14 +126,14 @@ export default function RedirectModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Current Target Business Group Info */}
-          {currentBusinessUnitGroupName && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-              <p className="text-sm text-foreground">
-                <span className="font-medium">Current Target Business Group:</span> {currentBusinessUnitGroupName}
-              </p>
-            </div>
-          )}
+ {/* Current Group Info */}
+ {currentBusinessUnitGroupName && (
+ <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+ <p className="text-sm text-foreground">
+ <span className="font-medium">Current Group:</span> {currentBusinessUnitGroupName}
+ </p>
+ </div>
+ )}
 
           {/* Error Message */}
           {error && (
@@ -156,11 +156,11 @@ export default function RedirectModal({
             />
           </div>
 
-          {/* Target Business Group List */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Select New Target Business Group *
-            </label>
+ {/* Group List */}
+ <div>
+ <label className="block text-sm font-medium text-foreground mb-2">
+ Select New Group *
+ </label>
             <div className="border border-border rounded-lg max-h-[200px] overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center h-32">

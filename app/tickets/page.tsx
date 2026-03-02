@@ -6,14 +6,12 @@ import DashboardLayout from "@/components/layout/dashboard-layout"
 import TicketsHeader from "@/components/tickets/tickets-header"
 import TicketsFilter from "@/components/tickets/tickets-filter"
 import TicketsTable from "@/components/tickets/tickets-table"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { CheckCircle } from "lucide-react"
 
 export default function TicketsPage() {
  const router = useRouter()
  const searchParams = useSearchParams()
  const [showSuccess, setShowSuccess] = useState(!!searchParams.get("created"))
- const [activeTab, setActiveTab] = useState<"customer" | "internal">("customer")
  const [filters, setFilters] = useState({})
  const [exportFn, setExportFn] = useState<(() => void) | null>(null)
  const [currentTickets, setCurrentTickets] = useState<any[]>([])
@@ -29,11 +27,9 @@ export default function TicketsPage() {
  }
 
  const handleFilterChange = (newFilters: any) => {
- // Add isInternal filter based on active tab
  // If myTeam is false, explicitly clear team-related fields
  const cleanedFilters = {
  ...newFilters,
- isInternal: activeTab === "internal",
  // Clear team-related fields when myTeam is false
  ...(newFilters.myTeam === false && {
  userId: undefined,
@@ -43,47 +39,20 @@ export default function TicketsPage() {
  setFilters(cleanedFilters)
  }
 
- const handleTabChange = (value: string) => {
- setActiveTab(value as "customer" | "internal")
- // Reset ALL filters and tickets when switching tabs
- const resetFilters = {
- status: "all",
- dateFrom: "",
- dateTo: "",
- assignee: "",
- spoc: "",
- type: "all",
- search: "",
- myTeam: false,
- teamMemberIds: undefined,
- targetBusinessGroup: "",
- initiator: "",
- initiatorGroup: "",
- project: "",
- isInternal: value === "internal",
- }
- setFilters(resetFilters)
- setCurrentTickets([])
- }
-
  return (
  <DashboardLayout>
- <div className="p-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
+ <div className="p-1 bg-gray-50 dark:bg-slate-900 min-h-screen">
  {showSuccess && (
  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex gap-3 animate-in fade-in slide-in-from-top">
  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
  <p className="text-green-700 dark:text-green-300 text-sm">Ticket created successfully: {searchParams.get("created")}</p>
  </div>
  )}
- <TicketsHeader />
+ <TicketsHeader
+  />
+ <div className="border-b border-slate-200 dark:border-slate-700 my-4" />
  
- <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
- <TabsList className="mb-4">
- <TabsTrigger value="customer">Customer Tickets</TabsTrigger>
- <TabsTrigger value="internal">Internal Tickets</TabsTrigger>
- </TabsList>
-
- <TabsContent value="customer" className="space-y-4">
+ <div className="space-y-4">
  <TicketsFilter 
  onFilterChange={handleFilterChange} 
  onExport={exportFn || undefined}
@@ -95,22 +64,7 @@ export default function TicketsPage() {
  onExportReady={handleExportReady}
  onTicketsChange={setCurrentTickets}
  />
- </TabsContent>
-
- <TabsContent value="internal" className="space-y-4">
- <TicketsFilter 
- onFilterChange={handleFilterChange} 
- onExport={exportFn || undefined}
- isInternal={true}
- tickets={currentTickets}
- />
- <TicketsTable 
- filters={filters} 
- onExportReady={handleExportReady}
- onTicketsChange={setCurrentTickets}
- />
- </TabsContent>
- </Tabs>
+ </div>
  </div>
  </DashboardLayout>
  )

@@ -107,11 +107,11 @@ export default function HorizontalNav() {
     : "U"
 
   return (
-    <header className="bg-white dark:bg-slate-900 border-b-2 border-slate-200 dark:border-slate-800 shadow-sm sticky top-0 z-50">
-      <div className="px-4 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+    <header className="bg-white dark:bg-slate-900 border-b-2 dark:border-slate-800  sticky top-0 z-50">
+      <div className="px-1 lg:px-1">
+        <div className="flex items-center justify-between h-16">
           {/* Logo and Nav Items - Left Aligned */}
-          <div className="flex items-center gap-8">
+          <div className="ml-40 flex items-center gap-1">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-3 group">
               <div>
@@ -120,11 +120,11 @@ export default function HorizontalNav() {
                   alt="Company Logo"
                   width={24}
                   height={24}
-                  className="w-12 h-12"
+                  className="w-10 h-10"
                 />
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-poppins font-bold text-slate-900 dark:text-white text-2xl leading-tight">
+                <h1 className="font-poppins font-bold text-slate-900 dark:text-white text-xl">
                   Ticket Portal
                 </h1>
               </div>
@@ -132,35 +132,29 @@ export default function HorizontalNav() {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-2">
-              {filteredNavItems.map(({ href, label, icon: Icon }) => {
-                const isActive = pathname === href || pathname.startsWith(`${href}/`)
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                      isActive
-                        ? "bg-black text-white shadow-md"
-                        : "text-black dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {label}
-                  </Link>
-                )
-              })}
+              {filteredNavItems.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-black dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Link>
+              ))}
             </nav>
           </div>
 
           {/* Right Section - User Info */}
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
-            <div className="hidden sm:block">
+          {/* <div className="hidden sm:block">
               <ThemeToggle />
-            </div>
+            </div> */}
+          <div className=" mr-30 flex items-center gap-3">
+            {/* Theme Toggle */}
+            
 
             {/* Notifications */}
-            <NotificationsDropdown />
+            {/* <NotificationsDropdown /> */}
 
             {/* User Dropdown */}
             <div className="relative">
@@ -182,7 +176,7 @@ export default function HorizontalNav() {
                     {user?.full_name || "User"}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
-                    {user?.email || ""}
+                    {user?.group_name || user?.email || ""}
                   </p>
                 </div>
                 
@@ -196,22 +190,20 @@ export default function HorizontalNav() {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowUserMenu(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border-2 border-slate-200 dark:border-slate-700 py-2 z-50 overflow-hidden">
-                    {/* User Info Header (Mobile) */}
-                    <div className="px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 md:hidden bg-slate-50 dark:bg-slate-900">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">{initials}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                            {user?.full_name || "User"}
-                          </p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
-                            {user?.email || ""}
-                          </p>
-                        </div>
-                      </div>
+                  <div className="absolute right-0 mt-1 w-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50 overflow-hidden">
+                    {/* User Info Header */}
+                    <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                      <p className="text-base font-medium text-slate-900 dark:text-white">
+                        {user?.full_name || "User"}
+                      </p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+                        {user?.email || ""}
+                      </p>
+                      {user?.group_name && (
+                        <p className="text-sm text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
+                          {user.group_name}
+                        </p>
+                      )}
                     </div>
 
                     {/* Menu Items */}
@@ -219,15 +211,17 @@ export default function HorizontalNav() {
                       <Link
                         href="/settings"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-4.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        className="flex items-center gap-3 px-4 py-0.5 text-m text-black dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                       >
-                        <Settings className="w-4 h-4" />
+                        <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                         User Settings
                       </Link>
                       
+                      <div className="border-t border-slate-200 dark:border-slate-700 my-1" />
+                      
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-4.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
@@ -250,30 +244,25 @@ export default function HorizontalNav() {
               )}
             </button>
           </div>
+          
         </div>
+        
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <nav className="lg:hidden py-4 border-t-2 border-slate-200 dark:border-slate-800">
             <div className="flex flex-col gap-2">
-              {filteredNavItems.map(({ href, label, icon: Icon }) => {
-                const isActive = pathname === href || pathname.startsWith(`${href}/`)
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                      isActive
-                        ? "bg-black text-white shadow-md"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {label}
-                  </Link>
-                )
-              })}
+              {filteredNavItems.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+                >
+                  <Icon className="w-5 h-5" />
+                  {label}
+                </Link>
+              ))}
               
               {/* Theme Toggle in Mobile Menu */}
               <div className="sm:hidden px-4 py-3 border-t-2 border-slate-200 dark:border-slate-800 mt-2">

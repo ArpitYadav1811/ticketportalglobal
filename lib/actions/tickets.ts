@@ -356,20 +356,21 @@ export async function getTicketById(id: number) {
 }
 
 export async function createTicket(data: {
-  ticketType: string
-  targetBusinessGroupId: number
-  projectName?: string
-  projectId?: number | null
-  categoryId: number | null
-  subcategoryId: number | null
-  title: string
-  description: string
-  estimatedDuration: number // Changed from string to number (hours)
-  spocId: number
-  productReleaseName?: string
-  estimatedReleaseDate?: string | null
-  isInternal?: boolean
-  assignedTo?: number | null
+ ticketType: string
+ parentTicketId?: number | null
+ targetBusinessGroupId: number
+ projectName?: string
+ projectId?: number | null
+ categoryId: number | null
+ subcategoryId: number | null
+ title: string
+ description: string
+ estimatedDuration: number // Changed from string to number (hours)
+ spocId: number
+ productReleaseName?: string
+ estimatedReleaseDate?: string | null
+ isInternal?: boolean
+ assignedTo?: number | null
 }) {
   try {
     const currentUser = await getCurrentUser()

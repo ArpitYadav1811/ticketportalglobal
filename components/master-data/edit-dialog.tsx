@@ -102,7 +102,7 @@ export default function EditDialog({ title, fields, initialData, onSave, onClose
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="bg-gradient-to-r from-primary to-secondary">
+            <Button type="submit" disabled={saving} className="bg-black from-primary to-secondary">
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
