@@ -9,9 +9,9 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col w-full" style={{ margin: 0, padding: 0, width: '100%', maxWidth: '100%' }}>
       <HorizontalNav />
-      <main className="bg-surface p-6 md:p-4 shadow-md">{children}</main>
+      <main className="flex-1 w-full" style={{ margin: 0, padding: 0, width: '100%', maxWidth: '100%' }}>{children}</main>
     </div>
   )
 }

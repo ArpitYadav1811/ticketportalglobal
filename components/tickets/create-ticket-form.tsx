@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AlertCircle, CheckCircle, Plus, X, Paperclip, Users, Building2, Tag, FileText, Calendar, Clock, User, Sparkles, Target, Layers } from "lucide-react"
+import { CheckCircle, X, Paperclip } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 import { createTicket, getUsers } from "@/lib/actions/tickets"
@@ -19,6 +19,7 @@ import {
   getTargetBusinessGroupsByOrganization,
 } from "@/lib/actions/master-data"
 import { Combobox } from "@/components/ui/combobox"
+import { TicketSuccessDialog } from "@/components/tickets/ticket-success-dialog"
 
 interface FormData {
   isInternal: boolean
@@ -69,9 +70,9 @@ export default function CreateTicketForm() {
  const [categories, setCategories] = useState<any[]>([])
  const [subcategories, setSubcategories] = useState<any[]>([])
  const [assignees, setAssignees] = useState<any[]>([])
- const [error, setError] = useState("")
  const [isLoading, setIsLoading] = useState(false)
- const [success, setSuccess] = useState(false)
+ const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+ const [createdTicketId, setCreatedTicketId] = useState<string | null>(null)
  const fileInputRefSupport = useRef<HTMLInputElement>(null)
  const fileInputRefRequirement = useRef<HTMLInputElement>(null)
 
@@ -439,7 +440,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  })
 
  if (invalidFiles.length > 0) {
- setError(`Files exceed 5MB limit: ${invalidFiles.join(", ")}`)
+ alert(`Files exceed 5MB limit: ${invalidFiles.join(", ")}`)
  }
 
  if (validFiles.length > 0) {
@@ -462,7 +463,6 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  const handleSubmit = async (e: FormEvent) => {
  e.preventDefault()
- setError("")
  setIsLoading(true)
 
  try {
@@ -550,7 +550,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  console.log("[v0] Create ticket result:", result)
 
  if (!result.success) {
- throw new Error(result.error || "Failed to create ticket")
+ alert(result.error || "Failed to create ticket")
+ setIsLoading(false)
+ return
  }
 
  // Upload attachments if any
@@ -582,49 +584,32 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  }
  }
 
- setSuccess(true)
- setTimeout(() => {
+ // Show success dialog with ticket ID
  if (result.data) {
- router.push(`/tickets?created=${result.data.ticket_id}`)
+ setCreatedTicketId(result.data.ticket_id || null)
+ setShowSuccessDialog(true)
  } else {
- router.push("/tickets")
+ setCreatedTicketId(null)
+ setShowSuccessDialog(true)
  }
- }, 2000)
  } catch (err) {
  console.error("[v0] Error creating ticket:", err)
- setError(err instanceof Error ? err.message : "Failed to create ticket")
+ alert(err instanceof Error ? err.message : "Failed to create ticket")
  } finally {
  setIsLoading(false)
  }
  }
 
- if (success) {
  return (
- <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center animate-in zoom-in fade-in duration-500">
- <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4 animate-bounce">
- <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
- </div>
- <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">Ticket Created Successfully!</h3>
- <p className="text-green-700 dark:text-green-400 font-medium">Redirecting you to the ticket list...</p>
- </div>
- )
- }
-
- return (
- <form onSubmit={handleSubmit} className="space-y-6 p-8">
- {error && (
- <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg flex gap-3 animate-in slide-in-from-top-2 fade-in">
- <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
- <p className="text-red-800 dark:text-red-300 text-sm font-semibold">{error}</p>
- </div>
- )}
+ <>
+ <form onSubmit={handleSubmit} className="space-y-4 w-full">
 
  {/* First Section: Ticket Functional Area, Business Group, Ticket Type, SPOC */}
- <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
+ <div className="space-y-3">
  {/* Row 1: Ticket Functional Area and Business Group */}
- <div className="grid grid-cols-2 gap-4">
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="grid grid-cols-2 gap-2 p-6">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Ticket Functional Area *
  </label>
  <Combobox
@@ -638,11 +623,12 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  placeholder={organizations.length === 0 ? "Loading functional areas..." : "Select functional area..."}
  searchPlaceholder="Search functional areas..."
  emptyText={organizations.length === 0 ? "No functional areas available. Please ensure the organizations table is seeded." : "No functional areas found"}
+ className="h-8 py-1.5 text-xs"
  />
  </div>
 
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Business Group *
  </label>
  <Combobox
@@ -661,14 +647,15 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  searchPlaceholder="Search business groups..."
  emptyText="No business groups found"
  disabled={!formData.organizationId}
+ className="h-8 py-1.5 text-xs"
  />
  </div>
  </div>
 
  {/* Row 2: Ticket Type and SPOC */}
- <div className="grid grid-cols-2 gap-4">
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="grid grid-cols-2 gap-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Ticket Type *
  </label>
  <Combobox
@@ -681,11 +668,12 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  placeholder="Select ticket type..."
  searchPlaceholder="Search ticket types..."
  emptyText="No ticket types found"
+ className="h-8 py-1.5 text-xs"
  />
  </div>
 
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Group)</span>
  </label>
  <Combobox
@@ -709,9 +697,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  searchPlaceholder="Search team members..."
  emptyText="No team members found"
  disabled={!!formData.spocId && !!formData.targetBusinessGroupId}
+ className="h-8 py-1.5 text-xs"
  />
  {formData.targetBusinessGroupId && !formData.spocId && (
- <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+ <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
  ⚠️ No SPOC found for this Business Group. Please select a SPOC manually or configure one in Master Settings &gt; Groups.
  </p>
  )}
@@ -720,16 +709,16 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Ticket Classification */}
- <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
- <h3 className="font-inter font-semibold text-foreground">
+ <div className="space-y-3">
+ <h3 className="font-inter font-semibold text-foreground text-sm mb-1">
  Ticket Classification
  </h3>
 
  {formData.ticketType === "requirement" ? (
  <>
  {/* Row 3: Title (full width for requirement) */}
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Title *
  </label>
  <input
@@ -738,13 +727,13 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  value={formData.title}
  onChange={handleInputChange}
  placeholder="Enter a descriptive title for this requirement"
- className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ className="w-full h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
  />
  </div>
 
  {/* Row 4: Description (full width) */}
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
  <textarea
@@ -752,15 +741,15 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  value={formData.description}
  onChange={handleInputChange}
  placeholder="Describe the requirement in detail..."
- rows={4}
- className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ rows={3}
+ className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
- <div className="grid grid-cols-2 gap-4">
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="grid grid-cols-2 gap-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Estimated Hrs *
  </label>
  <input
@@ -770,13 +759,13 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  onChange={handleInputChange}
  min="1"
  step="1"
- className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ className="w-full h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
  placeholder="Enter estimated hours (e.g., 2, 8, 16)"
  />
  </div>
 
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Attachments
  {formData.attachments.length > 0 && (
  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
@@ -795,9 +784,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  <button
  type="button"
  onClick={() => fileInputRefRequirement.current?.click()}
- className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+ className="w-full h-8 px-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
  >
- <Paperclip className="w-4 h-4" />
+ <Paperclip className="w-3 h-3" />
  Choose files
  </button>
  </div>
@@ -807,9 +796,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  ) : (
  <>
  {/* Row 3: Category and Sub Category (2-column grid) */}
- <div className="grid grid-cols-2 gap-4">
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Category *</label>
+ <div className="grid grid-cols-2 gap-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">Category *</label>
  <Combobox
  options={categories.map((cat) => ({
  value: cat.id.toString(),
@@ -822,11 +811,12 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  searchPlaceholder="Search categories..."
  emptyText="No categories found"
  disabled={!formData.targetBusinessGroupId}
+ className="h-8 py-1.5 text-xs"
  />
  </div>
 
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Sub Category *
  </label>
  <Combobox
@@ -845,13 +835,14 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  searchPlaceholder="Search sub-categories..."
  emptyText="No sub-categories available"
  disabled={!formData.categoryId}
+ className="h-8 py-1.5 text-xs"
  />
  </div>
  </div>
 
  {/* Row 4: Description (full width) */}
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
  <textarea
@@ -859,15 +850,15 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  value={formData.description}
  onChange={handleInputChange}
  placeholder="Auto-filled based on category and sub-category selection. You can edit this."
- rows={4}
- className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ rows={3}
+ className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
- <div className="grid grid-cols-2 gap-4">
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="grid grid-cols-2 gap-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Estimated Hrs *
  </label>
  <input
@@ -877,13 +868,13 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  onChange={handleInputChange}
  min="1"
  step="1"
- className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ className="w-full h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
  placeholder="Enter estimated hours (e.g., 2, 8, 16)"
  />
  </div>
 
- <div>
- <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Attachments
  {formData.attachments.length > 0 && (
  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
@@ -902,9 +893,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  <button
  type="button"
  onClick={() => fileInputRefSupport.current?.click()}
- className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+ className="w-full h-8 px-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
  >
- <Paperclip className="w-4 h-4" />
+ <Paperclip className="w-3 h-3" />
  Choose files
  </button>
  </div>
@@ -915,16 +906,16 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  {/* File list display */}
  {formData.attachments.length > 0 && (
- <div className="mt-4 space-y-2">
+ <div className="mt-1 space-y-1.5">
  {formData.attachments.map((file, idx) => (
  <div
  key={idx}
- className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600"
+ className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600"
  >
- <div className="flex items-center gap-3 min-w-0 flex-1">
- <Paperclip className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+ <div className="flex items-center gap-2 min-w-0 flex-1">
+ <Paperclip className="w-3 h-3 text-muted-foreground flex-shrink-0" />
  <div className="min-w-0 flex-1">
- <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{file.name}</p>
+ <p className="text-xs font-medium text-slate-900 dark:text-white truncate">{file.name}</p>
  <p className="text-xs text-slate-600 dark:text-slate-400">
  {(file.size / 1024).toFixed(1)} KB
  </p>
@@ -933,9 +924,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  <button
  type="button"
  onClick={() => removeAttachment(idx)}
- className="p-1.5 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+ className="p-1 hover:bg-red-50 rounded transition-colors flex-shrink-0"
  >
- <X className="w-4 h-4 text-danger" />
+ <X className="w-3 h-3 text-danger" />
  </button>
  </div>
  ))}
@@ -944,23 +935,50 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Submit Button & Cancel Button */}
- <div className="flex gap-3 justify-end">
+ <div className="flex gap-2 justify-end">
  <button
  type="button"
  onClick={() => router.back()}
- className="px-6 py-3 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+ className="px-4 py-2 h-9 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
  >
  Cancel
  </button>
  <button
  type="submit"
  disabled={isLoading}
- className="px-6 py-3 bg-black hover:bg-gray-800 text-white rounded-lg font-semibold hover:transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+ className="px-4 py-2 h-9 bg-black hover:bg-gray-800 text-white rounded-lg text-xs font-medium hover:transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
  >
- <CheckCircle className="w-4 h-4" /><span>{isLoading ? "Creating..." : "Create Ticket"}</span>
+ <CheckCircle className="w-3 h-3" /><span>{isLoading ? "Creating..." : "Create Ticket"}</span>
  </button>
  </div>
  </form>
+
+ <TicketSuccessDialog
+ isOpen={showSuccessDialog}
+ onClose={() => {
+ setShowSuccessDialog(false)
+ // Reset form after dialog closes
+ setFormData({
+ isInternal: false,
+ ticketType: "support",
+ organizationId: "",
+ targetBusinessGroupId: "",
+ projectId: "",
+ estimatedReleaseDate: "",
+ categoryId: "",
+ subcategoryId: "",
+ title: "",
+ description: "",
+ estimatedDuration: "",
+ spocId: "",
+ productReleaseName: "",
+ attachments: [],
+ })
+ setCreatedTicketId(null)
+ }}
+ ticketId={createdTicketId}
+ />
+ </>
  )
 }
 
