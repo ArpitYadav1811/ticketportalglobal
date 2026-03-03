@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, type FormEvent } from "react"
+import { useState, useEffect, useRef, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, CheckCircle, Plus, X, Paperclip, Users, Building2, Tag, FileText, Calendar, Clock, User, Sparkles, Target, Layers } from "lucide-react"
 
@@ -72,6 +72,8 @@ export default function CreateTicketForm() {
  const [error, setError] = useState("")
  const [isLoading, setIsLoading] = useState(false)
  const [success, setSuccess] = useState(false)
+ const fileInputRefSupport = useRef<HTMLInputElement>(null)
+ const fileInputRefRequirement = useRef<HTMLInputElement>(null)
 
  useEffect(() => {
  // Load user's group from localStorage
@@ -483,7 +485,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  throw new Error("Please select a Functional Area")
  }
  if (!formData.targetBusinessGroupId || !formData.title || !formData.spocId || formData.spocId === "") {
- throw new Error("Please fill in all required fields (Group, Title, SPOC)")
+ throw new Error("Please fill in all required fields (Business Group, Title, SPOC)")
  }
  } else {
  if (!formData.organizationId) {
@@ -493,7 +495,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  // Detailed validation with specific error messages
  const missingFields: string[] = []
  if (!formData.targetBusinessGroupId || formData.targetBusinessGroupId === "") {
- missingFields.push("Group")
+ missingFields.push("Business Group")
  }
  if (!formData.categoryId || formData.categoryId === "") {
  missingFields.push("Category")
@@ -617,31 +619,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
  )}
 
- {/* Ticket Type Selection (Issue vs Requirement) */}
- <div className="bg-white border border-border rounded-lg p-6 dark:bg-slate-800 dark:border-slate-600 dark:">
- <h3 className="font-poppins font-semibold text-foreground mb-4">Ticket Type</h3>
- <div className="flex gap-4">
- {["support", "requirement"].map((type) => (
- <label key={type} className="flex items-center gap-3 cursor-pointer">
- <input
- type="radio"
- name="ticketType"
- value={type}
- checked={formData.ticketType === type}
- onChange={handleInputChange}
- className="w-4 h-4 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
- />
- <span className="text-foreground font-medium capitalize">
- {type === "support" ? "Support Issue" : "New Requirement"}
- </span>
- </label>
- ))}
- </div>
- </div>
-
- {/* Functional Area Selection */}
- <div className="bg-white border border-border rounded-lg p-6 dark:bg-slate-800 dark:border-slate-600 dark:">
- {/* <h3 className="font-poppins font-semibold text-foreground mb-4">Functional Area</h3> */}
+ {/* First Section: Ticket Functional Area, Business Group, Ticket Type, SPOC */}
+ <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
+ {/* Row 1: Ticket Functional Area and Business Group */}
+ <div className="grid grid-cols-2 gap-4">
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
  Ticket Functional Area *
@@ -659,17 +640,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  emptyText={organizations.length === 0 ? "No functional areas available. Please ensure the organizations table is seeded." : "No functional areas found"}
  />
  </div>
- </div>
-
- {/* Ticket Classification */}
- <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
- <h3 className="font-poppins font-semibold text-foreground">
- Group
- </h3>
 
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- Group *
+ Business Group *
  </label>
  <Combobox
  options={targetBusinessGroups.map((tbg) => ({
@@ -681,17 +655,79 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  onChange={handleTargetBusinessGroupChange}
  placeholder={
  formData.organizationId
- ? "Select group..."
+ ? "Select business group..."
  : "Select functional area first..."
  }
- searchPlaceholder="Search groups..."
- emptyText="No groups found"
+ searchPlaceholder="Search business groups..."
+ emptyText="No business groups found"
  disabled={!formData.organizationId}
  />
  </div>
+ </div>
+
+ {/* Row 2: Ticket Type and SPOC */}
+ <div className="grid grid-cols-2 gap-4">
+ <div>
+ <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ Ticket Type *
+ </label>
+ <Combobox
+ options={[
+ { value: "support", label: "Support Issue" },
+ { value: "requirement", label: "New Requirement" },
+ ]}
+ value={formData.ticketType}
+ onChange={(value) => setFormData((prev) => ({ ...prev, ticketType: value as "support" | "requirement" }))}
+ placeholder="Select ticket type..."
+ searchPlaceholder="Search ticket types..."
+ emptyText="No ticket types found"
+ />
+ </div>
+
+ <div>
+ <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Group)</span>
+ </label>
+ <Combobox
+ options={assignees.map((user) => ({
+ value: user.id.toString(),
+ label: user.full_name || user.name,
+ subtitle: user.email,
+ }))}
+ value={formData.spocId}
+ onChange={(value) => {
+ console.log("[v0] SPOC manually changed to:", value)
+ setFormData((prev) => ({ ...prev, spocId: value }))
+ }}
+ placeholder={
+ formData.targetBusinessGroupId
+ ? formData.spocId
+ ? "SPOC auto-selected"
+ : "No SPOC found - please select manually"
+ : "Select Business Group first"
+ }
+ searchPlaceholder="Search team members..."
+ emptyText="No team members found"
+ disabled={!!formData.spocId && !!formData.targetBusinessGroupId}
+ />
+ {formData.targetBusinessGroupId && !formData.spocId && (
+ <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+ ⚠️ No SPOC found for this Business Group. Please select a SPOC manually or configure one in Master Settings &gt; Groups.
+ </p>
+ )}
+ </div>
+ </div>
+ </div>
+
+ {/* Ticket Classification */}
+ <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
+ <h3 className="font-inter font-semibold text-foreground">
+ Ticket Classification
+ </h3>
 
  {formData.ticketType === "requirement" ? (
  <>
+ {/* Row 3: Title (full width for requirement) */}
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
  Title *
@@ -706,6 +742,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  />
  </div>
 
+ {/* Row 4: Description (full width) */}
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
  Description
@@ -715,13 +752,62 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  value={formData.description}
  onChange={handleInputChange}
  placeholder="Describe the requirement in detail..."
- rows={6}
+ rows={4}
  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
  />
+ </div>
+
+ {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
+ <div className="grid grid-cols-2 gap-4">
+ <div>
+ <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ Estimated Hrs *
+ </label>
+ <input
+ type="number"
+ name="estimatedDuration"
+ value={formData.estimatedDuration}
+ onChange={handleInputChange}
+ min="1"
+ step="1"
+ className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ placeholder="Enter estimated hours (e.g., 2, 8, 16)"
+ />
+ </div>
+
+ <div>
+ <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+ Attachments
+ {formData.attachments.length > 0 && (
+ <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
+ ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
+ </span>
+ )}
+ </label>
+ <div className="relative">
+ <input
+ type="file"
+ multiple
+ onChange={handleFileChange}
+ ref={fileInputRefRequirement}
+ className="hidden"
+ />
+ <button
+ type="button"
+ onClick={() => fileInputRefRequirement.current?.click()}
+ className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+ >
+ <Paperclip className="w-4 h-4" />
+ Choose files
+ </button>
+ </div>
+ </div>
  </div>
  </>
  ) : (
  <>
+ {/* Row 3: Category and Sub Category (2-column grid) */}
+ <div className="grid grid-cols-2 gap-4">
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Category *</label>
  <Combobox
@@ -732,7 +818,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  }))}
  value={formData.categoryId}
  onChange={handleCategoryChange}
- placeholder={formData.targetBusinessGroupId ? "Select a category..." : "Select a target business group first"}
+ placeholder={formData.targetBusinessGroupId ? "Select a category..." : "Select a business group first"}
  searchPlaceholder="Search categories..."
  emptyText="No categories found"
  disabled={!formData.targetBusinessGroupId}
@@ -741,7 +827,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- Sub-Category *
+ Sub Category *
  </label>
  <Combobox
  options={
@@ -761,7 +847,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  disabled={!formData.categoryId}
  />
  </div>
+ </div>
 
+ {/* Row 4: Description (full width) */}
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
  Description
@@ -776,63 +864,22 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  />
  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  Estimated Duration (Hours) *
-                </label>
-                <input
-                  type="number"
-                  name="estimatedDuration"
-                  value={formData.estimatedDuration}
-                  onChange={handleInputChange}
-                  min="1"
-                  step="1"
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
-                  placeholder="Enter estimated hours (e.g., 2, 8, 16)"
-                />
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Enter the estimated duration in hours (e.g., 2 hours, 8 hours for 1 day, 40 hours for 1 week)
-                </p>
-              </div>
- </>
- )}
- </div>
-
- {/* Assignment & Details */}
- <div className="bg-white border border-border rounded-lg p-6 space-y-4 dark:bg-slate-800 dark:border-slate-600 dark:">
- <h3 className="font-poppins font-semibold text-foreground">Assignment & Details</h3>
-
+ {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
+ <div className="grid grid-cols-2 gap-4">
  <div>
  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
- SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Group)</span>
+ Estimated Hrs *
  </label>
-      <Combobox
-        options={assignees.map((user) => ({
-          value: user.id.toString(),
-          label: user.full_name || user.name,
-          subtitle: user.email,
-        }))}
-        value={formData.spocId}
-        onChange={(value) => {
-          console.log("[v0] SPOC manually changed to:", value)
-          setFormData((prev) => ({ ...prev, spocId: value }))
-        }}
-        placeholder={
-          formData.targetBusinessGroupId
-            ? formData.spocId
-              ? "SPOC auto-selected"
-              : "No SPOC found - please select manually"
-            : "Select Group first"
-        }
-        searchPlaceholder="Search team members..."
-        emptyText="No team members found"
-        disabled={!!formData.spocId && !!formData.targetBusinessGroupId} // Only disable if SPOC is auto-selected
-      />
-      {formData.targetBusinessGroupId && !formData.spocId && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-          ⚠️ No SPOC found for this Group. Please select a SPOC manually or configure one in Master Settings &gt; Groups.
-        </p>
-      )}
+ <input
+ type="number"
+ name="estimatedDuration"
+ value={formData.estimatedDuration}
+ onChange={handleInputChange}
+ min="1"
+ step="1"
+ className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-sm"
+ placeholder="Enter estimated hours (e.g., 2, 8, 16)"
+ />
  </div>
 
  <div>
@@ -844,21 +891,35 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </span>
  )}
  </label>
- <label className="flex items-center justify-center w-full px-4 py-8 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:border-gray-900 hover:bg-gray-50 dark:hover:bg-blue-950/20 transition-all duration-300 group">
- <div className="text-center">
- <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 mb-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-950/30 transition-colors"><Paperclip className="w-6 h-6 text-slate-600 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-blue-400 transition-colors" /></div>
- <span className="text-sm font-semibold text-slate-900 dark:text-white block">Click to upload or drag and drop</span>
- <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Max file size: 5MB per file</p>
+ <div className="relative">
+ <input
+ type="file"
+ multiple
+ onChange={handleFileChange}
+ ref={fileInputRefSupport}
+ className="hidden"
+ />
+ <button
+ type="button"
+ onClick={() => fileInputRefSupport.current?.click()}
+ className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-sm flex items-center justify-center gap-2"
+ >
+ <Paperclip className="w-4 h-4" />
+ Choose files
+ </button>
  </div>
- <input type="file" multiple onChange={handleFileChange} className="hidden" />
- </label>
+ </div>
+ </div>
+ </>
+ )}
 
+ {/* File list display */}
  {formData.attachments.length > 0 && (
  <div className="mt-4 space-y-2">
  {formData.attachments.map((file, idx) => (
  <div
  key={idx}
- className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600 hover:"
+ className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600"
  >
  <div className="flex items-center gap-3 min-w-0 flex-1">
  <Paperclip className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -880,7 +941,6 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  ))}
  </div>
  )}
- </div>
  </div>
 
  {/* Submit Button & Cancel Button */}
