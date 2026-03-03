@@ -44,9 +44,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning style={{ margin: 0, padding: 0, height: '100%', overflow: 'hidden' }}>
       <body 
         className={`font-sans antialiased bg-background text-foreground`}
+        style={{ margin: 0, padding: 0, height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}
         suppressHydrationWarning
       >
         <ThemeProvider

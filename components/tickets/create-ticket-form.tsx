@@ -602,13 +602,13 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  return (
  <>
- <form onSubmit={handleSubmit} className="space-y-4 w-full">
+ <form onSubmit={handleSubmit} className="space-y-1 w-full shadow-md rounded-lg max-w-6xl mx-auto">
 
  {/* First Section: Ticket Functional Area, Business Group, Ticket Type, SPOC */}
- <div className="space-y-3">
+ <div className="p-2">
  {/* Row 1: Ticket Functional Area and Business Group */}
- <div className="grid grid-cols-2 gap-2 p-6">
- <div className="space-y-1">
+ <div className="grid grid-cols-2 gap-2 p-2">
+ <div className="space-y-1 px-2">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Ticket Functional Area *
  </label>
@@ -653,23 +653,28 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 2: Ticket Type and SPOC */}
- <div className="grid grid-cols-2 gap-2">
+ <div className="grid grid-cols-2 gap-2 p-4">
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Ticket Type *
  </label>
- <Combobox
- options={[
- { value: "support", label: "Support Issue" },
- { value: "requirement", label: "New Requirement" },
- ]}
- value={formData.ticketType}
- onChange={(value) => setFormData((prev) => ({ ...prev, ticketType: value as "support" | "requirement" }))}
- placeholder="Select ticket type..."
- searchPlaceholder="Search ticket types..."
- emptyText="No ticket types found"
- className="h-8 py-1.5 text-xs"
+ <div className="flex gap-4 w-full">
+ {["support", "requirement"].map((type) => (
+ <label key={type} className="flex items-center gap-2 cursor-pointer flex-1">
+ <input
+ type="radio"
+ name="ticketType"
+ value={type}
+ checked={formData.ticketType === type}
+ onChange={handleInputChange}
+ className="w-3 h-3 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
  />
+ <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">
+ {type === "support" ? "Support Issue" : "New Requirement"}
+ </span>
+ </label>
+ ))}
+ </div>
  </div>
 
  <div className="space-y-1">
@@ -709,15 +714,15 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Ticket Classification */}
- <div className="space-y-3">
- <h3 className="font-inter font-semibold text-foreground text-sm mb-1">
+ <div className="p-2">
+ <h3 className="font-inter font-semibold text-foreground text-sm ml-4">
  Ticket Classification
  </h3>
 
  {formData.ticketType === "requirement" ? (
  <>
  {/* Row 3: Title (full width for requirement) */}
- <div className="space-y-1">
+ <div className="space-y-1 px-4 py-4">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Title *
  </label>
@@ -732,7 +737,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 4: Description (full width) */}
- <div className="space-y-1">
+ <div className="space-y-1 px-4">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
@@ -747,7 +752,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
- <div className="grid grid-cols-2 gap-2">
+ <div className="grid grid-cols-2 gap-2 p-4">
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Estimated Hrs *
@@ -796,7 +801,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  ) : (
  <>
  {/* Row 3: Category and Sub Category (2-column grid) */}
- <div className="grid grid-cols-2 gap-2">
+ <div className="grid grid-cols-2 gap-2 p-4">
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">Category *</label>
  <Combobox
@@ -841,7 +846,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 4: Description (full width) */}
- <div className="space-y-1">
+ <div className="space-y-1 px-4">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
@@ -856,7 +861,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
- <div className="grid grid-cols-2 gap-2">
+ <div className="grid grid-cols-2 gap-2 p-4">
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Estimated Hrs *
@@ -934,19 +939,12 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  )}
  </div>
 
- {/* Submit Button & Cancel Button */}
- <div className="flex gap-2 justify-end">
- <button
- type="button"
- onClick={() => router.back()}
- className="px-4 py-2 h-9 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
- >
- Cancel
- </button>
+ {/* Submit Button */}
+ <div className="w-full px-6 pb-6">
  <button
  type="submit"
  disabled={isLoading}
- className="px-4 py-2 h-9 bg-black hover:bg-gray-800 text-white rounded-lg text-xs font-medium hover:transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+ className="w-full px-4 py-2 h-9 bg-black hover:bg-gray-800 text-white rounded-lg text-xs font-medium hover:transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
  >
  <CheckCircle className="w-3 h-3" /><span>{isLoading ? "Creating..." : "Create Ticket"}</span>
  </button>
