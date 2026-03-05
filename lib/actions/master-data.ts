@@ -1,6 +1,7 @@
 "use server"
 
 import { sql } from "@/lib/db"
+import { getCurrentUser } from "@/lib/actions/auth"
 
 // Business Unit Groups
 export async function getBusinessUnitGroups() {
@@ -93,6 +94,16 @@ export async function getTargetBusinessGroupsByOrganization(organizationId: numb
 
 export async function createBusinessUnitGroup(name: string, description?: string, spocName?: string) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can create business groups
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can create business groups" }
+    }
+    
     const trimmedName = name.trim()
     const result = await sql`
       INSERT INTO business_unit_groups (name, description, spoc_name)
@@ -114,6 +125,16 @@ export async function createBusinessUnitGroup(name: string, description?: string
 
 export async function updateBusinessUnitGroup(id: number, name: string, description?: string, spocName?: string) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can update business groups
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can update business groups" }
+    }
+    
     const trimmedName = name.trim()
     const result = await sql`
       UPDATE business_unit_groups
@@ -136,6 +157,16 @@ export async function updateBusinessUnitGroup(id: number, name: string, descript
 
 export async function deleteBusinessUnitGroup(id: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can delete business groups
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can delete business groups" }
+    }
+    
     await sql`DELETE FROM business_unit_groups WHERE id = ${id}`
     return { success: true }
   } catch (error) {
@@ -160,6 +191,16 @@ export async function getCategories() {
 
 export async function createCategory(name: string, description?: string) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can create categories
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can create categories" }
+    }
+    
     const trimmedName = name.trim()
     const result = await sql`
       INSERT INTO categories (name, description)
@@ -181,6 +222,16 @@ export async function createCategory(name: string, description?: string) {
 
 export async function updateCategory(id: number, name: string, description?: string) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can update categories
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can update categories" }
+    }
+    
     const trimmedName = name.trim()
     const result = await sql`
       UPDATE categories 
@@ -203,6 +254,16 @@ export async function updateCategory(id: number, name: string, description?: str
 
 export async function deleteCategory(id: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can delete categories
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can delete categories" }
+    }
+    
     await sql`DELETE FROM categories WHERE id = ${id}`
     return { success: true }
   } catch (error) {
@@ -259,6 +320,16 @@ export async function getSubcategoryDetails(subcategoryId: number) {
 
 export async function createSubcategory(categoryId: number, name: string, description?: string) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can create subcategories
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can create subcategories" }
+    }
+    
     const trimmedName = name.trim()
     const result = await sql`
       INSERT INTO subcategories (category_id, name, description)
@@ -280,6 +351,16 @@ export async function createSubcategory(categoryId: number, name: string, descri
 
 export async function updateSubcategory(id: number, name: string, description?: string) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can update subcategories
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can update subcategories" }
+    }
+    
     const result = await sql`
       UPDATE subcategories 
       SET name = ${name}, description = ${description || null}, updated_at = CURRENT_TIMESTAMP
@@ -298,6 +379,16 @@ export async function updateSubcategory(id: number, name: string, description?: 
 
 export async function deleteSubcategory(id: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    // Only admins can delete subcategories
+    if (currentUser.role?.toLowerCase() !== "admin") {
+      return { success: false, error: "Only admins can delete subcategories" }
+    }
+    
     // Check if there are any tickets referencing this subcategory
     const ticketsCheck = await sql`
       SELECT COUNT(*) as count FROM tickets WHERE subcategory_id = ${id}
@@ -395,6 +486,23 @@ export async function isUserSpoc(userId: number) {
   }
 }
 
+/**
+ * Check if a SPOC has access to a specific business group
+ */
+export async function spocHasAccessToBusinessGroup(userId: number, businessGroupId: number) {
+  try {
+    const result = await sql`
+      SELECT COUNT(*) as count
+      FROM ticket_classification_mapping
+      WHERE spoc_user_id = ${userId} AND target_business_group_id = ${businessGroupId}
+    `
+    return (result[0]?.count || 0) > 0
+  } catch (error) {
+    console.error("Error checking SPOC access to business group:", error)
+    return false
+  }
+}
+
 export async function getSpocForTargetBusinessGroup(targetBusinessGroupId: number) {
   try {
     const result = await sql`
@@ -453,6 +561,21 @@ export async function createTicketClassificationMapping(
   description?: string,
 ) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    
+    // If user is SPOC (not admin), check if they have access to this business group
+    if (!isAdmin) {
+      const hasAccess = await spocHasAccessToBusinessGroup(currentUser.id, targetBusinessGroupId)
+      if (!hasAccess) {
+        return { success: false, error: "You can only create mappings for your assigned business groups" }
+      }
+    }
+    
     const result = await sql`
       INSERT INTO ticket_classification_mapping 
         (target_business_group_id, category_id, subcategory_id, estimated_duration, spoc_user_id, auto_title_template, description)
@@ -476,6 +599,28 @@ export async function updateTicketClassificationMapping(
   autoTitleTemplate?: string,
 ) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    
+    // If user is SPOC (not admin), check if they have access to this mapping's business group
+    if (!isAdmin) {
+      const mappingCheck = await sql`
+        SELECT target_business_group_id FROM ticket_classification_mapping WHERE id = ${id}
+      `
+      if (mappingCheck.length === 0) {
+        return { success: false, error: "Mapping not found" }
+      }
+      const businessGroupId = mappingCheck[0].target_business_group_id
+      const hasAccess = await spocHasAccessToBusinessGroup(currentUser.id, businessGroupId)
+      if (!hasAccess) {
+        return { success: false, error: "You can only update mappings for your assigned business groups" }
+      }
+    }
+    
     const result = await sql`
       UPDATE ticket_classification_mapping 
       SET 
@@ -498,6 +643,28 @@ export async function updateTicketClassificationMapping(
 
 export async function deleteTicketClassificationMapping(id: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+    
+    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    
+    // If user is SPOC (not admin), check if they have access to this mapping's business group
+    if (!isAdmin) {
+      const mappingCheck = await sql`
+        SELECT target_business_group_id FROM ticket_classification_mapping WHERE id = ${id}
+      `
+      if (mappingCheck.length === 0) {
+        return { success: false, error: "Mapping not found" }
+      }
+      const businessGroupId = mappingCheck[0].target_business_group_id
+      const hasAccess = await spocHasAccessToBusinessGroup(currentUser.id, businessGroupId)
+      if (!hasAccess) {
+        return { success: false, error: "You can only delete mappings for your assigned business groups" }
+      }
+    }
+    
     await sql`DELETE FROM ticket_classification_mapping WHERE id = ${id}`
     return { success: true }
   } catch (error) {

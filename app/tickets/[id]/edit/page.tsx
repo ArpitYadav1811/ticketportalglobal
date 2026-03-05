@@ -246,8 +246,8 @@ export default function EditTicketPage() {
           </button>
           <h1 className="text-2xl font-poppins font-bold text-foreground">
             Edit Ticket{" "}
-            {originalTicket.ticket_id && (
-              <span className="font-mono text-lg text-foreground-secondary">- {originalTicket.ticket_id}</span>
+            {originalTicket.ticket_number && (
+              <span className="font-mono text-lg text-foreground-secondary">#{originalTicket.ticket_number}</span>
             )}
           </h1>
         </div>

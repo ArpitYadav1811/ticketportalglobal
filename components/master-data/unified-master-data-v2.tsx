@@ -139,6 +139,18 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     return filtered
   }
 
+  // Helper function to check if SPOC has access to a business group
+  const spocHasAccess = (businessGroupId: number) => {
+    if (isAdmin) return true
+    return spocBusinessGroups.includes(businessGroupId)
+  }
+
+  // Helper function to check if SPOC has access to a mapping
+  const spocHasAccessToMapping = (mapping: any) => {
+    if (isAdmin) return true
+    return spocBusinessGroups.includes(mapping.target_business_group_id)
+  }
+
   // Business Group handlers
   const handleCreateBG = async (name: string, description?: string, spocName?: string) => {
     const result = await createBusinessUnitGroup(name, description, spocName)
@@ -298,6 +310,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               size="sm"
               onClick={() => setEditBG({ id: null, name: "", description: "", spoc_name: "" })}
               className="bg-black hover:bg-gray-800"
+              disabled={!isAdmin}
+              title={!isAdmin ? "Only admins can create business groups" : ""}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Business Group
@@ -321,10 +335,22 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                     {bg.spoc_name && <p className="text-sm text-primary">SPOC: {bg.spoc_name}</p>}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setEditBG(bg)}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setEditBG(bg)}
+                      disabled={!isAdmin}
+                      title={!isAdmin ? "Only admins can edit business groups" : ""}
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteBG(bg.id)}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDeleteBG(bg.id)}
+                      disabled={!isAdmin}
+                      title={!isAdmin ? "Only admins can delete business groups" : ""}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>
@@ -347,6 +373,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               size="sm"
               onClick={() => setEditCategory({ id: null, name: "", description: "" })}
               className="bg-black hover:bg-gray-800"
+              disabled={!isAdmin}
+              title={!isAdmin ? "Only admins can create categories" : ""}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Category
@@ -402,10 +430,22 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setEditCategory(category)} title="Edit Category">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setEditCategory(category)} 
+                          title={!isAdmin ? "Only admins can edit categories" : "Edit Category"}
+                          disabled={!isAdmin}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(category.id)} title="Delete Category">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDeleteCategory(category.id)} 
+                          title={!isAdmin ? "Only admins can delete categories" : "Delete Category"}
+                          disabled={!isAdmin}
+                        >
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </div>
@@ -434,6 +474,31 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                       )}
                                     </div>
 
+                                    {/* Add Mapping Button */}
+                                    <div className="mb-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          setEditMapping({
+                                            id: null,
+                                            target_business_group_id: "",
+                                            category_id: category.id,
+                                            subcategory_id: subcat.id,
+                                            estimated_duration: "",
+                                            spoc_user_id: "",
+                                            auto_title_template: "",
+                                            description: "",
+                                          })
+                                        }
+                                        disabled={!isAdmin && spocBusinessGroups.length === 0}
+                                        title={!isAdmin && spocBusinessGroups.length === 0 ? "You need to be assigned to a business group to create mappings" : "Add Classification Mapping"}
+                                      >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Add Mapping
+                                      </Button>
+                                    </div>
+
                                     {/* Show all mappings for this subcategory */}
                                     {subcatMappings.length > 0 && (
                                       <div className="space-y-1">
@@ -459,6 +524,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => setEditMapping(mapping)}
+                                                disabled={!spocHasAccessToMapping(mapping)}
+                                                title={!spocHasAccessToMapping(mapping) ? "You can only edit mappings for your assigned business groups" : "Edit Mapping"}
                                               >
                                                 <Edit className="w-3 h-3" />
                                               </Button>
@@ -466,6 +533,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleDeleteMapping(mapping.id)}
+                                                disabled={!spocHasAccessToMapping(mapping)}
+                                                title={!spocHasAccessToMapping(mapping) ? "You can only delete mappings for your assigned business groups" : "Delete Mapping"}
                                               >
                                                 <Trash2 className="w-3 h-3 text-red-500" />
                                               </Button>
@@ -480,16 +549,18 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      title="Edit Subcategory"
+                                      title={!isAdmin ? "Only admins can edit subcategories" : "Edit Subcategory"}
                                       onClick={() => setEditSubcategory({ ...subcat, category_name: category.name })}
+                                      disabled={!isAdmin}
                                     >
                                       <Edit className="w-3 h-3" />
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      title="Delete Subcategory"
+                                      title={!isAdmin ? "Only admins can delete subcategories" : "Delete Subcategory"}
                                       onClick={() => handleDeleteSubcategory(subcat.id)}
+                                      disabled={!isAdmin}
                                     >
                                       <Trash2 className="w-3 h-3 text-red-500" />
                                     </Button>
@@ -514,6 +585,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                 description: "",
                               })
                             }
+                            disabled={!isAdmin}
+                            title={!isAdmin ? "Only admins can create subcategories" : ""}
                           >
                             <Plus className="w-3 h-3 mr-1" />
                             Add Subcategory
@@ -605,8 +678,12 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               label: "Target Business Group",
               type: "select",
               required: true,
-              options: targetBusinessGroups.map((tbg) => ({ value: tbg.id, label: tbg.name })),
-              disabled: !!editMapping.id,
+              options: isAdmin 
+                ? targetBusinessGroups.map((tbg) => ({ value: tbg.id, label: tbg.name }))
+                : targetBusinessGroups
+                    .filter((tbg) => spocBusinessGroups.includes(tbg.id))
+                    .map((tbg) => ({ value: tbg.id, label: tbg.name })),
+              disabled: !!editMapping.id || (!isAdmin && !editMapping.id),
             },
             {
               name: "category_id",

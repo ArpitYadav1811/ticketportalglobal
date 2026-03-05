@@ -35,39 +35,55 @@ export function Combobox({
   className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLDivElement>(null)
+  const [popoverWidth, setPopoverWidth] = React.useState<number | undefined>(undefined)
 
   const selectedOption = options.find((option) => option.value === value)
 
+  React.useEffect(() => {
+    if (triggerRef.current && open) {
+      setPopoverWidth(triggerRef.current.offsetWidth)
+    }
+  }, [open])
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn(
-            "w-full justify-between px-4 py-3 h-auto text-left font-normal",
-            !value && "text-muted-foreground",
-            className,
-          )}
-        >
-          <span className="truncate">
-            {selectedOption ? (
-              <span className="flex flex-col">
-                <span>{selectedOption.label}</span>
-                {selectedOption.subtitle && (
-                  <span className="text-xs text-muted-foreground">{selectedOption.subtitle}</span>
-                )}
-              </span>
-            ) : (
-              placeholder
+    <div ref={triggerRef} className="w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn(
+              "w-full justify-between px-4 py-3 h-auto text-left font-normal",
+              !value && "text-muted-foreground",
+              className,
             )}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+          >
+            <span className="truncate">
+              {selectedOption ? (
+                <span className="flex items-center gap-2">
+                  <span>{selectedOption.label}</span>
+                  {selectedOption.subtitle && (
+                    <>
+                      <span className="text-muted-foreground">-</span>
+                      <span className="text-xs text-muted-foreground">{selectedOption.subtitle}</span>
+                    </>
+                  )}
+                </span>
+              ) : (
+                placeholder
+              )}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent 
+          className="p-0" 
+          align="start"
+          style={{ width: popoverWidth ? `${popoverWidth}px` : undefined }}
+        >
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="h-11 border-b border-0 focus:ring-0 px-3" />
           <CommandList>
@@ -84,9 +100,14 @@ export function Combobox({
                   className="cursor-pointer"
                 >
                   <Check className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")} />
-                  <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
                     <span>{option.label}</span>
-                    {option.subtitle && <span className="text-xs text-muted-foreground">{option.subtitle}</span>}
+                    {option.subtitle && (
+                      <>
+                        <span className="text-muted-foreground">-</span>
+                        <span className="text-xs text-muted-foreground">{option.subtitle}</span>
+                      </>
+                    )}
                   </div>
                 </CommandItem>
               ))}
@@ -95,5 +116,6 @@ export function Combobox({
         </Command>
       </PopoverContent>
     </Popover>
+    </div>
   )
 }

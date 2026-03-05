@@ -1,38 +1,28 @@
 -- ============================================================================
--- Updated Script: Seed Functional Areas and Mappings
--- Post-Migration Version (after target_business_groups merger)
+-- Migration Script: Update Functional Area Mappings
 -- ============================================================================
--- Description: Seeds functional_areas and maps them to business_unit_groups
+-- Description: Updates functional area names, adds new ones, removes obsolete ones,
+--              and updates all mappings according to the new structure
 -- Date: 2026-02-27
--- Note: Updated to use business_unit_groups instead of target_business_groups
--- Note: Uses functional_areas table (renamed from organizations for clarity)
 -- ============================================================================
 
 -- ============================================================================
--- STEP 1: CREATE TABLES IF THEY DON'T EXIST
+-- STEP 1: UPDATE EXISTING FUNCTIONAL AREA NAMES
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS functional_areas (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS functional_area_business_group_mapping (
-  id SERIAL PRIMARY KEY,
-  functional_area_id INTEGER NOT NULL REFERENCES functional_areas(id) ON DELETE CASCADE,
-  target_business_group_id INTEGER NOT NULL REFERENCES business_unit_groups(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(functional_area_id, target_business_group_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_functional_area_bg_mapping_fa ON functional_area_business_group_mapping(functional_area_id);
-CREATE INDEX IF NOT EXISTS idx_functional_area_bg_mapping_bg ON functional_area_business_group_mapping(target_business_group_id);
+-- Update existing functional area names where there's a clear mapping
+UPDATE functional_areas SET name = 'Tool MFBuddy', description = 'Support for MFBuddy application' WHERE name = 'MFBuddy support';
+UPDATE functional_areas SET name = 'Tool Cportal', description = 'Support for Customer Portal' WHERE name = 'Customer Portal support';
+UPDATE functional_areas SET name = 'Tool Tportal', description = 'Support for Ticket Portal' WHERE name = 'Ticket Portal support';
+UPDATE functional_areas SET name = 'Tool Bportal', description = 'Support for Billing Portal' WHERE name = 'Billing Portal support';
+UPDATE functional_areas SET name = 'Dev Integrations', description = 'Support for Customer Integrations' WHERE name = 'Customer Integrations support';
+UPDATE functional_areas SET name = 'Dev GUI', description = 'GUI Development work' WHERE name = 'GUI Development support';
+UPDATE functional_areas SET name = 'IT Admin', description = 'IT Administration tasks' WHERE name = 'IT Administration support';
+UPDATE functional_areas SET name = 'IT InfoSec', description = 'IT Security tasks' WHERE name = 'IT Security support';
+UPDATE functional_areas SET name = 'IT DevOps', description = 'IT DevOps tasks' WHERE name = 'IT DevOps support';
 
 -- ============================================================================
--- STEP 2: INSERT FUNCTIONAL AREAS
+-- STEP 2: INSERT NEW FUNCTIONAL AREAS
 -- ============================================================================
 
 INSERT INTO functional_areas (name, description) VALUES
@@ -40,24 +30,26 @@ INSERT INTO functional_areas (name, description) VALUES
   ('CS Web', 'Customer Success Web Services'),
   ('CS Brand', 'Customer Success Brand Management'),
   ('CS BM', 'Brand Monitoring'),
-  ('CS RMN', 'Customer Success RMN'),
-  ('Tool MFBuddy', 'Support for MFBuddy application'),
-  ('Tool Cportal', 'Support for Customer Portal'),
-  ('Tool Tportal', 'Support for Ticket Portal'),
-  ('Tool Bportal', 'Support for Billing Portal'),
-  ('Dev Integrations', 'Support for Customer Integrations'),
-  ('Dev GUI', 'GUI Development work'),
-  ('IT Admin', 'IT Administration tasks'),
-  ('IT InfoSec', 'IT Security tasks'),
-  ('IT DevOps', 'IT DevOps tasks'),
-  ('Others', 'Other functional areas')
+  ('CS RMN', 'Customer Success RMN')
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================================
--- STEP 3: CREATE MAPPINGS (Functional Area → Business Unit Group)
+-- STEP 3: DELETE OBSOLETE FUNCTIONAL AREAS
 -- ============================================================================
 
--- Note: Now using business_unit_groups instead of target_business_groups
+-- Delete obsolete functional areas (they will cascade delete their mappings)
+DELETE FROM functional_areas WHERE name IN ('Customer Solutions support', 'Competitive Research support');
+
+-- ============================================================================
+-- STEP 4: DELETE ALL EXISTING MAPPINGS
+-- ============================================================================
+
+-- Clear all existing mappings to recreate them with new structure
+DELETE FROM functional_area_business_group_mapping;
+
+-- ============================================================================
+-- STEP 5: CREATE NEW MAPPINGS (Functional Area → Business Unit Group)
+-- ============================================================================
 
 -- CS Apps → TD Apps
 INSERT INTO functional_area_business_group_mapping (functional_area_id, target_business_group_id)
@@ -185,24 +177,24 @@ ON CONFLICT (functional_area_id, target_business_group_id) DO NOTHING;
 
 DO $$
 DECLARE
-  org_count INTEGER;
+  fa_count INTEGER;
   mapping_count INTEGER;
   bug_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO org_count FROM functional_areas;
+  SELECT COUNT(*) INTO fa_count FROM functional_areas;
   SELECT COUNT(*) INTO mapping_count FROM functional_area_business_group_mapping;
   SELECT COUNT(*) INTO bug_count FROM business_unit_groups;
   
   RAISE NOTICE '============================================================================';
-  RAISE NOTICE 'FUNCTIONAL AREAS SEEDING COMPLETE';
+  RAISE NOTICE 'FUNCTIONAL AREA MAPPING UPDATE COMPLETE';
   RAISE NOTICE '============================================================================';
-  RAISE NOTICE 'Functional Areas: %', org_count;
+  RAISE NOTICE 'Functional Areas: %', fa_count;
   RAISE NOTICE 'Business Unit Groups: %', bug_count;
   RAISE NOTICE 'Mappings created: %', mapping_count;
   RAISE NOTICE '============================================================================';
   
-  IF org_count >= 14 AND mapping_count > 0 THEN
-    RAISE NOTICE '✅ SUCCESS: Functional areas seeded successfully';
+  IF fa_count >= 14 AND mapping_count > 0 THEN
+    RAISE NOTICE '✅ SUCCESS: Functional area mappings updated successfully';
   ELSE
     RAISE WARNING '⚠️  Check data: Expected at least 14 functional areas and multiple mappings';
   END IF;
@@ -210,12 +202,11 @@ BEGIN
   RAISE NOTICE '============================================================================';
 END $$;
 
--- Show sample mappings
+-- Show all mappings
 SELECT 
   fa.name as functional_area,
-  bug.name as target_business_group
+  bug.name as business_unit_group
 FROM functional_area_business_group_mapping fabgm
 JOIN functional_areas fa ON fabgm.functional_area_id = fa.id
 JOIN business_unit_groups bug ON fabgm.target_business_group_id = bug.id
-ORDER BY fa.name, bug.name
-LIMIT 20;
+ORDER BY fa.name, bug.name;

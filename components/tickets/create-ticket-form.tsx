@@ -101,7 +101,7 @@ export default function CreateTicketForm() {
  const customerMappings: Record<string, string> = {
  'CS Apps': 'TD Apps',
  'CS Web': 'TD Web',
- 'CS Brand': 'TD Brand',
+ 'CS Brand': 'TD Web',
  'CS BM': 'TD BM',
  'CS RMN': 'TD RMN',
  }
@@ -168,7 +168,12 @@ export default function CreateTicketForm() {
 
  useEffect(() => {
  if (formData.categoryId) {
+ if (formData.categoryId === "others") {
+ // Handle "Others" category - set "Others" subcategory directly
+ setSubcategories([{ id: "others", name: "Others", description: "Other subcategory", category_id: 0 }])
+ } else {
  loadSubcategories(Number(formData.categoryId))
+ }
  } else {
  setSubcategories([])
  // Don't reset spocId here - it's set by group selection
@@ -188,7 +193,12 @@ export default function CreateTicketForm() {
  const result = await getSubcategories(categoryId)
  console.log("[v0] Subcategories result:", result)
  if (result.success) {
- setSubcategories(result.data || [])
+ const loadedSubcategories = result.data || []
+ // Always add "Others" subcategory option
+ setSubcategories([
+ ...loadedSubcategories,
+ { id: "others", name: "Others", description: "Other subcategory", category_id: categoryId }
+ ])
  }
  }
 
@@ -251,7 +261,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  const customerMappings: Record<string, string> = {
  'CS Apps': 'TD Apps',
  'CS Web': 'TD Web',
- 'CS Brand': 'TD Brand',
+ 'CS Brand': 'TD Web',
  'CS BM': 'TD BM',
  'CS RMN': 'TD RMN',
  }
@@ -289,7 +299,24 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  if (value) {
  const result = await getTargetBusinessGroupsByOrganization(Number(value))
  if (result.success) {
- setTargetBusinessGroups(result.data || [])
+ const businessGroups = result.data || []
+ setTargetBusinessGroups(businessGroups)
+ 
+ // Auto-select Business Group if only one is available
+ if (businessGroups.length === 1) {
+ const autoSelectedGroup = businessGroups[0]
+ // Auto-select SPOC as well
+ const spocResult = await getSpocForTargetBusinessGroup(autoSelectedGroup.id)
+ let spocId = ""
+ if (spocResult.success && spocResult.data) {
+ spocId = spocResult.data.id.toString()
+ }
+ setFormData((prev) => ({
+ ...prev,
+ targetBusinessGroupId: autoSelectedGroup.id.toString(),
+ spocId,
+ }))
+ }
  }
  } else {
  setTargetBusinessGroups([])
@@ -616,7 +643,6 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  options={organizations && organizations.length > 0 ? organizations.map((org) => ({
  value: org.id.toString(),
  label: org.name,
- subtitle: org.description,
  })) : []}
  value={formData.organizationId}
  onChange={handleOrganizationChange}
@@ -629,7 +655,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Business Group *
+ Business Group * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected)</span>
  </label>
  <Combobox
  options={targetBusinessGroups.map((tbg) => ({
@@ -641,12 +667,14 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  onChange={handleTargetBusinessGroupChange}
  placeholder={
  formData.organizationId
- ? "Select business group..."
+ ? formData.targetBusinessGroupId
+ ? "Business Group auto-selected"
+ : "Select business group..."
  : "Select functional area first..."
  }
  searchPlaceholder="Search business groups..."
  emptyText="No business groups found"
- disabled={!formData.organizationId}
+ disabled={!formData.organizationId || !!formData.targetBusinessGroupId}
  className="h-8 py-1.5 text-xs"
  />
  </div>
@@ -805,11 +833,14 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">Category *</label>
  <Combobox
- options={categories.map((cat) => ({
+ options={[
+ ...categories.map((cat) => ({
  value: cat.id.toString(),
  label: cat.name,
  subtitle: cat.description,
- }))}
+ })),
+ { value: "others", label: "Others", subtitle: "Other category" }
+ ]}
  value={formData.categoryId}
  onChange={handleCategoryChange}
  placeholder={formData.targetBusinessGroupId ? "Select a category..." : "Select a business group first"}
@@ -828,7 +859,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  options={
  subcategories.length > 0
  ? subcategories.map((sub) => ({
- value: sub.id.toString(),
+ value: sub.id === "others" ? "others" : sub.id.toString(),
  label: sub.name,
  subtitle: sub.description,
  }))

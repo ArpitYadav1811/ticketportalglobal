@@ -273,7 +273,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  {onExport && (
  <button
  onClick={onExport}
- className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
+ className="flex items-center gap-4 px-2 py-1.5 rounded-sm text-sm font-semibold transition-colors whitespace-nowrap bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
  >
  <FileDown className="w-4 h-4" />
  Export
@@ -283,7 +283,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  {/* Filters Toggle */}
  <button
  onClick={() => setShowFilters(!showFilters)}
- className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+ className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm font-semibold transition-colors whitespace-nowrap ${
  showFilters || activeFilterCount > 0
  ? "bg-primary text-white"
  : "bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
@@ -311,7 +311,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  <button
  onClick={handleMyTeamToggle}
  disabled={loadingTeam}
- className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+ className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm font-semibold transition-colors whitespace-nowrap ${
  filters.myTeam
  ? "bg-primary text-white"
  : "bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
@@ -334,7 +334,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
 
  {/* Expanded Filters */}
  {showFilters && (
- <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6 space-y-4">
+ <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-4 space-y-4">
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
  {/* Status */}
  <div>

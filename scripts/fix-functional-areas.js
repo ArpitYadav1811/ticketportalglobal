@@ -23,7 +23,16 @@ async function fixFunctionalAreas() {
     process.exit(1);
   }
 
-  const sql = neon(process.env.DATABASE_URL);
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  
+  // Helper function to execute SQL
+  const sql = {
+    unsafe: async (query) => {
+      return await client.query(query);
+    },
+    [Symbol.for('nodejs.util.inspect.custom')]: () => 'sql'
+  };
 
   try {
     // Read the SQL file
@@ -84,22 +93,22 @@ async function fixFunctionalAreas() {
     // Verify the fix
     console.log('\n🔍 Verifying fix...\n');
     
-    const tableCheck = await sql`
+    const tableCheckResult = await client.query(`
       SELECT EXISTS (
         SELECT 1 
         FROM information_schema.tables 
         WHERE table_schema = 'public' 
         AND table_name = 'functional_areas'
       ) as exists
-    `;
+    `);
     
-    if (!tableCheck[0]?.exists) {
+    if (!tableCheckResult.rows[0]?.exists) {
       console.error('❌ Table still does not exist after creation attempt');
       process.exit(1);
     }
 
-    const count = await sql`SELECT COUNT(*) as count FROM functional_areas`;
-    const recordCount = parseInt(count[0]?.count || 0);
+    const countResult = await client.query('SELECT COUNT(*) as count FROM functional_areas');
+    const recordCount = parseInt(countResult.rows[0]?.count || 0);
 
     console.log('═══════════════════════════════════════════════════════════════');
     console.log('✅ FIX COMPLETE');
@@ -107,35 +116,38 @@ async function fixFunctionalAreas() {
     console.log(`  ✅ functional_areas table exists`);
     console.log(`  ✅ Found ${recordCount} functional areas`);
     
-    if (recordCount >= 12) {
-      console.log(`  ✅ All functional areas are present (expected: 12)`);
+    if (recordCount >= 14) {
+      console.log(`  ✅ All functional areas are present (expected: at least 14)`);
     } else if (recordCount > 0) {
-      console.log(`  ⚠️  Only ${recordCount} functional areas found (expected: 12)`);
+      console.log(`  ⚠️  Only ${recordCount} functional areas found (expected: at least 14)`);
       console.log(`  → You may need to run the seed script again`);
     } else {
       console.log(`  ⚠️  Table is empty - seeding data...`);
       
       // Try to seed data directly
       try {
-        await sql`
+        await client.query(`
           INSERT INTO functional_areas (name, description) VALUES
-            ('MFBuddy support', 'Support for MFBuddy application'),
-            ('Customer Portal support', 'Support for Customer Portal'),
-            ('Ticket Portal support', 'Support for Ticket Portal'),
-            ('Billing Portal support', 'Support for Billing Portal'),
-            ('Customer Integrations support', 'Support for Customer Integrations'),
-            ('GUI Development support', 'GUI Development work'),
-            ('IT Administration support', 'IT Administration tasks'),
-            ('IT Security support', 'IT Security tasks'),
-            ('IT DevOps support', 'IT DevOps tasks'),
-            ('Customer Solutions support', 'Customer Solutions work'),
-            ('Competitive Research support', 'Competitive Research work'),
+            ('CS Apps', 'Customer Success Applications'),
+            ('CS Web', 'Customer Success Web Services'),
+            ('CS Brand', 'Customer Success Brand Management'),
+            ('CS BM', 'Brand Monitoring'),
+            ('CS RMN', 'Customer Success RMN'),
+            ('Tool MFBuddy', 'Support for MFBuddy application'),
+            ('Tool Cportal', 'Support for Customer Portal'),
+            ('Tool Tportal', 'Support for Ticket Portal'),
+            ('Tool Bportal', 'Support for Billing Portal'),
+            ('Dev Integrations', 'Support for Customer Integrations'),
+            ('Dev GUI', 'GUI Development work'),
+            ('IT Admin', 'IT Administration tasks'),
+            ('IT InfoSec', 'IT Security tasks'),
+            ('IT DevOps', 'IT DevOps tasks'),
             ('Others', 'Other functional areas')
           ON CONFLICT (name) DO NOTHING
-        `;
+        `);
         
-        const newCount = await sql`SELECT COUNT(*) as count FROM functional_areas`;
-        console.log(`  ✅ Seeded data - now have ${newCount[0].count} functional areas`);
+        const newCountResult = await client.query('SELECT COUNT(*) as count FROM functional_areas');
+        console.log(`  ✅ Seeded data - now have ${newCountResult.rows[0].count} functional areas`);
       } catch (seedError) {
         console.error(`  ❌ Failed to seed data: ${seedError.message}`);
       }
@@ -149,6 +161,8 @@ async function fixFunctionalAreas() {
     console.error('\n❌ Error during fix:', error.message);
     console.error('Error details:', error);
     process.exit(1);
+  } finally {
+    await client.end();
   }
 }
 
