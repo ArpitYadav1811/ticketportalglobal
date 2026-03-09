@@ -117,6 +117,33 @@ export async function updateUser(
   }
 ) {
   try {
+    // If email is being updated, validate domain and check for duplicates
+    if (data.email) {
+      const sanitizedEmail = data.email.trim().toLowerCase()
+      
+      // Check if email domain is allowed
+      const ALLOWED_EMAIL_DOMAIN = "@mfilterit.com"
+      if (!sanitizedEmail.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+        return { 
+          success: false, 
+          error: `Only ${ALLOWED_EMAIL_DOMAIN} email addresses are allowed` 
+        }
+      }
+      
+      // Check for duplicates (case-insensitive)
+      const existingUser = await sql`
+        SELECT id FROM users 
+        WHERE LOWER(email) = ${sanitizedEmail} AND id != ${id}
+      `
+      
+      if (existingUser.length > 0) {
+        return { success: false, error: "Email already exists" }
+      }
+
+      // Use sanitized email for update
+      data.email = sanitizedEmail
+    }
+
     // Update user with all fields using Neon's template literals
     const result = await sql`
       UPDATE users

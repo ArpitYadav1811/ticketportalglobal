@@ -6,6 +6,8 @@ import { cookies } from "next/headers"
 
 // OWASP: Email validation regex
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+// Allowed email domain
+const ALLOWED_EMAIL_DOMAIN = "@mfilterit.com"
 
 function isValidEmail(email: string): boolean {
   // console.log(`==========[isValidEmail] Email: ${email}`);
@@ -13,7 +15,15 @@ function isValidEmail(email: string): boolean {
   // console.log(`==========[isValidEmail] Email regex test: ${EMAIL_REGEX.test(email.trim())}`);
   if (!email || typeof email !== "string") return false
   if (email.length > 254) return false
-  return EMAIL_REGEX.test(email.trim())
+  if (!EMAIL_REGEX.test(email.trim())) return false
+  
+  // Check if email domain is allowed
+  const emailLower = email.trim().toLowerCase()
+  if (!emailLower.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+    return false
+  }
+  
+  return true
 }
 
 function isValidPassword(password: string): boolean {
@@ -80,6 +90,10 @@ export async function signupUser(
 ) {
   try {
     if (!isValidEmail(email)) {
+      const emailLower = email.trim().toLowerCase()
+      if (!emailLower.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+        return { success: false, error: `Only ${ALLOWED_EMAIL_DOMAIN} email addresses are allowed` }
+      }
       return { success: false, error: "Invalid email format" }
     }
     if (!isValidPassword(password)) {
@@ -250,6 +264,15 @@ export async function findOrCreateSSOUser({
 }: FindOrCreateSSOUserParams) {
   try {
     const sanitizedEmail = email.trim().toLowerCase()
+    
+    // Check if email domain is allowed
+    if (!sanitizedEmail.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+      return { 
+        success: false, 
+        error: `Only ${ALLOWED_EMAIL_DOMAIN} email addresses are allowed` 
+      }
+    }
+    
     const sanitizedName = sanitizeString(name)
 
     let user = await getUserByMicrosoftId(microsoftId)

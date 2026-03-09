@@ -43,6 +43,7 @@ export interface Ticket {
   estimated_duration: number | null // Changed from string to number (hours)
  is_deleted: boolean
  attachment_count: number
+ reference_count: number
  business_unit_group_id: number
  group_name: string | null
  target_business_group_name: string | null
@@ -90,9 +91,10 @@ interface TicketsTableProps {
  }
  onExportReady?: (exportFn: () => void) => void
  onTicketsChange?: (tickets: Ticket[]) => void
+ onRefreshReady?: (refreshFn: () => void) => void
 }
 
-export default function TicketsTable({ filters, onExportReady, onTicketsChange }: TicketsTableProps) {
+export default function TicketsTable({ filters, onExportReady, onTicketsChange, onRefreshReady }: TicketsTableProps) {
  const router = useRouter()
  const { data: session, status: sessionStatus } = useSession()
  const [tickets, setTickets] = useState<Ticket[]>([])
@@ -126,6 +128,10 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
 
  // Copy state
  const [copiedTicketId, setCopiedTicketId] = useState<string | null>(null)
+
+ // Pagination state
+ const [currentPage, setCurrentPage] = useState(1)
+ const [pageSize, setPageSize] = useState(20)
 
  // Load current user from session or localStorage
  useEffect(() => {
@@ -224,6 +230,11 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  // Memoize filters key to prevent unnecessary re-fetches
  const filtersKey = useMemo(() => JSON.stringify(filters), [filters])
 
+ // Reset to page 1 when filters change
+ useEffect(() => {
+ setCurrentPage(1)
+ }, [filtersKey])
+
  // Load tickets when filters or user changes
  useEffect(() => {
  if (!currentUser) {
@@ -234,17 +245,12 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  loadUsers()
  }, [filtersKey, currentUser?.id, loadTicketsMemo])
 
- // Auto-refresh tickets every 30 seconds (reduced frequency to prevent constant refreshing)
+ // Expose refresh function to parent
  useEffect(() => {
- if (!currentUser) return
-
- const intervalId = setInterval(() => {
- loadTicketsMemo()
- }, 30000) // 30 seconds - less aggressive refresh
-
- // Cleanup interval on unmount
- return () => clearInterval(intervalId)
- }, [currentUser?.id, loadTicketsMemo]) // Only recreate when user changes
+ if (onRefreshReady) {
+ onRefreshReady(() => loadTicketsMemo())
+ }
+ }, [onRefreshReady, loadTicketsMemo])
 
  // Expose export function to parent
  useEffect(() => {
@@ -574,10 +580,18 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
  )
  }
 
+ // Pagination calculations
+ const totalTickets = tickets.length
+ const totalPages = Math.max(1, Math.ceil(totalTickets / pageSize))
+ const safeCurrentPage = Math.min(currentPage, totalPages)
+ const startIndex = (safeCurrentPage - 1) * pageSize
+ const endIndex = Math.min(startIndex + pageSize, totalTickets)
+ const paginatedTickets = tickets.slice(startIndex, endIndex)
+
  return (
- <div className="bg-white dark:bg-gray-800 border border-border rounded-xl overflow-hidden">
+ <div className="bg-white dark:bg-gray-800 border border-border rounded-xl overflow-hidden flex-1 flex flex-col min-h-0">
  <TicketsTableBody
-  tickets={tickets}
+  tickets={paginatedTickets}
   filters={filters}
   copiedTicketId={copiedTicketId}
   onCopyTicketId={handleCopyTicketId}
@@ -590,12 +604,67 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange }
   onOpenAttachmentsDialog={openAttachmentsDialog}
   getStatusColorWithDark={getStatusColorWithDark}
   getAvailableStatusOptions={getAvailableStatusOptions}
+  startIndex={startIndex}
  />
 
- <div className="px-6 py-4 border-t-2 border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
- <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
- Showing {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}
+ <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
+ <div className="flex items-center gap-2">
+  <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
+  <select
+   value={pageSize}
+   onChange={(e) => {
+    setPageSize(Number(e.target.value))
+    setCurrentPage(1)
+   }}
+   className="text-xs border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-primary"
+  >
+   {[10, 20, 50, 100].map((size) => (
+    <option key={size} value={size}>{size}</option>
+   ))}
+  </select>
+ </div>
+
+ <p className="text-xs text-slate-600 dark:text-slate-400">
+  {startIndex + 1}–{endIndex} of {totalTickets}
  </p>
+
+ <div className="flex items-center gap-1">
+  <button
+   onClick={() => setCurrentPage(1)}
+   disabled={safeCurrentPage <= 1}
+   className="px-1.5 py-0.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+   title="First page"
+  >
+   ««
+  </button>
+  <button
+   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+   disabled={safeCurrentPage <= 1}
+   className="px-1.5 py-0.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+   title="Previous page"
+  >
+   ‹
+  </button>
+  <span className="text-xs text-slate-600 dark:text-slate-400 px-2">
+   Page {safeCurrentPage} of {totalPages}
+  </span>
+  <button
+   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+   disabled={safeCurrentPage >= totalPages}
+   className="px-1.5 py-0.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+   title="Next page"
+  >
+   ›
+  </button>
+  <button
+   onClick={() => setCurrentPage(totalPages)}
+   disabled={safeCurrentPage >= totalPages}
+   className="px-1.5 py-0.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+   title="Last page"
+  >
+   »»
+  </button>
+ </div>
  </div>
 
  {/* Assignee Modal */}

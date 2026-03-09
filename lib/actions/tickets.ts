@@ -137,7 +137,8 @@ export async function getTickets(filters?: {
         holder.full_name as hold_by_name,
         redirected_bug.name as redirected_from_group_name,
         redirected_spoc.full_name as redirected_from_spoc_name,
-        (SELECT COUNT(*) FROM attachments att WHERE att.ticket_id = t.id) as attachment_count
+        (SELECT COUNT(*) FROM attachments att WHERE att.ticket_id = t.id) as attachment_count,
+        (SELECT COUNT(*) FROM ticket_references tr WHERE tr.source_ticket_id = t.id OR tr.reference_ticket_id = t.id) as reference_count
       FROM tickets t
       LEFT JOIN users u ON t.created_by = u.id
       LEFT JOIN users a ON t.assigned_to = a.id
@@ -1154,5 +1155,168 @@ export async function getTeamMembers(userId: number) {
   } catch (error) {
     console.error("[v0] Error fetching team members:", error)
     return { success: false, error: "Failed to fetch team members", data: [] }
+  }
+}
+
+// ===== Ticket References =====
+
+// Auto-create ticket_references table if it doesn't exist
+let ticketReferencesTableReady = false
+async function ensureTicketReferencesTable() {
+  if (ticketReferencesTableReady) return
+  try {
+    // Check if table exists first
+    const tableCheck = await sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'ticket_references'
+      ) as table_exists
+    `
+    if (tableCheck[0]?.table_exists) {
+      console.log("[TicketRef] Table already exists")
+      ticketReferencesTableReady = true
+      return
+    }
+
+    console.log("[TicketRef] Creating ticket_references table...")
+    await sql`
+      CREATE TABLE IF NOT EXISTS ticket_references (
+        id SERIAL PRIMARY KEY,
+        source_ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+        reference_ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        UNIQUE(source_ticket_id, reference_ticket_id),
+        CHECK (source_ticket_id <> reference_ticket_id)
+      )
+    `
+    await sql`CREATE INDEX IF NOT EXISTS idx_ticket_ref_source ON ticket_references(source_ticket_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_ticket_ref_reference ON ticket_references(reference_ticket_id)`
+    console.log("[TicketRef] Table and indexes created successfully")
+    ticketReferencesTableReady = true
+  } catch (error) {
+    console.error("[TicketRef] FAILED to create ticket_references table:", error)
+    // Re-throw so callers know the table isn't ready
+    throw new Error(`Failed to ensure ticket_references table: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+export async function validateTicketByNumber(ticketNumber: number) {
+  try {
+    const result = await sql`
+      SELECT t.id, t.ticket_number, t.ticket_id, t.title, t.ticket_type, t.status,
+             u.full_name as creator_name
+      FROM tickets t
+      LEFT JOIN users u ON t.created_by = u.id
+      WHERE t.ticket_number = ${ticketNumber} AND t.is_deleted = FALSE
+      LIMIT 1
+    `
+    if (result.length === 0) {
+      return { success: false, error: "No ticket found" }
+    }
+    return { success: true, data: result[0] }
+  } catch (error) {
+    console.error("[v0] Error validating ticket:", error)
+    return { success: false, error: "Failed to validate ticket" }
+  }
+}
+
+export async function addTicketReferences(sourceTicketId: number, referenceTicketIds: number[]) {
+  try {
+    console.log(`[TicketRef] addTicketReferences called: source=${sourceTicketId}, refs=[${referenceTicketIds.join(",")}]`)
+    await ensureTicketReferencesTable()
+    const currentUser = await getCurrentUser()
+    if (!currentUser || !currentUser.id) {
+      console.error("[TicketRef] User not authenticated")
+      return { success: false, error: "User not authenticated" }
+    }
+
+    let addedCount = 0
+    for (const refTicketId of referenceTicketIds) {
+      if (refTicketId === sourceTicketId) {
+        console.warn(`[TicketRef] Skipping self-reference: ${refTicketId}`)
+        continue
+      }
+      try {
+        console.log(`[TicketRef] Inserting reference: ${sourceTicketId} -> ${refTicketId}`)
+        await sql`
+          INSERT INTO ticket_references (source_ticket_id, reference_ticket_id, created_by)
+          VALUES (${sourceTicketId}, ${refTicketId}, ${currentUser.id})
+          ON CONFLICT (source_ticket_id, reference_ticket_id) DO NOTHING
+        `
+        addedCount++
+        console.log(`[TicketRef] Successfully inserted reference: ${sourceTicketId} -> ${refTicketId}`)
+      } catch (err) {
+        console.error(`[TicketRef] FAILED to insert reference ${sourceTicketId} -> ${refTicketId}:`, err)
+      }
+    }
+
+    console.log(`[TicketRef] Done. Added ${addedCount} references.`)
+    return { success: true, addedCount }
+  } catch (error) {
+    console.error("[TicketRef] Error in addTicketReferences:", error)
+    return { success: false, error: `Failed to add ticket references: ${error instanceof Error ? error.message : String(error)}` }
+  }
+}
+
+export async function getTicketReferences(ticketId: number) {
+  try {
+    await ensureTicketReferencesTable()
+    const result = await sql`
+      SELECT 
+        tr.id as ref_id,
+        t.id, t.ticket_number, t.ticket_id, t.title, t.ticket_type, t.status,
+        u.full_name as creator_name
+      FROM ticket_references tr
+      JOIN tickets t ON tr.reference_ticket_id = t.id
+      LEFT JOIN users u ON t.created_by = u.id
+      WHERE tr.source_ticket_id = ${ticketId} AND t.is_deleted = FALSE
+      UNION
+      SELECT 
+        tr.id as ref_id,
+        t.id, t.ticket_number, t.ticket_id, t.title, t.ticket_type, t.status,
+        u.full_name as creator_name
+      FROM ticket_references tr
+      JOIN tickets t ON tr.source_ticket_id = t.id
+      LEFT JOIN users u ON t.created_by = u.id
+      WHERE tr.reference_ticket_id = ${ticketId} AND t.is_deleted = FALSE
+      ORDER BY ticket_number DESC
+    `
+    return { success: true, data: result }
+  } catch (error) {
+    console.error("[v0] Error fetching ticket references:", error)
+    return { success: false, error: "Failed to fetch references", data: [] }
+  }
+}
+
+export async function removeTicketReference(sourceTicketId: number, referenceTicketId: number) {
+  try {
+    await ensureTicketReferencesTable()
+    await sql`
+      DELETE FROM ticket_references 
+      WHERE (source_ticket_id = ${sourceTicketId} AND reference_ticket_id = ${referenceTicketId})
+         OR (source_ticket_id = ${referenceTicketId} AND reference_ticket_id = ${sourceTicketId})
+    `
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error removing ticket reference:", error)
+    return { success: false, error: "Failed to remove reference" }
+  }
+}
+
+export async function getTicketReferenceCount(ticketId: number) {
+  try {
+    await ensureTicketReferencesTable()
+    const result = await sql`
+      SELECT COUNT(*) as count FROM (
+        SELECT reference_ticket_id as linked_id FROM ticket_references WHERE source_ticket_id = ${ticketId}
+        UNION
+        SELECT source_ticket_id as linked_id FROM ticket_references WHERE reference_ticket_id = ${ticketId}
+      ) refs
+      JOIN tickets t ON t.id = refs.linked_id AND t.is_deleted = FALSE
+    `
+    return { success: true, count: Number(result[0]?.count || 0) }
+  } catch (error) {
+    return { success: true, count: 0 }
   }
 }

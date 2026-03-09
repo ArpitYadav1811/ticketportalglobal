@@ -32,9 +32,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const existingUser = await sql`SELECT id FROM users WHERE email = ${email}`
+    // Sanitize email: trim and lowercase for consistency
+    const sanitizedEmail = email.trim().toLowerCase()
+    
+    // Check if email domain is allowed
+    const ALLOWED_EMAIL_DOMAIN = "@mfilterit.com"
+    if (!sanitizedEmail.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+      return NextResponse.json(
+        { error: `Only ${ALLOWED_EMAIL_DOMAIN} email addresses are allowed` }, 
+        { status: 400 }
+      )
+    }
 
-    if (existingUser.length > 0) {
+    // Check if user with this email already exists (case-insensitive)
+    const existingUser = await sql`SELECT id FROM users WHERE LOWER(email) = ${sanitizedEmail}`
+
+    if (Array.isArray(existingUser) && existingUser.length > 0) {
       return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
     }
 
@@ -42,13 +55,15 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(tempPassword, 10)
 
     const result = await sql`
-      INSERT INTO users (full_name, email, role, password_hash) VALUES (${full_name}, ${email}, ${role}, ${passwordHash})
+      INSERT INTO users (full_name, email, role, password_hash) VALUES (${full_name}, ${sanitizedEmail}, ${role}, ${passwordHash})
       RETURNING id, full_name, email, role
     `
 
+    const userResult = Array.isArray(result) ? result[0] : null
+
     return NextResponse.json(
       {
-        user: result[0],
+        user: userResult,
         message: "User created successfully",
         tempPassword: tempPassword,
         note: "Share this temporary password with the user. They should change it on first login.",

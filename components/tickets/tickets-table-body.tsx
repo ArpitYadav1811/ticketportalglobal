@@ -3,9 +3,10 @@
 import React from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { Edit, Paperclip, UserPlus, History, Copy, Check } from "lucide-react"
+import { Edit, Paperclip, UserPlus, History, Copy, Check, Link2 } from "lucide-react"
 import { FolderKanban } from "lucide-react"
 import TicketHistoryTooltip from "./ticket-history-tooltip"
+import TicketReferencesTooltip from "./ticket-references-tooltip"
 import type { Ticket } from "./tickets-table"
 
 interface TicketsTableBodyProps {
@@ -25,6 +26,7 @@ interface TicketsTableBodyProps {
  onOpenAttachmentsDialog: (ticket: Ticket) => void | Promise<void>
  getStatusColorWithDark: (status: string) => string
  getAvailableStatusOptions: (ticket: Ticket) => string[]
+ startIndex?: number
 }
 
 export default function TicketsTableBody({
@@ -41,81 +43,96 @@ export default function TicketsTableBody({
  onOpenAttachmentsDialog,
  getStatusColorWithDark,
  getAvailableStatusOptions,
+ startIndex = 0,
 }: TicketsTableBodyProps) {
  const router = useRouter()
 
  return (
-  <div className="overflow-x-auto">
-   <table className="w-full">
-    <thead className="bg-surface dark:bg-slate-700 border-b border-border">
+  <div className="overflow-auto flex-1 min-h-0">
+   <table className="w-full table-fixed">
+    <colgroup>
+     <col className="w-[4%]" />
+     <col className="w-[9%]" />
+     <col className="w-[7%]" />
+     <col className="w-[8%]" />
+     <col className="w-[12%]" />
+     <col className="w-[16%]" />
+     <col className="w-[8%]" />
+     {filters?.isInternal && <col className="w-[7%]" />}
+     <col className="w-[8%]" />
+     <col className="w-[7%]" />
+     <col className="w-[9%]" />
+     <col className="w-[12%]" />
+    </colgroup>
+    <thead className="bg-surface dark:bg-slate-700 border-b border-border sticky top-0 z-10">
      <tr>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        S.No
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Initiator
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Date
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Type
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Title / Category
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap max-w-xs">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Description
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        SPOC
       </th>
       {filters?.isInternal && (
-       <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+       <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
         Group
        </th>
       )}
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Assignee
       </th>
-      <th className="px-3 py-2.5 text-left text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Status
       </th>
-      <th className="px-3 py-2.5 text-center text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-center text-xs font-semibold text-foreground whitespace-nowrap">
        Project
       </th>
-      <th className="px-3 py-2.5 text-center text-xs font-semibold text-foreground whitespace-nowrap w-24">
+      <th className="px-2 py-2 text-center text-xs font-semibold text-foreground whitespace-nowrap">
        Actions
       </th>
      </tr>
     </thead>
     <tbody className="divide-y divide-border">
-     {tickets.map((ticket) => (
+     {tickets.map((ticket, index) => (
       <tr
        key={ticket.id}
        className={`hover:bg-surface dark:hover:bg-slate-700 transition-colors ${
         ticket.is_deleted ? "opacity-50 bg-slate-50 dark:bg-slate-900/50" : ""
        }`}
       >
-       {/* Ticket ID */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="text-sm font-medium text-foreground font-mono">#{ticket.ticket_number || ticket.id}</div>
+       {/* S.No */}
+       <td className="px-2 py-2 whitespace-nowrap">
+        <div className="text-xs font-medium text-foreground">{startIndex + index + 1}</div>
        </td>
 
        {/* Initiator Name and Group */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="text-sm font-medium text-foreground">{ticket.creator_name || "Unknown"}</div>
-        <div className="text-xs text-foreground-secondary">{ticket.initiator_group_name || "No Group"}</div>
+       <td className="px-2 py-2">
+        <div className="text-xs font-medium text-foreground truncate">{ticket.creator_name || "Unknown"}</div>
+        <div className="text-[11px] text-foreground-secondary truncate">{ticket.initiator_group_name || "No Group"}</div>
        </td>
 
        {/* Date - Compact format */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="text-sm text-foreground">{format(new Date(ticket.created_at), "dd MMM yyyy")}</div>
-        <div className="text-xs text-foreground-secondary">{format(new Date(ticket.created_at), "hh:mm a")}</div>
+       <td className="px-2 py-2 whitespace-nowrap">
+        <div className="text-xs text-foreground">{format(new Date(ticket.created_at), "dd MMM yy")}</div>
+        <div className="text-[11px] text-foreground-secondary">{format(new Date(ticket.created_at), "hh:mm a")}</div>
        </td>
 
        {/* Type + Ticket ID */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
+       <td className="px-2 py-2 whitespace-nowrap">
         <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
          ticket.ticket_type === "requirement"
           ? "bg-purple-100 text-purple-700"
@@ -125,8 +142,8 @@ export default function TicketsTableBody({
         </span>
         {ticket.ticket_id && (
          <div className="flex items-center gap-1.5 mt-0.5">
-          <div className="text-xs text-foreground-secondary font-mono">
-           {ticket.ticket_id.replace(/^TKT-/, '').replace(/-/g, '')}
+          <div className="text-[11px] text-foreground-secondary">
+           {ticket.ticket_id.split('-').pop()}
           </div>
           <button
            onClick={(e) => onCopyTicketId(ticket.ticket_id, e)}
@@ -142,20 +159,20 @@ export default function TicketsTableBody({
          </div>
         )}
         {!ticket.ticket_id && (
-         <div className="text-xs text-foreground-secondary mt-0.5 font-mono">#{ticket.ticket_number}</div>
+         <div className="text-[11px] text-foreground-secondary mt-0.5">{ticket.ticket_number}</div>
         )}
        </td>
 
        {/* Title (for Requirements) or Category/Subcategory (for Support) */}
-       <td className="px-3 py-2.5">
+       <td className="px-2 py-2">
         {ticket.ticket_type === "requirement" ? (
-         <div className="text-sm font-medium text-foreground">{ticket.title || "Untitled"}</div>
+         <div className="text-xs font-medium text-foreground truncate" title={ticket.title || "Untitled"}>{ticket.title || "Untitled"}</div>
         ) : (
          <>
-          <div className="text-sm font-medium text-foreground">{ticket.category_name || "N/A"}</div>
+          <div className="text-xs font-medium text-foreground truncate" title={ticket.category_name || "N/A"}>{ticket.category_name || "N/A"}</div>
           {ticket.subcategory_name && (
            <div
-            className="text-xs text-foreground-secondary max-w-[150px] truncate"
+            className="text-[11px] text-foreground-secondary truncate"
             title={ticket.subcategory_name}
            >
             {ticket.subcategory_name}
@@ -166,9 +183,9 @@ export default function TicketsTableBody({
        </td>
 
        {/* Description Truncated */}
-       <td className="px-3 py-2.5">
+       <td className="px-2 py-2">
         <p
-         className="text-sm text-foreground max-w-[200px] truncate"
+         className="text-xs text-foreground truncate"
          title={ticket.description || ticket.title}
         >
          {ticket.description || ticket.title || "-"}
@@ -176,50 +193,50 @@ export default function TicketsTableBody({
        </td>
 
        {/* SPOC */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="text-sm text-foreground">{ticket.spoc_name || "-"}</div>
+       <td className="px-2 py-2">
+        <div className="text-xs text-foreground truncate">{ticket.spoc_name || "-"}</div>
         {ticket.target_business_group_name && (
-         <div className="text-xs text-foreground-secondary">{ticket.target_business_group_name}</div>
+         <div className="text-[11px] text-foreground-secondary truncate">{ticket.target_business_group_name}</div>
         )}
        </td>
 
        {/* Target Business Group (Internal Tickets Only) */}
        {filters?.isInternal && (
-        <td className="px-3 py-2.5 whitespace-nowrap">
-         <span className="text-sm text-foreground">{ticket.group_name || "-"}</span>
+        <td className="px-2 py-2">
+         <span className="text-xs text-foreground truncate">{ticket.group_name || "-"}</span>
         </td>
        )}
 
        {/* Assignee */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
+       <td className="px-2 py-2">
         {ticket.assignee_name ? (
          <div>
           <span
-           className={`text-sm font-medium text-foreground ${canEditAssignee(ticket) ? "cursor-pointer hover:text-primary" : ""}`}
+           className={`text-xs font-medium text-foreground truncate ${canEditAssignee(ticket) ? "cursor-pointer hover:text-primary" : ""}`}
            onClick={() => canEditAssignee(ticket) && onOpenAssigneeModal(ticket)}
           >
            {ticket.assignee_name}
            {canEditAssignee(ticket) && <Edit className="w-3 h-3 inline ml-1 opacity-50" />}
           </span>
           {ticket.assignee_group_name && (
-           <div className="text-xs text-foreground-secondary">{ticket.assignee_group_name}</div>
+           <div className="text-[11px] text-foreground-secondary truncate">{ticket.assignee_group_name}</div>
           )}
          </div>
         ) : canEditAssignee(ticket) ? (
          <button
           onClick={() => onOpenAssigneeModal(ticket)}
-          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium hover:bg-amber-200"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[11px] font-medium hover:bg-amber-200"
          >
           <UserPlus className="w-3 h-3" />
           Assign
          </button>
         ) : (
-         <span className="text-sm text-muted-foreground">Unassigned</span>
+         <span className="text-xs text-muted-foreground">Unassigned</span>
         )}
        </td>
 
        {/* Status */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
+       <td className="px-2 py-2 whitespace-nowrap">
         <div className="flex flex-col gap-1">
          {canEditStatus(ticket) ? (
           <select
@@ -251,10 +268,10 @@ export default function TicketsTableBody({
        </td>
 
        {/* Project */}
-       <td className="px-3 py-2.5 whitespace-nowrap">
+       <td className="px-2 py-2 whitespace-nowrap">
         {ticket.ticket_type === "requirement" ? (
          <button
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 group border-2 border-transparent ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 group border-2 border-transparent ${
            canEditProject(ticket)
             ? "hover:bg-purple-50 dark:hover:bg-purple-950/30 cursor-pointer hover:border-purple-200 dark:hover:border-purple-900"
             : "cursor-not-allowed opacity-50"
@@ -278,26 +295,26 @@ export default function TicketsTableBody({
             : "text-muted-foreground"
           }`} />
           {ticket.project_name ? (
-           <span className={`text-sm font-medium ${
+           <span className={`text-xs font-medium truncate ${
             canEditProject(ticket) ? "text-purple-600 dark:text-purple-400" : "text-purple-400 dark:text-purple-500"
            }`}>
             {ticket.project_name}
            </span>
           ) : (
-           <span className="text-xs text-muted-foreground">Not assigned</span>
+           <span className="text-[11px] text-muted-foreground">Not assigned</span>
           )}
          </button>
         ) : (
-         <span className="text-xs text-muted-foreground px-3">N/A</span>
+         <span className="text-[11px] text-muted-foreground px-2">N/A</span>
         )}
        </td>
 
        {/* Actions */}
-       <td className="px-3 py-2.5">
-        <div className="flex items-center justify-center gap-1">
+       <td className="px-2 py-2">
+        <div className="flex items-center justify-center gap-0.5">
          {/* Files/Attachments - Always visible */}
          <button
-          className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover: border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+          className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
           onClick={() => onOpenAttachmentsDialog(ticket)}
           title={ticket.attachment_count > 0 ? `${ticket.attachment_count} attachment(s) - Click to view` : "No attachments"}
          >
@@ -314,16 +331,33 @@ export default function TicketsTableBody({
          {/* Activity History - Always visible */}
          <TicketHistoryTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
           <button
-           className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover: border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+           className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
            title="Activity History (Hover to view)"
           >
            <History className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
          </TicketHistoryTooltip>
 
+         {/* References - Always visible */}
+         <TicketReferencesTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
+          <button
+           className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+           title={ticket.reference_count > 0 ? `${ticket.reference_count} reference(s) - Hover to view` : "No references"}
+          >
+           <div className="relative">
+            <Link2 className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+            {ticket.reference_count > 0 && (
+             <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-blue-600 rounded-full">
+              {ticket.reference_count}
+             </span>
+            )}
+           </div>
+          </button>
+         </TicketReferencesTooltip>
+
          {/* Edit - Always visible */}
          <button
-          className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all duration-200 group hover:scale-110 hover: border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+          className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
           title="Edit"
           onClick={() => router.push(`/tickets/${ticket.id}/edit`)}
          >

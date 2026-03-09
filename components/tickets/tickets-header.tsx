@@ -2,7 +2,7 @@
 
 export default function TicketsHeader() {
  return (
- <div className="m-6">
+ <div className="m-0">
  <h1 className=" text-3xl font-bold text-slate-900 dark:text-white">
  My Tickets
  </h1>

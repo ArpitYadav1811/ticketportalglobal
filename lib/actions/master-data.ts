@@ -512,7 +512,7 @@ export async function getSpocForTargetBusinessGroup(targetBusinessGroupId: numbe
         u.full_name,
         u.email
       FROM business_unit_groups bug
-      LEFT JOIN users u ON u.full_name = bug.spoc_name
+      LEFT JOIN users u ON LOWER(TRIM(u.full_name)) = LOWER(TRIM(bug.spoc_name))
       WHERE bug.id = ${targetBusinessGroupId}
       LIMIT 1
     `

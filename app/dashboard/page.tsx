@@ -21,23 +21,17 @@ export default function DashboardPage() {
 
  return (
  <DashboardLayout>
- <div className=" h-full">
- <div className="max-w-8xl mx-auto px-20">
- {/* Simple Header - matching Customer Portal */}
- <div className="mb-6 border-b border-slate-200 dark:border-slate-700 pb-4 ">
- <h1 className="text-3xl font-bold text-slate-900 dark:text-white max-w-6xl mx-auto pt-2">
+ <div className="pl-6 pr-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
+ <div className="px-1 py-4">
+ <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
  New Ticket
  </h1>
- <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-6xl mx-auto">
+ <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
  Fill in the details below to create a new work ticket
  </p>
  </div>
-
- {/* Form Container */}
- <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg max-w-6xl mx-auto">
- <CreateTicketForm />
- </div>
- </div>
+ <div className="border-b border-slate-200 dark:border-slate-700 mb-4" />
+ <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm"><CreateTicketForm /></div>
  </div>
  </DashboardLayout>
  )

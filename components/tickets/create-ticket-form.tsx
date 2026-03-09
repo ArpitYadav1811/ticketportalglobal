@@ -4,10 +4,10 @@ import type React from "react"
 
 import { useState, useEffect, useRef, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CheckCircle, X, Paperclip } from "lucide-react"
+import { CheckCircle, X, Paperclip, Link2, Loader2, Check, AlertCircle } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-import { createTicket, getUsers } from "@/lib/actions/tickets"
+import { createTicket, getUsers, addTicketReferences } from "@/lib/actions/tickets"
 import {
   getTargetBusinessGroups,
   getBusinessUnitGroups,
@@ -75,6 +75,26 @@ export default function CreateTicketForm() {
  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null)
  const fileInputRefSupport = useRef<HTMLInputElement>(null)
  const fileInputRefRequirement = useRef<HTMLInputElement>(null)
+
+ // Reference ticket state
+ const [referenceInput, setReferenceInput] = useState("")
+ const [referenceValidating, setReferenceValidating] = useState(false)
+ const [referenceValidation, setReferenceValidation] = useState<{
+  success: boolean
+  message: string
+  data?: { id: number; ticket_id: string; title: string; ticket_number: number; status: string }
+ } | null>(null)
+ const [referenceTickets, setReferenceTickets] = useState<
+  { id: number; ticket_id: string; title: string; ticket_number: number; status: string }[]
+ >([])
+ const referenceTicketsRef = useRef<
+  { id: number; ticket_id: string; title: string; ticket_number: number; status: string }[]
+ >([])
+ const referenceValidationRef = useRef<{
+  success: boolean
+  data?: { id: number; ticket_id: string; title: string; ticket_number: number; status: string }
+ } | null>(null)
+ const referenceDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
  useEffect(() => {
  // Load user's group from localStorage
@@ -367,12 +387,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  const mapping = mappingResult.data
  const durationMinutes = mapping.estimated_duration || 0
  
- if (durationMinutes >= 60) {
- const hours = Math.floor(durationMinutes / 60)
- const mins = durationMinutes % 60
- durationText = mins > 0 ? `${hours} hr ${mins} min` : `${hours} hr`
- } else if (durationMinutes > 0) {
- durationText = `${durationMinutes} min`
+ // Convert minutes to hours (rounded up) for the numeric input field
+ if (durationMinutes > 0) {
+ const hours = Math.ceil(durationMinutes / 60)
+ durationText = hours.toString()
  }
 
  descriptionText = mapping.description || selectedSubcat.input_template || ""
@@ -402,12 +420,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  const othersMapping = othersMappingResult.data
  const durationMinutes = othersMapping.estimated_duration || 0
  
- if (durationMinutes >= 60) {
- const hours = Math.floor(durationMinutes / 60)
- const mins = durationMinutes % 60
- durationText = mins > 0 ? `${hours} hr ${mins} min` : `${hours} hr`
- } else if (durationMinutes > 0) {
- durationText = `${durationMinutes} min`
+ // Convert minutes to hours (rounded up) for the numeric input field
+ if (durationMinutes > 0) {
+ const hours = Math.ceil(durationMinutes / 60)
+ durationText = hours.toString()
  }
 
  descriptionText = othersMapping.description || ""
@@ -433,12 +449,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  } else {
  // Fallback to subcategory data if available
  const durationMinutes = selectedSubcat.estimated_duration_minutes || 0
- if (durationMinutes >= 60) {
- const hours = Math.floor(durationMinutes / 60)
- const mins = durationMinutes % 60
- durationText = mins > 0 ? `${hours} hr ${mins} min` : `${hours} hr`
- } else if (durationMinutes > 0) {
- durationText = `${durationMinutes} min`
+ // Convert minutes to hours (rounded up) for the numeric input field
+ if (durationMinutes > 0) {
+ const hours = Math.ceil(durationMinutes / 60)
+ durationText = hours.toString()
  }
  descriptionText = selectedSubcat.input_template || ""
  }
@@ -486,6 +500,72 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  ...prev,
  attachments: prev.attachments.filter((_, i) => i !== index),
  }))
+ }
+
+ // Reference ticket validation (real-time, debounced)
+ const handleReferenceInputChange = (value: string) => {
+  setReferenceInput(value)
+  setReferenceValidation(null)
+
+  if (referenceDebounceRef.current) {
+   clearTimeout(referenceDebounceRef.current)
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed) return
+
+  referenceDebounceRef.current = setTimeout(async () => {
+   setReferenceValidating(true)
+   try {
+    const res = await fetch(`/api/tickets/validate?ticketId=${encodeURIComponent(trimmed)}`)
+    const data = await res.json()
+    if (data.success && data.data) {
+     // Check if already added
+     const alreadyAdded = referenceTicketsRef.current.some((t) => t.id === data.data.id)
+     if (alreadyAdded) {
+      setReferenceValidation({ success: false, message: "This ticket is already added" })
+      referenceValidationRef.current = null
+     } else {
+      const validation = {
+       success: true,
+       message: `Ticket Found: ${data.data.title}`,
+       data: data.data,
+      }
+      setReferenceValidation(validation)
+      referenceValidationRef.current = validation
+     }
+    } else {
+     setReferenceValidation({ success: false, message: "No ticket ID found" })
+     referenceValidationRef.current = null
+    }
+   } catch {
+    setReferenceValidation({ success: false, message: "Failed to validate ticket" })
+    referenceValidationRef.current = null
+   } finally {
+    setReferenceValidating(false)
+   }
+  }, 500)
+ }
+
+ const addReferenceTicket = () => {
+  if (referenceValidation?.success && referenceValidation.data) {
+   const newRef = referenceValidation.data
+   // Check not already added
+   if (!referenceTicketsRef.current.some((t) => t.id === newRef.id)) {
+    const updated = [...referenceTicketsRef.current, newRef]
+    setReferenceTickets(updated)
+    referenceTicketsRef.current = updated
+   }
+   setReferenceInput("")
+   setReferenceValidation(null)
+   referenceValidationRef.current = null
+  }
+ }
+
+ const removeReferenceTicket = (ticketId: number) => {
+  const updated = referenceTicketsRef.current.filter((t) => t.id !== ticketId)
+  setReferenceTickets(updated)
+  referenceTicketsRef.current = updated
  }
 
  const handleSubmit = async (e: FormEvent) => {
@@ -611,6 +691,31 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  }
  }
 
+ // Auto-add any validated-but-not-added reference before saving
+ if (referenceValidationRef.current?.success && referenceValidationRef.current.data) {
+  const pendingRef = referenceValidationRef.current.data
+  if (!referenceTicketsRef.current.some((t) => t.id === pendingRef.id)) {
+   referenceTicketsRef.current = [...referenceTicketsRef.current, pendingRef]
+  }
+  referenceValidationRef.current = null
+ }
+
+ // Save reference tickets if any (use ref for latest value)
+ const refsToSave = referenceTicketsRef.current
+ if (refsToSave.length > 0 && result.data) {
+  try {
+   const refResult = await addTicketReferences(
+    result.data.id,
+    refsToSave.map((t) => t.id)
+   )
+   if (!refResult.success) {
+    alert(`Reference tickets failed to save: ${refResult.error}`)
+   }
+  } catch (err) {
+   alert(`Reference tickets exception: ${err instanceof Error ? err.message : String(err)}`)
+  }
+ }
+
  // Show success dialog with ticket ID
  if (result.data) {
  setCreatedTicketId(result.data.ticket_id || null)
@@ -629,13 +734,38 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  return (
  <>
- <form onSubmit={handleSubmit} className="space-y-1 w-full shadow-md rounded-lg max-w-6xl mx-auto">
+ <form onSubmit={handleSubmit} className="space-y-1 w-full">
 
- {/* First Section: Ticket Functional Area, Business Group, Ticket Type, SPOC */}
- <div className="p-2">
- {/* Row 1: Ticket Functional Area and Business Group */}
- <div className="grid grid-cols-2 gap-2 p-2">
- <div className="space-y-1 px-2">
+ {/* Row 1: Ticket Type */}
+ <div className="px-4 pt-4" style={{ width: 'calc(33.333% - 0.34rem)' }}>
+ <div className="space-y-1">
+ <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+ Ticket Type *
+ </label>
+ <div className="flex w-full">
+ {["support", "requirement"].map((type) => (
+ <label key={type} className="flex items-center gap-2 cursor-pointer flex-1">
+ <input
+ type="radio"
+ name="ticketType"
+ value={type}
+ checked={formData.ticketType === type}
+ onChange={handleInputChange}
+ className="w-3 h-3 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
+ />
+ <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">
+ {type === "support" ? "Support Issue" : "New Requirement"}
+ </span>
+ </label>
+ ))}
+ </div>
+ </div>
+ </div>
+
+ {/* Row 2: Ticket Functional Area, Business Group, SPOC */}
+ <div className="px-4 pt-4">
+ <div className="grid grid-cols-3 gap-2">
+ <div className="space-y-1 ">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Ticket Functional Area *
  </label>
@@ -655,7 +785,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Business Group * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected)</span>
+ Business Group<span className="text-xs font-normal text-slate-500 dark:text-slate-400"></span>
  </label>
  <Combobox
  options={targetBusinessGroups.map((tbg) => ({
@@ -678,42 +808,15 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  className="h-8 py-1.5 text-xs"
  />
  </div>
- </div>
-
- {/* Row 2: Ticket Type and SPOC */}
- <div className="grid grid-cols-2 gap-2 p-4">
- <div className="space-y-1">
- <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Ticket Type *
- </label>
- <div className="flex gap-4 w-full">
- {["support", "requirement"].map((type) => (
- <label key={type} className="flex items-center gap-2 cursor-pointer flex-1">
- <input
- type="radio"
- name="ticketType"
- value={type}
- checked={formData.ticketType === type}
- onChange={handleInputChange}
- className="w-3 h-3 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
- />
- <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">
- {type === "support" ? "Support Issue" : "New Requirement"}
- </span>
- </label>
- ))}
- </div>
- </div>
 
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- SPOC * <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Auto-selected based on Group)</span>
+ SPOC <span className="text-xs font-normal text-slate-500 dark:text-slate-400"></span>
  </label>
  <Combobox
  options={assignees.map((user) => ({
  value: user.id.toString(),
  label: user.full_name || user.name,
- subtitle: user.email,
  }))}
  value={formData.spocId}
  onChange={(value) => {
@@ -742,15 +845,13 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Ticket Classification */}
- <div className="p-2">
- <h3 className="font-inter font-semibold text-foreground text-sm ml-4">
- Ticket Classification
- </h3>
+ <div className="p-0">
+ 
 
  {formData.ticketType === "requirement" ? (
  <>
  {/* Row 3: Title (full width for requirement) */}
- <div className="space-y-1 px-4 py-4">
+ <div className="space-y-1 px-4 pt-4">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Title *
  </label>
@@ -765,25 +866,25 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 4: Description (full width) */}
- <div className="space-y-1 px-4">
+ <div className="space-y-1 px-4 pt-4">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
- <textarea
- name="description"
- value={formData.description}
- onChange={handleInputChange}
- placeholder="Describe the requirement in detail..."
- rows={3}
+            <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="Describe the requirement in detail..."
+            rows={6}
  className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
- <div className="grid grid-cols-2 gap-2 p-4">
+ <div className="grid grid-cols-2 gap-2 px-4 pt-4">
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Estimated Hrs *
+ Estimated Hrs 
  </label>
  <input
  type="number"
@@ -797,49 +898,75 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  />
  </div>
 
- <div className="space-y-1">
- <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Attachments
- {formData.attachments.length > 0 && (
- <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
- ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
- </span>
- )}
- </label>
- <div className="relative">
- <input
- type="file"
- multiple
- onChange={handleFileChange}
- ref={fileInputRefRequirement}
- className="hidden"
- />
- <button
- type="button"
- onClick={() => fileInputRefRequirement.current?.click()}
- className="w-full h-8 px-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
- >
- <Paperclip className="w-3 h-3" />
- Choose files
- </button>
- </div>
- </div>
- </div>
- </>
- ) : (
+  <div className="space-y-1">
+  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+  Attachments
+  {formData.attachments.length > 0 && (
+  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
+  ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
+  </span>
+  )}
+  </label>
+  <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 p-2 min-h-[2rem]">
+  <input
+  type="file"
+  multiple
+  onChange={handleFileChange}
+  ref={fileInputRefRequirement}
+  className="hidden"
+  />
+  <button
+  type="button"
+  onClick={() => fileInputRefRequirement.current?.click()}
+  className="w-full h-8 px-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
+  >
+  <Paperclip className="w-3 h-3" />
+  Choose files
+  </button>
+  {formData.attachments.length > 0 && (
+  <div className="mt-2 space-y-1">
+  {formData.attachments.map((file, idx) => (
+  <div
+  key={`req-${idx}`}
+  className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-md"
+  >
+  <div className="flex items-center gap-2 min-w-0 flex-1">
+  <Paperclip className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+  <div className="min-w-0 flex-1">
+  <p className="text-xs font-medium text-slate-900 dark:text-white truncate">{file.name}</p>
+  <p className="text-[10px] text-slate-500 dark:text-slate-400">{(file.size / 1024).toFixed(1)} KB</p>
+  </div>
+  </div>
+  <button
+  type="button"
+  onClick={() => removeAttachment(idx)}
+  className="p-0.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
+  >
+  <X className="w-3 h-3 text-danger" />
+  </button>
+  </div>
+  ))}
+  </div>
+  )}
+  </div>
+  </div>
+  </div>
+  </>
+  ) : (
  <>
  {/* Row 3: Category and Sub Category (2-column grid) */}
- <div className="grid grid-cols-2 gap-2 p-4">
+ <div className="grid grid-cols-2 gap-2 px-4 pt-4">
  <div className="space-y-1">
- <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">Category *</label>
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+ Category *
+ </label>
  <Combobox
  options={[
  ...categories.map((cat) => ({
  value: cat.id.toString(),
  label: cat.name,
- subtitle: cat.description,
  })),
- { value: "others", label: "Others", subtitle: "Other category" }
+ { value: "others", label: "Others" }
  ]}
  value={formData.categoryId}
  onChange={handleCategoryChange}
@@ -861,9 +988,8 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  ? subcategories.map((sub) => ({
  value: sub.id === "others" ? "others" : sub.id.toString(),
  label: sub.name,
- subtitle: sub.description,
  }))
- : [{ value: "N/A", label: "N/A", subtitle: "No subcategories available" }]
+ : [{ value: "N/A", label: "N/A" }]
  }
  value={formData.subcategoryId || (subcategories.length === 0 && formData.categoryId ? "N/A" : "")}
  onChange={handleSubcategoryChange}
@@ -877,25 +1003,25 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  </div>
 
  {/* Row 4: Description (full width) */}
- <div className="space-y-1 px-4">
+ <div className="space-y-1 px-4 pt-4">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
- <textarea
- name="description"
- value={formData.description}
- onChange={handleInputChange}
- placeholder="Auto-filled based on category and sub-category selection. You can edit this."
- rows={3}
+            <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="Auto-filled based on category and sub-category selection. You can edit this."
+            rows={6}
  className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
- <div className="grid grid-cols-2 gap-2 p-4">
+ <div className="grid grid-cols-2 gap-2 px-4 pt-4">
  <div className="space-y-1">
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Estimated Hrs *
+ Estimated Hours
  </label>
  <input
  type="number"
@@ -909,65 +1035,149 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  />
  </div>
 
- <div className="space-y-1">
- <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
- Attachments
- {formData.attachments.length > 0 && (
- <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
- ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
- </span>
- )}
- </label>
- <div className="relative">
- <input
- type="file"
- multiple
- onChange={handleFileChange}
- ref={fileInputRefSupport}
- className="hidden"
- />
- <button
- type="button"
- onClick={() => fileInputRefSupport.current?.click()}
- className="w-full h-8 px-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
- >
- <Paperclip className="w-3 h-3" />
- Choose files
- </button>
+  <div className="space-y-1">
+  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+  Attachments
+  {formData.attachments.length > 0 && (
+  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
+  ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
+  </span>
+  )}
+  </label>
+  <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 p-2 min-h-[2rem]">
+  <input
+  type="file"
+  multiple
+  onChange={handleFileChange}
+  ref={fileInputRefSupport}
+  className="hidden"
+  />
+  <button
+  type="button"
+  onClick={() => fileInputRefSupport.current?.click()}
+  className="w-full h-8 px-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
+  >
+  <Paperclip className="w-3 h-3" />
+  Choose files
+  </button>
+  {formData.attachments.length > 0 && (
+  <div className="mt-2 space-y-1">
+  {formData.attachments.map((file, idx) => (
+  <div
+  key={`sup-${idx}`}
+  className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-md"
+  >
+  <div className="flex items-center gap-2 min-w-0 flex-1">
+  <Paperclip className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+  <div className="min-w-0 flex-1">
+  <p className="text-xs font-medium text-slate-900 dark:text-white truncate">{file.name}</p>
+  <p className="text-[10px] text-slate-500 dark:text-slate-400">{(file.size / 1024).toFixed(1)} KB</p>
+  </div>
+  </div>
+  <button
+  type="button"
+  onClick={() => removeAttachment(idx)}
+  className="p-0.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
+  >
+  <X className="w-3 h-3 text-danger" />
+  </button>
+  </div>
+  ))}
+  </div>
+  )}
+  </div>
+  </div>
+  </div>
+  </>
+  )}
  </div>
- </div>
- </div>
- </>
- )}
 
- {/* File list display */}
- {formData.attachments.length > 0 && (
- <div className="mt-1 space-y-1.5">
- {formData.attachments.map((file, idx) => (
- <div
- key={idx}
- className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-all duration-200 hover:border-gray-400 dark:hover:border-blue-600"
- >
- <div className="flex items-center gap-2 min-w-0 flex-1">
- <Paperclip className="w-3 h-3 text-muted-foreground flex-shrink-0" />
- <div className="min-w-0 flex-1">
- <p className="text-xs font-medium text-slate-900 dark:text-white truncate">{file.name}</p>
- <p className="text-xs text-slate-600 dark:text-slate-400">
- {(file.size / 1024).toFixed(1)} KB
- </p>
- </div>
- </div>
- <button
- type="button"
- onClick={() => removeAttachment(idx)}
- className="p-1 hover:bg-red-50 rounded transition-colors flex-shrink-0"
- >
- <X className="w-3 h-3 text-danger" />
- </button>
- </div>
- ))}
- </div>
- )}
+ {/* Reference Tickets */}
+ <div className="px-4 pt-4">
+  <div className="space-y-1">
+   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+    Reference Tickets
+    {referenceTickets.length > 0 && (
+     <span className="text-xs text-slate-500 ml-2">({referenceTickets.length} linked)</span>
+    )}
+   </label>
+   <div className="flex items-start gap-2">
+    <div className="flex-1 space-y-1">
+     <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+       <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+       <input
+        type="text"
+        value={referenceInput}
+        onChange={(e) => handleReferenceInputChange(e.target.value)}
+        onKeyDown={(e) => {
+         if (e.key === "Enter") {
+          e.preventDefault()
+          addReferenceTicket()
+         }
+        }}
+        placeholder="Enter Ticket ID (e.g., 04821 or TKT-202603-04821)"
+        className="w-full h-8 pl-8 pr-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
+       />
+       {referenceValidating && (
+        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 animate-spin" />
+       )}
+      </div>
+      <button
+       type="button"
+       onClick={addReferenceTicket}
+       disabled={!referenceValidation?.success}
+       className="h-8 px-3 bg-black hover:bg-gray-800 text-white rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0"
+      >
+       <Link2 className="w-3 h-3" />
+       Add
+      </button>
+     </div>
+     {/* Validation feedback */}
+     {referenceValidation && (
+      <div className={`flex items-center gap-1.5 text-xs ${referenceValidation.success ? "text-emerald-600" : "text-red-500"}`}>
+       {referenceValidation.success ? (
+        <Check className="w-3 h-3" />
+       ) : (
+        <AlertCircle className="w-3 h-3" />
+       )}
+       <span>{referenceValidation.message}</span>
+      </div>
+     )}
+    </div>
+   </div>
+
+   {/* List of added reference tickets */}
+   {referenceTickets.length > 0 && (
+    <div className="mt-2 space-y-1">
+     {referenceTickets.map((ref) => (
+      <div
+       key={ref.id}
+       className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-md"
+      >
+       <div className="flex items-center gap-2 min-w-0 flex-1">
+        <Link2 className="w-3 h-3 text-blue-500 flex-shrink-0" />
+        <div className="min-w-0 flex-1">
+         <p className="text-xs font-medium text-slate-900 dark:text-white truncate">
+          {ref.ticket_id ? ref.ticket_id.replace(/^TKT-\d{6}-/, '') : ref.ticket_number} — {ref.title}
+         </p>
+         <p className="text-[10px] text-slate-500 dark:text-slate-400">
+          Status: {ref.status}
+         </p>
+        </div>
+       </div>
+       <button
+        type="button"
+        onClick={() => removeReferenceTicket(ref.id)}
+        className="p-0.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
+       >
+        <X className="w-3 h-3 text-red-500" />
+       </button>
+      </div>
+     ))}
+    </div>
+   )}
+  </div>
  </div>
 
  {/* Submit Button */}
@@ -1003,6 +1213,11 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  productReleaseName: "",
  attachments: [],
  })
+ setReferenceTickets([])
+ referenceTicketsRef.current = []
+ setReferenceInput("")
+ setReferenceValidation(null)
+ referenceValidationRef.current = null
  setCreatedTicketId(null)
  }}
  ticketId={createdTicketId}

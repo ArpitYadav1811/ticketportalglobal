@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
 import { CheckCircle } from "lucide-react"
 import {
   Dialog,
@@ -9,46 +9,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 
 interface TicketSuccessDialogProps {
   isOpen: boolean
   onClose: () => void
   ticketId: string | null
-  onViewTicket?: () => void
 }
 
 export function TicketSuccessDialog({
   isOpen,
   onClose,
   ticketId,
-  onViewTicket,
 }: TicketSuccessDialogProps) {
-  const router = useRouter()
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const [countdown, setCountdown] = useState(3)
 
-  const handleViewTicket = () => {
-    if (ticketId) {
-      router.push(`/tickets?created=${ticketId}`)
-    } else {
-      router.push("/tickets")
-    }
-    onClose()
-  }
+  useEffect(() => {
+    if (isOpen) {
+      setCountdown(3)
 
-  const handleClose = () => {
-    onClose()
-    if (ticketId) {
-      router.push(`/tickets?created=${ticketId}`)
-    } else {
-      router.push("/tickets")
+      // Countdown every second
+      const intervalId = setInterval(() => {
+        setCountdown((prev) => prev - 1)
+      }, 1000)
+
+      // Auto-close after 3 seconds
+      timerRef.current = setTimeout(() => {
+        if (timerRef.current) clearTimeout(timerRef.current)
+        onClose()
+      }, 3000)
+
+      return () => {
+        clearInterval(intervalId)
+        if (timerRef.current) clearTimeout(timerRef.current)
+      }
     }
-  }
+  }, [isOpen])
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={() => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      onClose()
+    }}>
+      <DialogContent className="sm:max-w-md [&>button]:hidden">
         <DialogHeader>
-          <div className="flex flex-col items-center text-center space-y-3 py-2">
+          <div className="flex flex-col items-center text-center space-y-3 py-4">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full">
               <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
@@ -60,23 +65,11 @@ export function TicketSuccessDialog({
                 Your ticket has been created with ID: <span className="font-semibold text-slate-900 dark:text-slate-100">{ticketId}</span>
               </DialogDescription>
             )}
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              Closing in {countdown}s...
+            </p>
           </div>
         </DialogHeader>
-        <div className="flex gap-2 justify-end pt-4">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            className="text-xs h-8"
-          >
-            Close
-          </Button>
-          <Button
-            onClick={handleViewTicket}
-            className="bg-black hover:bg-gray-800 text-white text-xs h-8"
-          >
-            View Ticket
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   )

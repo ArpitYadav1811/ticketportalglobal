@@ -111,27 +111,23 @@ export default function HorizontalNav() {
       <div className="px-1 lg:px-1">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Nav Items - Left Aligned */}
-          <div className="ml-40 flex items-center gap-1">
+          <div className="ml-5 flex items-center gap-4">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center gap-3 group">
-              <div>
-                <Image
-                  src="/mfilterit-logo.png"
-                  alt="Company Logo"
-                  width={24}
-                  height={24}
-                  className="w-10 h-10"
-                />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="font-poppins font-bold text-slate-900 dark:text-white text-xl">
-                  Ticket Portal
-                </h1>
-              </div>
+            <Link href="/dashboard" className="flex items-center gap-2 group">
+              <Image
+                src="/mfilterit-logo.png"
+                alt="Company Logo"
+                width={24}
+                height={24}
+                className="w-8 h-8"
+              />
+              <h1 className="hidden sm:block font-poppins font-bold text-slate-900 dark:text-white text-lg leading-none">
+                Ticket Portal
+              </h1>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-2">
+            <nav className="hidden lg:flex items-center gap-1">
               {filteredNavItems.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
@@ -149,7 +145,7 @@ export default function HorizontalNav() {
           {/* <div className="hidden sm:block">
               <ThemeToggle />
             </div> */}
-          <div className=" mr-30 flex items-center gap-3">
+          <div className=" mr-5 flex items-center gap-3">
             {/* Theme Toggle */}
             
 
@@ -175,7 +171,7 @@ export default function HorizontalNav() {
                   <p className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
                     {user?.full_name || "User"}
                   </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 leading-tight">
                     {user?.group_name || user?.email || ""}
                   </p>
                 </div>
@@ -190,17 +186,17 @@ export default function HorizontalNav() {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowUserMenu(false)}
                   />
-                  <div className="absolute right-0 mt-1 w-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-0 bg-popover text-popover-foreground overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md w-48 z-50">
                     {/* User Info Header */}
-                    <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                      <p className="text-base font-medium text-slate-900 dark:text-white">
+                    <div className="px-3">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
                         {user?.full_name || "User"}
                       </p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                         {user?.email || ""}
                       </p>
                       {user?.group_name && (
-                        <p className="text-sm text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
                           {user.group_name}
                         </p>
                       )}
@@ -211,9 +207,9 @@ export default function HorizontalNav() {
                       <Link
                         href="/settings"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-0.5 text-m text-black dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                        className="focus:bg-accent data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer gap-2"
                       >
-                        <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                        <Settings className="w-4 h-4" />
                         User Settings
                       </Link>
                       
@@ -221,7 +217,7 @@ export default function HorizontalNav() {
                       
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        className="focus:bg-accent data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer gap-2 text-red-600 focus:text-red-600 w-full"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout

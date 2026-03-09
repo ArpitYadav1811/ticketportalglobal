@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, Users, X, FileDown } from "lucide-react"
+import { Search, Filter, Users, X, FileDown, RefreshCw } from "lucide-react"
 import { getUsers } from "@/lib/actions/tickets"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { getMyTeamMembers } from "@/lib/actions/my-team"
@@ -38,11 +38,12 @@ interface Ticket {
 interface TicketsFilterProps {
  onFilterChange: (filters: any) => void
  onExport?: () => void
+ onRefresh?: () => void
  isInternal?: boolean
  tickets?: Ticket[]
 }
 
-export default function TicketsFilter({ onFilterChange, onExport, isInternal = false, tickets = [] }: TicketsFilterProps) {
+export default function TicketsFilter({ onFilterChange, onExport, onRefresh, isInternal = false, tickets = [] }: TicketsFilterProps) {
  const [showFilters, setShowFilters] = useState(false)
  const [userId, setUserId] = useState<number | null>(null)
  const [users, setUsers] = useState<User[]>([])
@@ -232,7 +233,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  ].filter(Boolean).length
 
  return (
- <div className="space-y-4 bg-card dark:bg-slate-800 p-4 rounded-md w-full border border-border">
+ <div className="space-y-4 w-full">
  {/* Quick Actions Bar */}
  <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
  {/* Universal Search */}
@@ -244,7 +245,7 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  placeholder="Search tickets, descriptions, users, categories..."
  value={filters.search}
  onChange={(e) => handleSearchChange(e.target.value)}
- className="w-full px-4 py-2.5 pl-10 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+ className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input w-full min-w-0 rounded-md border bg-transparent px-2 py-1 shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive pl-10 h-9 text-sm"
  />
  {filters.search && (
  <button
@@ -269,11 +270,22 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  </div>
  </form>
 
+ {/* Refresh Button */}
+ {onRefresh && (
+ <button
+ onClick={onRefresh}
+ className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-xs bg-transparent"
+ title="Refresh tickets"
+ >
+ <RefreshCw className="w-4 h-4" />
+ </button>
+ )}
+
  {/* Export Button */}
  {onExport && (
  <button
  onClick={onExport}
- className="flex items-center gap-4 px-2 py-1.5 rounded-sm text-sm font-semibold transition-colors whitespace-nowrap bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
+ className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-xs bg-transparent"
  >
  <FileDown className="w-4 h-4" />
  Export
@@ -283,10 +295,10 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  {/* Filters Toggle */}
  <button
  onClick={() => setShowFilters(!showFilters)}
- className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm font-semibold transition-colors whitespace-nowrap ${
+ className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-xs ${
  showFilters || activeFilterCount > 0
- ? "bg-primary text-white"
- : "bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
+ ? "bg-primary text-white hover:bg-primary/90"
+ : "hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 bg-transparent"
  }`}
  >
  <Filter className="w-4 h-4" />
@@ -311,10 +323,10 @@ export default function TicketsFilter({ onFilterChange, onExport, isInternal = f
  <button
  onClick={handleMyTeamToggle}
  disabled={loadingTeam}
- className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm font-semibold transition-colors whitespace-nowrap ${
+ className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-xs ${
  filters.myTeam
- ? "bg-primary text-white"
- : "bg-white dark:bg-slate-700 border border-border text-foreground hover:bg-surface dark:hover:bg-slate-600"
+ ? "bg-primary text-white hover:bg-primary/90"
+ : "hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 bg-transparent"
  } ${loadingTeam ? "opacity-50 cursor-not-allowed" : ""}`}
  >
  <Users className="w-4 h-4" />
