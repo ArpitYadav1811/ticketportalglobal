@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { useEffect, useState } from "react"
 import { TicketIcon, BarChart3, Settings, Users, LogOut, X, Home, Plus, Database, UserCog } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -15,6 +16,19 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem("user")
+      if (userData) {
+        const user = JSON.parse(userData)
+        setUserRole(user.role?.toLowerCase() || null)
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error)
+    }
+  }, [])
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -24,8 +38,15 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { href: "/teams", label: "Teams", icon: Users },
     { href: "/users", label: "User Management", icon: UserCog },
     { href: "/master-data", label: "Masters", icon: Database },
-    { href: "/admin", label: "Admin", icon: Settings },
+    { href: "/admin", label: "Admin", icon: Settings, superAdminOnly: true },
   ]
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.superAdminOnly && userRole !== "superadmin") {
+      return false
+    }
+    return true
+  })
 
   const handleLogout = async () => {
     try {
@@ -79,7 +100,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {navItems.map(({ href, label, icon: Icon }) => (
+            {filteredNavItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}

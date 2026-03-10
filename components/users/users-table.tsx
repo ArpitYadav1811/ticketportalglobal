@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
-import { Edit, Trash2, Key, CheckCircle, XCircle } from "lucide-react"
+import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X } from "lucide-react"
 import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles } from "@/lib/actions/users"
-import { updateUserRole } from "@/lib/actions/admin"
+import { updateUserRole, updateUserBusinessGroup } from "@/lib/actions/admin"
+import { getBusinessUnitGroups } from "@/lib/actions/master-data"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 interface User {
   id: number
@@ -15,6 +17,12 @@ interface User {
   created_at: string
   is_active: boolean
   ticket_count: number
+  ticket_count_open: number
+  ticket_count_on_hold: number
+  ticket_count_resolved: number
+  ticket_count_closed: number
+  ticket_count_returned: number
+  ticket_count_deleted: number
   team_count: number
   business_unit_group_id: number | null
   business_group_name: string | null
@@ -34,11 +42,25 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [roleChangingId, setRoleChangingId] = useState<number | null>(null)
   const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
+  const [businessGroups, setBusinessGroups] = useState<{ id: number; name: string }[]>([])
+  const [bgChangingId, setBgChangingId] = useState<number | null>(null)
 
   useEffect(() => {
     if (isSuperAdmin) {
       getUserRoles(true).then((res) => {
         if (res.success && res.data) setRoles(res.data)
+      })
+
+      // Load business groups for inline editing
+      getBusinessUnitGroups().then((res: any) => {
+        if (res?.success && Array.isArray(res.data)) {
+          setBusinessGroups(
+            res.data.map((bg: any) => ({
+              id: bg.id,
+              name: bg.name,
+            })),
+          )
+        }
       })
     }
   }, [isSuperAdmin])
@@ -120,6 +142,23 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
       alert(result.error || "Failed to update role")
     }
     setRoleChangingId(null)
+  }
+
+  const handleInlineBusinessGroupChange = async (
+    userId: number,
+    newBusinessGroupId: number | null,
+    userName: string,
+  ) => {
+    if (!confirm(`Change ${userName}'s Business Group?`)) return
+
+    setBgChangingId(userId)
+    const result = await updateUserBusinessGroup(userId, newBusinessGroupId)
+    if (result.success) {
+      onRefresh()
+    } else {
+      alert(result.error || "Failed to update business group")
+    }
+    setBgChangingId(null)
   }
 
   const getRoleBadgeColor = (role: string) => {
@@ -215,18 +254,29 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                 </td>
                 <td className="px-4 py-3">
                   {isSuperAdmin && user.id !== currentUserId ? (
-                    <div className="relative">
+                    <div className="relative inline-flex max-w-[160px]">
                       {roleChangingId === user.id ? (
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <select
                           value={user.role}
                           onChange={(e) => handleInlineRoleChange(user.id, e.target.value, user.full_name)}
-                          className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-primary ${getRoleBadgeColor(user.role)}`}
-                          style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.3rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1rem' }}
+                          className={`w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer appearance-none shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary/60 ${getRoleBadgeColor(user.role)}`}
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                            backgroundPosition: "right 0.5rem center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundSize: "1rem",
+                          }}
                         >
                           {roles.map((r) => (
-                            <option key={r.value} value={r.value}>{r.label}</option>
+                            <option 
+                              key={r.value} 
+                              value={r.value}
+                              className="py-2 px-3 bg-white dark:bg-slate-800 text-foreground hover:bg-primary/10"
+                            >
+                              {r.label}
+                            </option>
                           ))}
                         </select>
                       )}
@@ -239,7 +289,44 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  {user.business_group_name ? (
+                  {isSuperAdmin ? (
+                    <div className="flex items-center gap-1 max-w-[200px]">
+                      {bgChangingId === user.id ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <select
+                          value={user.business_unit_group_id ?? ""}
+                          onChange={(e) =>
+                            handleInlineBusinessGroupChange(
+                              user.id,
+                              e.target.value ? Number(e.target.value) : null,
+                              user.full_name,
+                            )
+                          }
+                          className="w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer appearance-none shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary/60"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                            backgroundPosition: "right 0.5rem center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundSize: "1rem",
+                          }}
+                        >
+                          <option value="" className="py-2 px-3 bg-white dark:bg-slate-800 text-foreground">
+                            No Group
+                          </option>
+                          {businessGroups.map((bg) => (
+                            <option 
+                              key={bg.id} 
+                              value={bg.id}
+                              className="py-2 px-3 bg-white dark:bg-slate-800 text-foreground hover:bg-primary/10"
+                            >
+                              {bg.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ) : user.business_group_name ? (
                     <span className="inline-flex px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
                       {user.business_group_name}
                     </span>
@@ -260,7 +347,104 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-foreground-secondary">{user.ticket_count || 0}</td>
+                <td className="px-4 py-3">
+                  {user.ticket_count > 0 ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex flex-col gap-1 cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-foreground">Total: {user.ticket_count}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {user.ticket_count_resolved > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-50 text-green-700 text-[11px] font-medium">
+                                <CheckCircle className="w-3 h-3" />
+                                Resolved: {user.ticket_count_resolved}
+                              </span>
+                            )}
+                            {user.ticket_count_on_hold > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-[11px] font-medium">
+                                <AlertTriangle className="w-3 h-3" />
+                                Hold: {user.ticket_count_on_hold}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="bg-white dark:bg-slate-800 border border-border shadow-lg p-3 max-w-xs">
+                        <div className="space-y-2">
+                          <div className="font-semibold text-sm text-foreground mb-2 pb-2 border-b border-border">
+                            Ticket Status Breakdown
+                          </div>
+                          <div className="space-y-1.5 text-xs">
+                            {user.ticket_count_open > 0 && (
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <Circle className="w-3 h-3 text-blue-500 fill-blue-500" />
+                                  <span className="text-foreground">Open</span>
+                                </div>
+                                <span className="font-medium text-foreground">{user.ticket_count_open}</span>
+                              </div>
+                            )}
+                            {user.ticket_count_on_hold > 0 && (
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <AlertTriangle className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                  <span className="text-foreground">On Hold</span>
+                                </div>
+                                <span className="font-medium text-foreground">{user.ticket_count_on_hold}</span>
+                              </div>
+                            )}
+                            {user.ticket_count_resolved > 0 && (
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="w-3 h-3 text-green-500 fill-green-500" />
+                                  <span className="text-foreground">Resolved</span>
+                                </div>
+                                <span className="font-medium text-foreground">{user.ticket_count_resolved}</span>
+                              </div>
+                            )}
+                            {user.ticket_count_closed > 0 && (
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="w-3 h-3 text-slate-500 fill-slate-500" />
+                                  <span className="text-foreground">Closed</span>
+                                </div>
+                                <span className="font-medium text-foreground">{user.ticket_count_closed}</span>
+                              </div>
+                            )}
+                            {user.ticket_count_returned > 0 && (
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <Circle className="w-3 h-3 text-purple-500 fill-purple-500" />
+                                  <span className="text-foreground">Returned</span>
+                                </div>
+                                <span className="font-medium text-foreground">{user.ticket_count_returned}</span>
+                              </div>
+                            )}
+                            {user.ticket_count_deleted > 0 && (
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <X className="w-3 h-3 text-red-500" />
+                                  <span className="text-foreground">Deleted</span>
+                                </div>
+                                <span className="font-medium text-foreground">{user.ticket_count_deleted}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="pt-2 mt-2 border-t border-border">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-semibold text-foreground">Total</span>
+                              <span className="font-bold text-foreground">{user.ticket_count}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">0</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   {user.is_active === false ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">

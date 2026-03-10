@@ -10,7 +10,6 @@ import {
   Building2,
   FolderTree,
   Link2,
-  UserCog,
   ScrollText,
   Plus,
   Edit,
@@ -48,7 +47,6 @@ import {
   deleteFunctionalArea,
   addFunctionalAreaMapping,
   removeFunctionalAreaMapping,
-  updateUserRole,
   getSystemAuditLogs,
   updateBusinessGroupSpoc,
   updateFunctionalAreaMapping,
@@ -71,7 +69,7 @@ export default function AdminDashboardPage() {
     const parsedUser = JSON.parse(userData)
     const role = parsedUser.role?.toLowerCase()
 
-    if (role !== "admin" && role !== "superadmin") {
+    if (role !== "superadmin") {
       router.push("/dashboard")
       return
     }
@@ -126,10 +124,6 @@ export default function AdminDashboardPage() {
                   <Link2 className="w-3.5 h-3.5" /> FA Mappings
                   <Lock className="w-3 h-3 text-amber-500" />
                 </TabsTrigger>
-                <TabsTrigger value="role-management" className="text-xs gap-1.5">
-                  <UserCog className="w-3.5 h-3.5" /> Role Management
-                  <Lock className="w-3 h-3 text-amber-500" />
-                </TabsTrigger>
                 <TabsTrigger value="audit-logs" className="text-xs gap-1.5">
                   <ScrollText className="w-3.5 h-3.5" /> Audit Logs
                   <Lock className="w-3 h-3 text-amber-500" />
@@ -160,9 +154,6 @@ export default function AdminDashboardPage() {
             <>
               <TabsContent value="fa-mappings" className="mt-4">
                 <FAMappingsTab />
-              </TabsContent>
-              <TabsContent value="role-management" className="mt-4">
-                <RoleManagementTab currentUserId={user.id} />
               </TabsContent>
               <TabsContent value="audit-logs" className="mt-4">
                 <AuditLogsTab />
@@ -692,139 +683,6 @@ function FAMappingsTab() {
  </div>
  </div>
  )}
-    </div>
-  )
-}
-
-// ==================== ROLE MANAGEMENT TAB (SUPERADMIN ONLY) ====================
-function RoleManagementTab({ currentUserId }: { currentUserId: number }) {
-  const [users, setUsers] = useState<any[]>([])
-  const [roles, setRoles] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState("")
-  const [saving, setSaving] = useState<number | null>(null)
-
-  const loadData = async () => {
-    setLoading(true)
-    const [usersRes, rolesRes] = await Promise.all([
-      getAllUsers(),
-      getUserRoles(true), // include superadmin
-    ])
-    if (usersRes.success) setUsers(usersRes.data || [])
-    if (rolesRes.success) setRoles(rolesRes.data || [])
-    setLoading(false)
-  }
-
-  useEffect(() => { loadData() }, [])
-
-  const handleRoleChange = async (userId: number, newRole: string) => {
-    if (userId === currentUserId) {
-      alert("Cannot change your own role")
-      return
-    }
-    const user = users.find(u => u.id === userId)
-    if (!confirm(`Change ${user?.full_name}'s role to "${newRole}"?`)) return
-
-    setSaving(userId)
-    const result = await updateUserRole(userId, newRole)
-    if (result.success) {
-      await loadData()
-    } else {
-      alert(result.error || "Failed to update role")
-    }
-    setSaving(null)
-  }
-
-  const filteredUsers = users.filter((u) => {
-    if (!search) return true
-    const s = search.toLowerCase()
-    return u.full_name?.toLowerCase().includes(s) || u.email?.toLowerCase().includes(s)
-  })
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
-        <Lock className="w-4 h-4 text-amber-600 shrink-0" />
-        <p className="text-sm text-amber-800">
-          <strong>Super Admin Only</strong> — Changing roles affects what users can access across the entire system.
-        </p>
-      </div>
-
-      <div className="bg-card border rounded-lg shadow-sm p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">User Roles</h3>
-          <div className="flex gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64"
-              />
-            </div>
-            <Button size="sm" variant="outline" onClick={loadData}><RefreshCw className="w-3.5 h-3.5" /></Button>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-6"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
-        ) : (
-          <div className="overflow-auto max-h-[500px]">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-card">
-                <tr className="border-b text-left">
-                  <th className="pb-2 text-xs font-medium text-muted-foreground">Name</th>
-                  <th className="pb-2 text-xs font-medium text-muted-foreground">Email</th>
-                  <th className="pb-2 text-xs font-medium text-muted-foreground">Current Role</th>
-                  <th className="pb-2 text-xs font-medium text-muted-foreground w-48">Change Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => {
-                  const isCurrentUser = user.id === currentUserId
-                  return (
-                    <tr key={user.id} className={`border-b last:border-0 ${isCurrentUser ? "bg-amber-50/50" : "hover:bg-muted/30"}`}>
-                      <td className="py-2 font-medium">
-                        {user.full_name}
-                        {isCurrentUser && <span className="ml-1 text-xs text-amber-600">(You)</span>}
-                      </td>
-                      <td className="py-2 text-muted-foreground">{user.email}</td>
-                      <td className="py-2">
-                        <span className={`px-2 py-0.5 text-xs rounded font-medium ${
-                          user.role === "superadmin" ? "bg-amber-100 text-amber-800" :
-                          user.role === "admin" ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
-                        }`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="py-2">
-                        {isCurrentUser ? (
-                          <span className="text-xs text-muted-foreground italic">Cannot change own role</span>
-                        ) : saving === user.id ? (
-                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <select
-                            value={user.role}
-                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                            className="px-2 py-1 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-                          >
-                            {roles.map((r: any) => (
-                              <option key={r.value} value={r.value}>{r.label}</option>
-                            ))}
-                          </select>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

@@ -674,14 +674,14 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
 
  {/* Assignee Modal */}
  <AssigneeModal
-  isOpen={isAssigneeModalOpen}
-  onClose={() => {
-    setIsAssigneeModalOpen(false)
-    setSelectedTicketForAssignment(null)
-  }}
-  onSelect={handleAssigneeSelect}
-  currentAssigneeId={selectedTicketForAssignment?.assigned_to || null}
-  ticketTitle={selectedTicketForAssignment?.title || ""}
+ isOpen={isAssigneeModalOpen}
+ onClose={() => {
+ setIsAssigneeModalOpen(false)
+ setSelectedTicketForAssignment(null)
+ }}
+ onSelect={handleAssigneeSelect}
+ currentAssigneeId={selectedTicketForAssignment?.assigned_to || null}
+ ticketTitle={selectedTicketForAssignment?.title || ""}
   ticketId={selectedTicketForAssignment?.ticket_id || null}
   // Use the ticket's Target Business Group (driven by SPOC mapping), not the initiator group
   ticketBusinessUnitGroupId={selectedTicketForAssignment?.target_business_group_id || null}

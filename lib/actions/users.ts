@@ -9,7 +9,7 @@ export async function getAllUsers(filters?: {
   includeInactive?: boolean
 }) {
   try {
-    // Fetch all users with business group, team names - filtering done in JavaScript
+    // Fetch all users with business group, team names, and ticket counts by status - filtering done in JavaScript
     const users = await sql`
       SELECT
         u.id,
@@ -23,6 +23,12 @@ export async function getAllUsers(filters?: {
         u.business_unit_group_id,
         bug.name as business_group_name,
         COUNT(DISTINCT t.id) as ticket_count,
+        COUNT(DISTINCT CASE WHEN t.status = 'open' THEN t.id END) as ticket_count_open,
+        COUNT(DISTINCT CASE WHEN t.status = 'on-hold' THEN t.id END) as ticket_count_on_hold,
+        COUNT(DISTINCT CASE WHEN t.status = 'resolved' THEN t.id END) as ticket_count_resolved,
+        COUNT(DISTINCT CASE WHEN t.status = 'closed' THEN t.id END) as ticket_count_closed,
+        COUNT(DISTINCT CASE WHEN t.status = 'returned' THEN t.id END) as ticket_count_returned,
+        COUNT(DISTINCT CASE WHEN t.status = 'deleted' THEN t.id END) as ticket_count_deleted,
         COUNT(DISTINCT tm.team_id) as team_count,
         COALESCE(
           (SELECT string_agg(DISTINCT te.name, ', ' ORDER BY te.name)
@@ -33,7 +39,7 @@ export async function getAllUsers(filters?: {
         ) as team_names
       FROM users u
       LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
-      LEFT JOIN tickets t ON u.id = t.assigned_to
+      LEFT JOIN tickets t ON u.id = t.assigned_to AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
       LEFT JOIN team_members tm ON u.id = tm.user_id
       WHERE (u.is_active IS NULL OR u.is_active = TRUE)
       GROUP BY u.id, u.email, u.full_name, u.role, u.avatar_url, u.created_at, u.updated_at, u.is_active, u.business_unit_group_id, bug.name

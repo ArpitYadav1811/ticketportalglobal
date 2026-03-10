@@ -713,7 +713,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
    }
   } catch (err) {
    alert(`Reference tickets exception: ${err instanceof Error ? err.message : String(err)}`)
-  }
+ }
  }
 
  // Show success dialog with ticket ID
@@ -870,11 +870,11 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
-            <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="Describe the requirement in detail..."
+ <textarea
+ name="description"
+ value={formData.description}
+ onChange={handleInputChange}
+ placeholder="Describe the requirement in detail..."
             rows={6}
  className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
@@ -898,31 +898,31 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  />
  </div>
 
-  <div className="space-y-1">
-  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-  Attachments
-  {formData.attachments.length > 0 && (
-  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
-  ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
-  </span>
-  )}
-  </label>
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+ Attachments
+ {formData.attachments.length > 0 && (
+ <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
+ ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
+ </span>
+ )}
+ </label>
   <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 p-2 min-h-[2rem]">
-  <input
-  type="file"
-  multiple
-  onChange={handleFileChange}
-  ref={fileInputRefRequirement}
-  className="hidden"
-  />
-  <button
-  type="button"
-  onClick={() => fileInputRefRequirement.current?.click()}
+ <input
+ type="file"
+ multiple
+ onChange={handleFileChange}
+ ref={fileInputRefRequirement}
+ className="hidden"
+ />
+ <button
+ type="button"
+ onClick={() => fileInputRefRequirement.current?.click()}
   className="w-full h-8 px-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
-  >
-  <Paperclip className="w-3 h-3" />
-  Choose files
-  </button>
+ >
+ <Paperclip className="w-3 h-3" />
+ Choose files
+ </button>
   {formData.attachments.length > 0 && (
   <div className="mt-2 space-y-1">
   {formData.attachments.map((file, idx) => (
@@ -948,11 +948,11 @@ const handleTargetBusinessGroupChange = async (value: string) => {
   ))}
   </div>
   )}
-  </div>
-  </div>
-  </div>
-  </>
-  ) : (
+ </div>
+ </div>
+ </div>
+ </>
+ ) : (
  <>
  {/* Row 3: Category and Sub Category (2-column grid) */}
  <div className="grid grid-cols-2 gap-2 px-4 pt-4">
@@ -1007,11 +1007,11 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
  Description
  </label>
-            <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="Auto-filled based on category and sub-category selection. You can edit this."
+ <textarea
+ name="description"
+ value={formData.description}
+ onChange={handleInputChange}
+ placeholder="Auto-filled based on category and sub-category selection. You can edit this."
             rows={6}
  className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
@@ -1035,31 +1035,31 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  />
  </div>
 
-  <div className="space-y-1">
-  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-  Attachments
-  {formData.attachments.length > 0 && (
-  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
-  ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
-  </span>
-  )}
-  </label>
+ <div className="space-y-1">
+ <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+ Attachments
+ {formData.attachments.length > 0 && (
+ <span className="text-xs text-slate-600 dark:text-slate-400 font-medium ml-2">
+ ({formData.attachments.length} file{formData.attachments.length > 1 ? "s" : ""})
+ </span>
+ )}
+ </label>
   <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 p-2 min-h-[2rem]">
-  <input
-  type="file"
-  multiple
-  onChange={handleFileChange}
-  ref={fileInputRefSupport}
-  className="hidden"
-  />
-  <button
-  type="button"
-  onClick={() => fileInputRefSupport.current?.click()}
+ <input
+ type="file"
+ multiple
+ onChange={handleFileChange}
+ ref={fileInputRefSupport}
+ className="hidden"
+ />
+ <button
+ type="button"
+ onClick={() => fileInputRefSupport.current?.click()}
   className="w-full h-8 px-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 text-xs flex items-center justify-center gap-2"
-  >
-  <Paperclip className="w-3 h-3" />
-  Choose files
-  </button>
+ >
+ <Paperclip className="w-3 h-3" />
+ Choose files
+ </button>
   {formData.attachments.length > 0 && (
   <div className="mt-2 space-y-1">
   {formData.attachments.map((file, idx) => (
@@ -1085,11 +1085,11 @@ const handleTargetBusinessGroupChange = async (value: string) => {
   ))}
   </div>
   )}
-  </div>
-  </div>
-  </div>
-  </>
-  )}
+ </div>
+ </div>
+ </div>
+ </>
+ )}
  </div>
 
  {/* Reference Tickets */}
@@ -1154,29 +1154,29 @@ const handleTargetBusinessGroupChange = async (value: string) => {
       <div
        key={ref.id}
        className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-md"
-      >
-       <div className="flex items-center gap-2 min-w-0 flex-1">
+ >
+ <div className="flex items-center gap-2 min-w-0 flex-1">
         <Link2 className="w-3 h-3 text-blue-500 flex-shrink-0" />
-        <div className="min-w-0 flex-1">
+ <div className="min-w-0 flex-1">
          <p className="text-xs font-medium text-slate-900 dark:text-white truncate">
           {ref.ticket_id ? ref.ticket_id.replace(/^TKT-\d{6}-/, '') : ref.ticket_number} — {ref.title}
          </p>
          <p className="text-[10px] text-slate-500 dark:text-slate-400">
           Status: {ref.status}
-         </p>
-        </div>
-       </div>
-       <button
-        type="button"
+ </p>
+ </div>
+ </div>
+ <button
+ type="button"
         onClick={() => removeReferenceTicket(ref.id)}
         className="p-0.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
-       >
+ >
         <X className="w-3 h-3 text-red-500" />
-       </button>
-      </div>
-     ))}
-    </div>
-   )}
+ </button>
+ </div>
+ ))}
+ </div>
+ )}
   </div>
  </div>
 

@@ -390,6 +390,67 @@ export async function updateUserRole(userId: number, newRole: string) {
   }
 }
 
+// ==================== USER BUSINESS GROUP MANAGEMENT ====================
+
+export async function updateUserBusinessGroup(userId: number, businessGroupId: number | null) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const role = currentUser.role?.toLowerCase()
+    // Allow both superadmin and admin to change a user's business group
+    if (role !== "superadmin" && role !== "admin") {
+      return { success: false, error: "Only Admin or Super Admin can change user business group" }
+    }
+
+    const oldUser = await sql`
+      SELECT full_name, business_unit_group_id
+      FROM users
+      WHERE id = ${userId}
+    `
+    if (oldUser.length === 0) {
+      return { success: false, error: "User not found" }
+    }
+
+    const oldBg = oldUser[0].business_unit_group_id
+
+    await sql`
+      UPDATE users
+      SET business_unit_group_id = ${businessGroupId}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${userId}
+    `
+
+    // Get names for audit log
+    const oldBgRow = oldBg
+      ? await sql`SELECT name FROM business_unit_groups WHERE id = ${oldBg}`
+      : []
+    const newBgRow = businessGroupId
+      ? await sql`SELECT name FROM business_unit_groups WHERE id = ${businessGroupId}`
+      : []
+
+    const oldValue = oldBgRow[0]?.name || (oldBg ? String(oldBg) : "None")
+    const newValue = newBgRow[0]?.name || (businessGroupId ? String(businessGroupId) : "None")
+
+    await addSystemAuditLog({
+      actionType: "update",
+      entityType: "user_business_group",
+      entityId: userId,
+      oldValue,
+      newValue,
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email,
+      notes: `Updated business group for ${oldUser[0].full_name}`,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating user business group:", error)
+    return { success: false, error: "Failed to update user business group" }
+  }
+}
+
 // ==================== BUSINESS GROUP SPOC MANAGEMENT ====================
 
 export async function updateBusinessGroupSpoc(businessGroupId: number, spocName: string) {

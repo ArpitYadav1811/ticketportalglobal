@@ -74,7 +74,12 @@ export default function HorizontalNav() {
   ]
 
   const filteredNavItems = navItems.filter((item) => {
-    if (item.adminOnly && userRole !== "admin" && userRole !== "superadmin") {
+    // Admin Dashboard is only for Super Admins
+    if (item.href === "/admin" && userRole !== "superadmin") {
+      return false
+    }
+    // Other admin-only items are for both admin and superadmin
+    if (item.adminOnly && item.href !== "/admin" && userRole !== "admin" && userRole !== "superadmin") {
       return false
     }
     return true
