@@ -109,7 +109,8 @@ export default function TicketDetailPage() {
     if (ticket.is_deleted || ticket.status === "deleted") return []
 
     const userId = Number(currentUser.id)
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const role = currentUser.role?.toLowerCase()
+    const isAdmin = role === "admin" || role === "superadmin"
     const isInitiator = userId === ticket.created_by
     const isAssignee = userId === ticket.assigned_to
     const isSPOC = userId === ticket.spoc_user_id
@@ -173,15 +174,16 @@ export default function TicketDetailPage() {
 
   // Check if user can redirect per permissions matrix:
   // 5. Redirect to another SPOC: Initiator ❌ | SPOC ✅ (with remarks) | Assignee ❌
+  const userRole = currentUser?.role?.toLowerCase()
   const canRedirect = currentUser && ticket && (
-    currentUser.role?.toLowerCase() === "admin" ||
+    userRole === "admin" || userRole === "superadmin" ||
     currentUser.id === ticket.spoc_user_id
   )
 
   // Check if user can create sub-ticket (SPOC of the parent ticket)
   const canCreateSubTicket = currentUser && ticket && (
     currentUser.id === ticket.spoc_user_id ||
-    currentUser.role?.toLowerCase() === "admin"
+    userRole === "admin" || userRole === "superadmin"
   )
 
   const handleCreateSubTicket = () => {
@@ -653,6 +655,7 @@ export default function TicketDetailPage() {
         currentBusinessUnitGroupId={ticket?.target_business_group_id || null}
         currentBusinessUnitGroupName={ticket?.target_business_group_name || null}
         ticketTitle={ticket?.title || ""}
+        ticketId={ticket?.ticket_id || null}
       />
 
       {/* Status Change Modal */}

@@ -98,10 +98,10 @@ export default function TicketsTableBody({
       <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Status
       </th>
-      <th className="px-2 py-2 text-center text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Project
       </th>
-      <th className="px-2 py-2 text-center text-xs font-semibold text-foreground whitespace-nowrap">
+      <th className="px-2 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
        Actions
       </th>
      </tr>
@@ -143,7 +143,7 @@ export default function TicketsTableBody({
         {ticket.ticket_id && (
          <div className="flex items-center gap-1.5 mt-0.5">
           <div className="text-[11px] text-foreground-secondary">
-           {ticket.ticket_id.split('-').pop()}
+           {ticket.ticket_id.replace(/^TKT-\d{6}-/, '')}
           </div>
           <button
            onClick={(e) => onCopyTicketId(ticket.ticket_id, e)}
@@ -341,7 +341,6 @@ export default function TicketsTableBody({
          <TicketHistoryTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
           <button
            className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
-           title="Activity History (Hover to view)"
           >
            <History className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
@@ -351,7 +350,6 @@ export default function TicketsTableBody({
          <TicketReferencesTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
           <button
            className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
-           title={ticket.reference_count > 0 ? `${ticket.reference_count} reference(s) - Hover to view` : "No references"}
           >
            <div className="relative">
             <Link2 className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />

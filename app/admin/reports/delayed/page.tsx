@@ -78,7 +78,8 @@ export default function DelayedTicketsReportPage() {
   }, [sessionStatus, session, router])
 
   useEffect(() => {
-    if (currentUser?.role?.toLowerCase() === "admin") {
+    const r = currentUser?.role?.toLowerCase()
+    if (r === "admin" || r === "superadmin") {
       loadDelayedTickets()
     }
   }, [currentUser])

@@ -46,6 +46,7 @@ export interface Ticket {
  reference_count: number
  business_unit_group_id: number
  group_name: string | null
+ target_business_group_id: number | null
  target_business_group_name: string | null
  assignee_group_name: string | null
  initiator_group_name: string | null
@@ -261,7 +262,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
 
  const canEditTicket = (ticket: Ticket) => {
  if (!currentUser) return false
- const isAdmin = currentUser.role?.toLowerCase() === "admin"
+ const role = currentUser.role?.toLowerCase()
+ const isAdmin = role === "admin" || role === "superadmin"
  const isInitiator = currentUser.id === ticket.created_by
  const isAssignee = currentUser.id === ticket.assigned_to
  const isSPOC = currentUser.id === ticket.spoc_user_id
@@ -353,26 +355,29 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  if (ticket.ticket_type !== "requirement") return false
  if (!currentUser) return false
  const userId = Number(currentUser.id)
+ const role = currentUser.role?.toLowerCase()
  return (
  userId === ticket.spoc_user_id ||
- currentUser.role?.toLowerCase() === "admin"
+ role === "admin" || role === "superadmin"
  )
  }
 
  const canEditAssignee = (ticket: Ticket) => {
  if (!currentUser) return false
- const userId = Number(currentUser.id) // Ensure ID is a number for comparison
+ const userId = Number(currentUser.id)
+ const role = currentUser.role?.toLowerCase()
  return (
  userId === ticket.spoc_user_id ||
- currentUser.role?.toLowerCase() === "admin"
+ role === "admin" || role === "superadmin"
  )
  }
 
   const canEditStatus = (ticket: Ticket) => {
     if (!currentUser) return false
-    if (ticket.is_deleted) return false // Soft deleted tickets cannot have status changed
+    if (ticket.is_deleted) return false
  const userId = Number(currentUser.id)
- const isAdmin = currentUser.role?.toLowerCase() === "admin"
+ const role = currentUser.role?.toLowerCase()
+ const isAdmin = role === "admin" || role === "superadmin"
  const isInitiator = userId === ticket.created_by
  const isAssignee = userId === ticket.assigned_to
  const isSPOC = userId === ticket.spoc_user_id
@@ -380,13 +385,13 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  return isAdmin || isInitiator || isAssignee || isSPOC
  }
 
- // Get available status options based on user role and current status
  const getAvailableStatusOptions = (ticket: Ticket): string[] => {
  if (!currentUser) return []
  if (ticket.is_deleted || ticket.status === "deleted") return []
  
  const userId = Number(currentUser.id)
- const isAdmin = currentUser.role?.toLowerCase() === "admin"
+ const role = currentUser.role?.toLowerCase()
+ const isAdmin = role === "admin" || role === "superadmin"
  const isInitiator = userId === ticket.created_by
  const isAssignee = userId === ticket.assigned_to
  const isSPOC = userId === ticket.spoc_user_id
@@ -669,16 +674,18 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
 
  {/* Assignee Modal */}
  <AssigneeModal
- isOpen={isAssigneeModalOpen}
- onClose={() => {
- setIsAssigneeModalOpen(false)
- setSelectedTicketForAssignment(null)
- }}
- onSelect={handleAssigneeSelect}
- currentAssigneeId={selectedTicketForAssignment?.assigned_to || null}
- ticketTitle={selectedTicketForAssignment?.title || ""}
- ticketBusinessUnitGroupId={selectedTicketForAssignment?.business_unit_group_id || null}
- isAdmin={currentUser?.role?.toLowerCase() === "admin"}
+  isOpen={isAssigneeModalOpen}
+  onClose={() => {
+    setIsAssigneeModalOpen(false)
+    setSelectedTicketForAssignment(null)
+  }}
+  onSelect={handleAssigneeSelect}
+  currentAssigneeId={selectedTicketForAssignment?.assigned_to || null}
+  ticketTitle={selectedTicketForAssignment?.title || ""}
+  ticketId={selectedTicketForAssignment?.ticket_id || null}
+  // Use the ticket's Target Business Group (driven by SPOC mapping), not the initiator group
+  ticketBusinessUnitGroupId={selectedTicketForAssignment?.target_business_group_id || null}
+  isAdmin={currentUser?.role?.toLowerCase() === "admin" || currentUser?.role?.toLowerCase() === "superadmin"}
  />
 
   {/* Project Modal */}
@@ -691,7 +698,9 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
     onSelect={handleProjectSelect}
     currentProjectId={selectedTicketForProject?.project_id || null}
     ticketTitle={selectedTicketForProject?.title || ""}
-    ticketBusinessUnitGroupId={selectedTicketForProject?.business_unit_group_id || null}
+    ticketId={selectedTicketForProject?.ticket_id || null}
+    ticketBusinessUnitGroupId={selectedTicketForProject?.target_business_group_id || null}
+    businessGroupName={selectedTicketForProject?.target_business_group_name || null}
   />
 
  {/* Activity History is now shown in tooltip, no modal needed */}
@@ -719,7 +728,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  setSelectedTicketForAttachments(null)
  }}
  attachments={attachmentsList}
- ticketNumber={selectedTicketForAttachments?.ticket_number || 0}
+ ticketId={selectedTicketForAttachments?.ticket_id || null}
+ businessGroupName={selectedTicketForAttachments?.target_business_group_name || null}
  />
  </div>
  )

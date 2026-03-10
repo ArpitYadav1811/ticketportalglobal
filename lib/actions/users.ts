@@ -9,7 +9,7 @@ export async function getAllUsers(filters?: {
   includeInactive?: boolean
 }) {
   try {
-    // Fetch all users - filtering done in JavaScript
+    // Fetch all users with business group, team names - filtering done in JavaScript
     const users = await sql`
       SELECT
         u.id,
@@ -20,13 +20,23 @@ export async function getAllUsers(filters?: {
         u.created_at,
         u.updated_at,
         u.is_active,
+        u.business_unit_group_id,
+        bug.name as business_group_name,
         COUNT(DISTINCT t.id) as ticket_count,
-        COUNT(DISTINCT tm.team_id) as team_count
+        COUNT(DISTINCT tm.team_id) as team_count,
+        COALESCE(
+          (SELECT string_agg(DISTINCT te.name, ', ' ORDER BY te.name)
+           FROM team_members tmm
+           JOIN teams te ON tmm.team_id = te.id
+           WHERE tmm.user_id = u.id),
+          ''
+        ) as team_names
       FROM users u
+      LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
       LEFT JOIN tickets t ON u.id = t.assigned_to
       LEFT JOIN team_members tm ON u.id = tm.user_id
       WHERE (u.is_active IS NULL OR u.is_active = TRUE)
-      GROUP BY u.id, u.email, u.full_name, u.role, u.avatar_url, u.created_at, u.updated_at, u.is_active
+      GROUP BY u.id, u.email, u.full_name, u.role, u.avatar_url, u.created_at, u.updated_at, u.is_active, u.business_unit_group_id, bug.name
       ORDER BY u.created_at DESC
     `
 
@@ -286,20 +296,47 @@ export async function deleteUser(id: number) {
   }
 }
 
-export async function getUserRoles() {
-  return {
-    success: true,
-    data: [
-      { value: "admin", label: "Admin" },
-      { value: "manager", label: "Manager" },
-      { value: "team_lead", label: "Team Lead" },
-      { value: "support_agent", label: "Support Agent" },
-      { value: "developer", label: "Developer" },
-      { value: "qa_engineer", label: "QA Engineer" },
-      { value: "designer", label: "Designer" },
-      { value: "analyst", label: "Analyst" },
-    ],
+export async function getUserRoles(includeSuper = false) {
+  try {
+    // Fetch distinct roles that actually exist in the database
+    const result = await sql`
+      SELECT DISTINCT role FROM users WHERE role IS NOT NULL ORDER BY role ASC
+    `
+
+    // Format role values into label-value pairs
+    const formatLabel = (role: string) => {
+      return role
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    }
+
+    let roles = result.map((r: any) => ({
+      value: r.role,
+      label: formatLabel(r.role),
+    }))
+
+    // Filter out superadmin unless explicitly requested
+    if (!includeSuper) {
+      roles = roles.filter((r: any) => r.value !== "superadmin")
+    }
+
+    return { success: true, data: roles }
+  } catch (error) {
+    console.error("Error fetching roles:", error)
+    return { success: true, data: [{ value: "user", label: "User" }, { value: "admin", label: "Admin" }] }
   }
+}
+
+// Helper to check if a role has admin-level access (admin or superadmin)
+export async function isAdminRole(role?: string): Promise<boolean> {
+  const r = role?.toLowerCase()
+  return r === "admin" || r === "superadmin"
+}
+
+// Helper to check if a role is superadmin
+export async function isSuperAdminRole(role?: string): Promise<boolean> {
+  return role?.toLowerCase() === "superadmin"
 }
 
 // Settings page functions

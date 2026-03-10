@@ -20,6 +20,7 @@ interface AssigneeModalProps {
   onSelect: (userId: number | null) => void
   currentAssigneeId: number | null
   ticketTitle: string
+  ticketId?: string | null
   ticketBusinessUnitGroupId?: number | null
   isAdmin?: boolean
 }
@@ -30,6 +31,7 @@ export default function AssigneeModal({
   onSelect,
   currentAssigneeId,
   ticketTitle,
+  ticketId,
   ticketBusinessUnitGroupId,
   isAdmin = false,
 }: AssigneeModalProps) {
@@ -134,6 +136,11 @@ export default function AssigneeModal({
 
   if (!isOpen) return null
 
+  const ticketBusinessGroupName =
+    ticketBusinessUnitGroupId && businessGroups.length
+      ? businessGroups.find((bg) => bg.id === ticketBusinessUnitGroupId)?.name
+      : undefined
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -143,34 +150,46 @@ export default function AssigneeModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+      <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[75vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Assign Ticket</h2>
-            <p className="text-sm text-muted-foreground truncate max-w-[300px]">
-              {ticketTitle}
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-lg font-semibold text-foreground">Assign Ticket</h2>
+              {ticketId && (
+                <span className="text-lg font-semibold text-foreground">
+                  #{ticketId.replace(/^TKT-\d{6}-/, '')}
+                </span>
+              )}
+            </div>
+            {ticketBusinessUnitGroupId && ticketBusinessGroupName && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5" />
+                <span className="font-medium">
+                  {ticketBusinessGroupName}
+                </span>
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-surface dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-surface dark:hover:bg-slate-700 rounded-md transition-colors"
           >
-            <X className="w-5 h-5 text-muted-foreground" />
+            <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="p-4 space-y-3 border-b border-border">
+        <div className="px-3 py-2.5 space-y-2 border-b border-border">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              className="w-full pl-9 pr-3 py-2 border border-border rounded-md bg-white dark:bg-slate-700 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
               autoFocus
             />
           </div>
@@ -182,7 +201,7 @@ export default function AssigneeModal({
               <select
                 value={selectedBUGroup}
                 onChange={(e) => setSelectedBUGroup(e.target.value)}
-                className="flex-1 px-3 py-2 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 px-2.5 py-2 border border-border rounded-md bg-white dark:bg-slate-700 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="all">All Business Units</option>
                 {businessGroups.map((group) => (
@@ -196,7 +215,7 @@ export default function AssigneeModal({
         </div>
 
         {/* User List */}
-        <div className="flex-1 overflow-y-auto p-2 min-h-[200px] max-h-[300px]">
+        <div className="flex-1 overflow-y-auto p-2 min-h-[180px] max-h-[260px]">
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -215,13 +234,13 @@ export default function AssigneeModal({
                     <button
                       key={user.id}
                       onClick={() => setSelectedUserId(user.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors text-left ${
                         selectedUserId === user.id
                           ? "bg-primary/10 dark:bg-primary/20 border-2 border-primary"
                           : "hover:bg-surface dark:hover:bg-slate-700 border-2 border-transparent"
                       }`}
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      <div className="w-9 h-9 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium text-xs">
                         {user.full_name
                           ?.split(" ")
                           .map((n) => n[0])
@@ -230,15 +249,15 @@ export default function AssigneeModal({
                           .slice(0, 2)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
+                        <p className="font-medium text-sm text-foreground truncate">
                           {user.full_name}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-[11px] text-muted-foreground truncate">
                           {user.email}
                         </p>
                       </div>
                       {selectedUserId === user.id && (
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
                       )}
                     </button>
                   ))}
@@ -249,7 +268,7 @@ export default function AssigneeModal({
               {hasOtherGroupsUsers && !showOtherGroups && (
                 <button
                   onClick={() => setShowOtherGroups(true)}
-                  className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-border hover:bg-surface dark:hover:bg-slate-700 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
+                  className="w-full flex items-center justify-center gap-2 px-2.5 py-2 rounded-md border-2 border-dashed border-border hover:bg-surface dark:hover:bg-slate-700 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   <span>More...</span>
                   <span className="text-xs">({filteredUsersInOtherGroups.length} from other groups)</span>
@@ -266,13 +285,13 @@ export default function AssigneeModal({
                     <button
                       key={user.id}
                       onClick={() => setSelectedUserId(user.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors text-left ${
                         selectedUserId === user.id
                           ? "bg-primary/10 dark:bg-primary/20 border-2 border-primary"
                           : "hover:bg-surface dark:hover:bg-slate-700 border-2 border-transparent"
                       }`}
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      <div className="w-9 h-9 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium text-xs">
                         {user.full_name
                           ?.split(" ")
                           .map((n) => n[0])
@@ -281,20 +300,20 @@ export default function AssigneeModal({
                           .slice(0, 2)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
+                        <p className="font-medium text-sm text-foreground truncate">
                           {user.full_name}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-[11px] text-muted-foreground truncate">
                           {user.email}
                         </p>
                         {user.group_name && (
-                          <p className="text-xs text-muted-foreground/70 truncate">
+                          <p className="text-[11px] text-muted-foreground/70 truncate">
                             {user.group_name}
                           </p>
                         )}
                       </div>
                       {selectedUserId === user.id && (
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
                       )}
                     </button>
                   ))}
@@ -305,24 +324,24 @@ export default function AssigneeModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-border bg-surface/50 dark:bg-slate-700/50">
+        <div className="flex items-center justify-between px-3 py-2.5 border-t border-border bg-surface/50 dark:bg-slate-700/50">
           <button
             onClick={handleUnassign}
-            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Remove Assignment
           </button>
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-surface dark:hover:bg-slate-700 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-surface dark:hover:bg-slate-700 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={selectedUserId === currentAssigneeId}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Assign
             </button>

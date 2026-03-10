@@ -250,7 +250,7 @@ export default function TicketReferencesTooltip({
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border pr-6">
             <Link2 className="w-4 h-4 text-blue-500" />
             <h4 className="font-semibold text-sm text-foreground">
-              References
+              Reference Tickets
             </h4>
           </div>
 

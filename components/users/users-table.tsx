@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { format } from "date-fns"
-import { Edit, Trash2, Key, CheckCircle, XCircle, Mail } from "lucide-react"
-import { deactivateUser, activateUser, deleteUser, resetUserPassword } from "@/lib/actions/users"
+import { Edit, Trash2, Key, CheckCircle, XCircle } from "lucide-react"
+import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles } from "@/lib/actions/users"
+import { updateUserRole } from "@/lib/actions/admin"
 
 interface User {
   id: number
@@ -15,6 +16,9 @@ interface User {
   is_active: boolean
   ticket_count: number
   team_count: number
+  business_unit_group_id: number | null
+  business_group_name: string | null
+  team_names: string | null
 }
 
 interface UsersTableProps {
@@ -22,10 +26,22 @@ interface UsersTableProps {
   loading: boolean
   onEditUser: (user: User) => void
   onRefresh: () => void
+  isSuperAdmin?: boolean
+  currentUserId?: number
 }
 
-export default function UsersTable({ users, loading, onEditUser, onRefresh }: UsersTableProps) {
+export default function UsersTable({ users, loading, onEditUser, onRefresh, isSuperAdmin = false, currentUserId }: UsersTableProps) {
   const [processingId, setProcessingId] = useState<number | null>(null)
+  const [roleChangingId, setRoleChangingId] = useState<number | null>(null)
+  const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      getUserRoles(true).then((res) => {
+        if (res.success && res.data) setRoles(res.data)
+      })
+    }
+  }, [isSuperAdmin])
 
   const handleDeactivate = async (user: User) => {
     if (!confirm(`Are you sure you want to deactivate ${user.full_name}? They will not be able to log in.`)) {
@@ -89,8 +105,26 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
     setProcessingId(null)
   }
 
+  const handleInlineRoleChange = async (userId: number, newRole: string, userName: string) => {
+    if (userId === currentUserId) {
+      alert("Cannot change your own role")
+      return
+    }
+    if (!confirm(`Change ${userName}'s role to "${formatRoleName(newRole)}"?`)) return
+
+    setRoleChangingId(userId)
+    const result = await updateUserRole(userId, newRole)
+    if (result.success) {
+      onRefresh()
+    } else {
+      alert(result.error || "Failed to update role")
+    }
+    setRoleChangingId(null)
+  }
+
   const getRoleBadgeColor = (role: string) => {
     const roleColors: Record<string, string> = {
+      superadmin: "bg-amber-100 text-amber-800",
       admin: "bg-red-100 text-red-700",
       manager: "bg-purple-100 text-purple-700",
       team_lead: "bg-blue-100 text-blue-700",
@@ -135,14 +169,15 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
         <table className="w-full">
           <thead className="bg-surface border-b border-border">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">User</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Email</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Role</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tickets</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Teams</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Status</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Created</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">User</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Role</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Business Group</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Teams</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Tickets</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Created</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -151,13 +186,13 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
                 key={user.id}
                 className={`hover:bg-surface transition-colors ${user.is_active === false ? "opacity-50 bg-slate-50" : ""}`}
               >
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-full" />
+                      <img src={user.avatar_url} alt={user.full_name} className="w-7 h-7 rounded-full" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-semibold text-sm">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-primary font-semibold text-xs">
                           {user.full_name
                             .split(" ")
                             .map((n) => n[0])
@@ -168,27 +203,65 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
                       </div>
                     )}
                     <div>
-                      <div className="font-medium text-foreground">{user.full_name}</div>
+                      <div className="font-medium text-sm text-foreground">{user.full_name}</div>
                       {user.is_active === false && (
                         <span className="text-xs text-red-600 font-medium">Inactive</span>
                       )}
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2 text-sm text-foreground-secondary">
-                    <Mail className="w-3.5 h-3.5" />
-                    {user.email}
-                  </div>
+                <td className="px-4 py-3">
+                  <span className="text-xs text-foreground-secondary">{user.email}</span>
                 </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                    {formatRoleName(user.role)}
-                  </span>
+                <td className="px-4 py-3">
+                  {isSuperAdmin && user.id !== currentUserId ? (
+                    <div className="relative">
+                      {roleChangingId === user.id ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleInlineRoleChange(user.id, e.target.value, user.full_name)}
+                          className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-primary ${getRoleBadgeColor(user.role)}`}
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.3rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1rem' }}
+                        >
+                          {roles.map((r) => (
+                            <option key={r.value} value={r.value}>{r.label}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ) : (
+                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                      {formatRoleName(user.role)}
+                      {user.id === currentUserId && <span className="ml-1 opacity-60">(You)</span>}
+                    </span>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-sm text-foreground-secondary">{user.ticket_count || 0}</td>
-                <td className="px-6 py-4 text-sm text-foreground-secondary">{user.team_count || 0}</td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-3">
+                  {user.business_group_name ? (
+                    <span className="inline-flex px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
+                      {user.business_group_name}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {user.team_names ? (
+                    <div className="flex flex-wrap gap-1">
+                      {user.team_names.split(", ").map((team, i) => (
+                        <span key={i} className="inline-flex px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-medium">
+                          {team}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-xs text-foreground-secondary">{user.ticket_count || 0}</td>
+                <td className="px-4 py-3">
                   {user.is_active === false ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
                       <XCircle className="w-3.5 h-3.5" />
@@ -201,10 +274,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh }: Us
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-sm text-foreground-secondary">
+                <td className="px-4 py-3 text-xs text-foreground-secondary">
                   {format(new Date(user.created_at), "MMM dd, yyyy")}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <button
                       className="p-1.5 hover:bg-surface rounded transition-colors"

@@ -566,7 +566,8 @@ export async function createTicketClassificationMapping(
       return { success: false, error: "User not authenticated" }
     }
     
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
     
     // If user is SPOC (not admin), check if they have access to this business group
     if (!isAdmin) {
@@ -604,7 +605,8 @@ export async function updateTicketClassificationMapping(
       return { success: false, error: "User not authenticated" }
     }
     
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
     
     // If user is SPOC (not admin), check if they have access to this mapping's business group
     if (!isAdmin) {
@@ -648,7 +650,8 @@ export async function deleteTicketClassificationMapping(id: number) {
       return { success: false, error: "User not authenticated" }
     }
     
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
     
     // If user is SPOC (not admin), check if they have access to this mapping's business group
     if (!isAdmin) {

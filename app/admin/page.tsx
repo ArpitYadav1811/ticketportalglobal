@@ -1,153 +1,349 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { Settings, Plus, Edit, Trash2, Users, X } from "lucide-react"
-import { getTeams, createTeam, updateTeam, deleteTeam } from "@/lib/actions/teams"
+import {
+  Shield,
+  Users,
+  Building2,
+  FolderTree,
+  Link2,
+  UserCog,
+  ScrollText,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  X,
+  ChevronRight,
+  Lock,
+  RefreshCw,
+  Save,
+  AlertTriangle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-export default function AdminPage() {
+// User Management imports
+import { getAllUsers, getUserRoles } from "@/lib/actions/users"
+import UsersTable from "@/components/users/users-table"
+import EditUserModal from "@/components/users/edit-user-modal"
+import CreateUserModal from "@/components/teams/create-user-modal"
+
+// Master Data imports
+import UnifiedMasterDataV2 from "@/components/master-data/unified-master-data-v2"
+
+// Teams imports
+import { getTeams, createTeam, updateTeam, deleteTeam } from "@/lib/actions/teams"
+
+// Admin-only imports
+import {
+  getFunctionalAreas,
+  getFunctionalAreaMappings,
+  createFunctionalArea,
+  updateFunctionalArea,
+  deleteFunctionalArea,
+  addFunctionalAreaMapping,
+  removeFunctionalAreaMapping,
+  updateUserRole,
+  getSystemAuditLogs,
+  updateBusinessGroupSpoc,
+  updateFunctionalAreaMapping,
+} from "@/lib/actions/admin"
+import { getBusinessUnitGroups } from "@/lib/actions/master-data"
+import { getUsers } from "@/lib/actions/tickets"
+
+export default function AdminDashboardPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("users")
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    if (!userData) {
+      router.push("/login")
+      return
+    }
+    const parsedUser = JSON.parse(userData)
+    const role = parsedUser.role?.toLowerCase()
+
+    if (role !== "admin" && role !== "superadmin") {
+      router.push("/dashboard")
+      return
+    }
+
+    setUser(parsedUser)
+    setIsLoading(false)
+  }, [router])
+
+  if (isLoading || !user) return null
+
+  const isSuperAdmin = user.role?.toLowerCase() === "superadmin"
+  const userRole = user.role?.toLowerCase()
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-4 p-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              {isSuperAdmin
+                ? "Super Admin — Full access to all modules"
+                : "Admin — Manage users, teams, and master data"}
+            </p>
+          </div>
+          {isSuperAdmin && (
+            <span className="ml-auto px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full border border-amber-200">
+              Super Admin
+            </span>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1 rounded-lg">
+            <TabsTrigger value="users" className="text-xs gap-1.5">
+              <Users className="w-3.5 h-3.5" /> Users
+            </TabsTrigger>
+            <TabsTrigger value="master-data" className="text-xs gap-1.5">
+              <Building2 className="w-3.5 h-3.5" /> Master Data
+            </TabsTrigger>
+            <TabsTrigger value="teams" className="text-xs gap-1.5">
+              <FolderTree className="w-3.5 h-3.5" /> Teams
+            </TabsTrigger>
+            {isSuperAdmin && (
+              <>
+                <TabsTrigger value="fa-mappings" className="text-xs gap-1.5">
+                  <Link2 className="w-3.5 h-3.5" /> FA Mappings
+                  <Lock className="w-3 h-3 text-amber-500" />
+                </TabsTrigger>
+                <TabsTrigger value="role-management" className="text-xs gap-1.5">
+                  <UserCog className="w-3.5 h-3.5" /> Role Management
+                  <Lock className="w-3 h-3 text-amber-500" />
+                </TabsTrigger>
+                <TabsTrigger value="audit-logs" className="text-xs gap-1.5">
+                  <ScrollText className="w-3.5 h-3.5" /> Audit Logs
+                  <Lock className="w-3 h-3 text-amber-500" />
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
+
+          {/* ====== TAB: USERS ====== */}
+          <TabsContent value="users" className="mt-4">
+            <UserManagementTab userRole={userRole} userId={user.id} />
+          </TabsContent>
+
+          {/* ====== TAB: MASTER DATA ====== */}
+          <TabsContent value="master-data" className="mt-4">
+            <div className="bg-card border rounded-lg shadow-sm p-4">
+              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
+            </div>
+          </TabsContent>
+
+          {/* ====== TAB: TEAMS ====== */}
+          <TabsContent value="teams" className="mt-4">
+            <TeamsTab />
+          </TabsContent>
+
+          {/* ====== SUPERADMIN TABS ====== */}
+          {isSuperAdmin && (
+            <>
+              <TabsContent value="fa-mappings" className="mt-4">
+                <FAMappingsTab />
+              </TabsContent>
+              <TabsContent value="role-management" className="mt-4">
+                <RoleManagementTab currentUserId={user.id} />
+              </TabsContent>
+              <TabsContent value="audit-logs" className="mt-4">
+                <AuditLogsTab />
+              </TabsContent>
+            </>
+          )}
+        </Tabs>
+      </div>
+    </DashboardLayout>
+  )
+}
+
+// ==================== USER MANAGEMENT TAB ====================
+function UserManagementTab({ userRole, userId }: { userRole: string; userId: number }) {
+  const [users, setUsers] = useState<any[]>([])
+  const [roles, setRoles] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [filters, setFilters] = useState({ role: "all", search: "", includeInactive: false })
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true)
+    const result = await getAllUsers(filters)
+    if (result.success && result.data) setUsers(result.data)
+    else setUsers([])
+    setLoading(false)
+  }, [filters])
+
+  const loadRoles = async () => {
+    const isSuperAdmin = userRole === "superadmin"
+    const result = await getUserRoles(isSuperAdmin)
+    if (result.success && result.data) setRoles(result.data)
+  }
+
+  useEffect(() => { loadRoles() }, [])
+  useEffect(() => { loadUsers() }, [loadUsers])
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card border rounded-lg shadow-sm p-4">
+        <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={filters.search}
+                onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="relative min-w-[180px]">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <select
+                value={filters.role}
+                onChange={(e) => setFilters((p) => ({ ...p, role: e.target.value }))}
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">All Roles</option>
+                {roles.map((r: any) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-border rounded-lg hover:bg-muted/30 text-sm whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filters.includeInactive}
+                onChange={(e) => setFilters((p) => ({ ...p, includeInactive: e.target.checked }))}
+                className="w-4 h-4"
+              />
+              Show Inactive
+            </label>
+          </div>
+          <Button onClick={() => setShowCreateModal(true)} size="sm" className="bg-black hover:bg-gray-800">
+            <Plus className="w-4 h-4 mr-1" /> Create User
+          </Button>
+        </div>
+        <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+          {loading ? "Loading..." : `Showing ${users.length} user${users.length !== 1 ? "s" : ""}`}
+        </div>
+      </div>
+
+      <div className="bg-card border rounded-lg shadow-sm p-4">
+        <UsersTable users={users} loading={loading} onEditUser={(u: any) => { setSelectedUser(u); setShowEditModal(true) }} onRefresh={loadUsers} isSuperAdmin={userRole === "superadmin"} currentUserId={userId} />
+      </div>
+
+      {showCreateModal && (
+        <CreateUserModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => { setShowCreateModal(false); loadUsers() }}
+        />
+      )}
+      {showEditModal && selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          onClose={() => setShowEditModal(false)}
+          onUserUpdated={() => { setShowEditModal(false); setSelectedUser(null); loadUsers() }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ==================== TEAMS TAB ====================
+function TeamsTab() {
  const [teams, setTeams] = useState<any[]>([])
  const [loading, setLoading] = useState(true)
- const [showTeamModal, setShowTeamModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
  const [editTeam, setEditTeam] = useState<any>(null)
- const [teamFormData, setTeamFormData] = useState({ name: "", description: "" })
+  const [formData, setFormData] = useState({ name: "", description: "" })
  const [saving, setSaving] = useState(false)
 
  const loadTeams = async () => {
  setLoading(true)
  const result = await getTeams()
- if (result.success && result.data) {
- setTeams(result.data)
- } else {
- setTeams([])
- }
+    if (result.success && result.data) setTeams(result.data)
+    else setTeams([])
  setLoading(false)
  }
 
- useEffect(() => {
- loadTeams()
- }, [])
+  useEffect(() => { loadTeams() }, [])
 
- const handleAddTeam = () => {
- setEditTeam(null)
- setTeamFormData({ name: "", description: "" })
- setShowTeamModal(true)
- }
-
- const handleEditTeam = (team: any) => {
- setEditTeam(team)
- setTeamFormData({ name: team.name, description: team.description || "" })
- setShowTeamModal(true)
- }
-
- const handleDeleteTeam = async (id: number, name: string) => {
- if (confirm(`Are you sure you want to delete the team "${name}"? This action cannot be undone.`)) {
- const result = await deleteTeam(id)
- if (result.success) {
- await loadTeams()
- } else {
- alert(result.error || "Failed to delete team")
- }
- }
- }
-
- const handleSaveTeam = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
  e.preventDefault()
  setSaving(true)
-
  try {
- let result
- if (editTeam) {
- result = await updateTeam(editTeam.id, teamFormData.name, teamFormData.description)
- } else {
- result = await createTeam(teamFormData.name, teamFormData.description)
- }
+      const result = editTeam
+        ? await updateTeam(editTeam.id, formData.name, formData.description)
+        : await createTeam(formData.name, formData.description)
+      if (result.success) { await loadTeams(); setShowModal(false) }
+      else alert(result.error || "Failed to save team")
+    } finally { setSaving(false) }
+  }
 
- if (result.success) {
- await loadTeams()
- setShowTeamModal(false)
- } else {
- alert(result.error || "Failed to save team")
- }
- } catch (error) {
- alert("An error occurred")
- } finally {
- setSaving(false)
+  const handleDelete = async (id: number, name: string) => {
+    if (confirm(`Delete team "${name}"?`)) {
+      const result = await deleteTeam(id)
+      if (result.success) loadTeams()
+      else alert(result.error || "Failed to delete team")
  }
  }
 
  return (
- <DashboardLayout>
- <div className="max-w-4xl">
- <div className="mb-8">
- <h1 className="text-3xl font-sans font-bold text-foreground flex items-center gap-3">
- <Settings className="w-8 h-8" />
- Admin Panel
- </h1>
- <p className="text-muted-foreground mt-2">Manage administration, settings, and team preferences</p>
- </div>
-
- {/* Teams Management */}
- <div className="bg-white border border-border rounded-xl p-6 mb-6 ">
- <div className="flex justify-between items-start mb-6">
- <div className="flex items-center gap-3">
- <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
- <Users className="w-5 h-5 text-primary" />
- </div>
- <div>
- <h3 className="font-sans font-semibold text-lg text-foreground">Teams Management</h3>
- <p className="text-sm text-muted-foreground mt-0.5">Create and manage your functional area teams</p>
- </div>
- </div>
- <Button onClick={handleAddTeam} size="sm" className="bg-black hover:bg-gray-800">
- <Plus className="w-4 h-4 mr-2" />
- Create Team
+    <div className="bg-card border rounded-lg shadow-sm p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-semibold text-lg">Teams Management</h3>
+        <Button size="sm" className="bg-black hover:bg-gray-800" onClick={() => { setEditTeam(null); setFormData({ name: "", description: "" }); setShowModal(true) }}>
+          <Plus className="w-4 h-4 mr-1" /> Create Team
  </Button>
  </div>
 
  {loading ? (
- <div className="text-center py-12">
- <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
- <p className="text-muted-foreground">Loading teams...</p>
+        <div className="text-center py-8">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading teams...</p>
  </div>
  ) : teams.length === 0 ? (
- <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
- <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
- <p className="text-muted-foreground font-medium mb-2">No teams yet</p>
- <p className="text-sm text-muted-foreground mb-4">Create your first team to organize your members</p>
- <Button onClick={handleAddTeam} size="sm" variant="outline">
- <Plus className="w-4 h-4 mr-2" />
- Create Your First Team
- </Button>
+        <div className="text-center py-8 border-2 border-dashed rounded-lg">
+          <p className="text-muted-foreground text-sm">No teams yet</p>
  </div>
  ) : (
- <div className="space-y-3">
+        <div className="space-y-2">
  {teams.map((team) => (
- <div
- key={team.id}
- className="flex justify-between items-center p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-muted/30 transition-all group"
- >
- <div className="flex-1">
- <div className="flex items-center gap-2 mb-1">
- <h4 className="font-semibold text-foreground">{team.name}</h4>
- <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded">
- {team.member_count || 0} members
- </span>
+            <div key={team.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/30 group">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-sm">{team.name}</h4>
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">{team.member_count || 0} members</span>
  </div>
- <p className="text-sm text-muted-foreground">{team.description || "No description provided"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{team.description || "No description"}</p>
  </div>
- <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
- <Button variant="ghost" size="sm" onClick={() => handleEditTeam(team)}>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="sm" onClick={() => { setEditTeam(team); setFormData({ name: team.name, description: team.description || "" }); setShowModal(true) }}>
  <Edit className="w-4 h-4" />
  </Button>
- <Button
- variant="ghost"
- size="sm"
- onClick={() => handleDeleteTeam(team.id, team.name)}
- className="hover:bg-destructive/10 hover:text-destructive"
- >
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(team.id, team.name)} className="hover:bg-destructive/10 hover:text-destructive">
  <Trash2 className="w-4 h-4" />
  </Button>
  </div>
@@ -155,132 +351,611 @@ export default function AdminPage() {
  ))}
  </div>
  )}
+
+      {/* Team Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">{editTeam ? "Edit Team" : "Create Team"}</h3>
+              <button onClick={() => setShowModal(false)}><X className="w-5 h-5" /></button>
+ </div>
+            <form onSubmit={handleSave} className="space-y-4">
+ <div>
+                <label className="block text-sm font-medium mb-1">Team Name *</label>
+                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+ </div>
+ <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
+              </div>
+              <div className="flex gap-2 justify-end pt-2 border-t">
+                <Button variant="outline" type="button" onClick={() => setShowModal(false)}>Cancel</Button>
+                <Button type="submit" disabled={saving || !formData.name.trim()} className="bg-black hover:bg-gray-800">
+                  {saving ? "Saving..." : editTeam ? "Update" : "Create"}
+                </Button>
+              </div>
+            </form>
+ </div>
+ </div>
+      )}
+    </div>
+  )
+}
+
+// ==================== FA MAPPINGS TAB (SUPERADMIN ONLY) ====================
+function FAMappingsTab() {
+  const [functionalAreas, setFunctionalAreas] = useState<any[]>([])
+  const [mappings, setMappings] = useState<any[]>([])
+  const [businessGroups, setBusinessGroups] = useState<any[]>([])
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddFA, setShowAddFA] = useState(false)
+  const [showAddMapping, setShowAddMapping] = useState(false)
+  const [editFA, setEditFA] = useState<any>(null)
+  const [faForm, setFaForm] = useState({ name: "", description: "" })
+  const [mappingForm, setMappingForm] = useState({ functionalAreaId: "", targetBusinessGroupId: "" })
+  const [saving, setSaving] = useState(false)
+  const [spocSaving, setSpocSaving] = useState<number | null>(null)
+  const [mappingSaving, setMappingSaving] = useState<number | null>(null)
+
+  const loadData = async () => {
+    setLoading(true)
+    const [faRes, mapRes, bgRes, usersRes] = await Promise.all([
+      getFunctionalAreas(),
+      getFunctionalAreaMappings(),
+      getBusinessUnitGroups(),
+      getUsers(),
+    ])
+    if (faRes.success) setFunctionalAreas(faRes.data || [])
+    if (mapRes.success) setMappings(mapRes.data || [])
+    if (bgRes.success) setBusinessGroups(bgRes.data || [])
+    if (usersRes.success) setAllUsers(usersRes.data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { loadData() }, [])
+
+  const handleSpocChange = async (bgId: number, bgName: string, newSpocName: string) => {
+    if (!confirm(`Change SPOC for "${bgName}" to "${newSpocName || 'None'}"?`)) return
+    setSpocSaving(bgId)
+    const result = await updateBusinessGroupSpoc(bgId, newSpocName)
+    if (result.success) {
+      await loadData()
+    } else {
+      alert(result.error || "Failed to update SPOC")
+    }
+    setSpocSaving(null)
+  }
+
+  const handleUpdateMapping = async (mappingId: number, field: "fa" | "bg", newValue: string, mapping: any) => {
+    const newFaId = field === "fa" ? Number(newValue) : mapping.functional_area_id
+    const newBgId = field === "bg" ? Number(newValue) : mapping.target_business_group_id
+
+    const faName = field === "fa" ? functionalAreas.find(f => f.id === Number(newValue))?.name : mapping.functional_area_name
+    const bgName = field === "bg" ? businessGroups.find(b => b.id === Number(newValue))?.name : mapping.business_group_name
+
+    if (!confirm(`Update mapping to "${faName} → ${bgName}"?`)) return
+
+    setMappingSaving(mappingId)
+    const result = await updateFunctionalAreaMapping(mappingId, newFaId, newBgId)
+    if (result.success) {
+      await loadData()
+    } else {
+      alert(result.error || "Failed to update mapping")
+    }
+    setMappingSaving(null)
+  }
+
+  const handleSaveFA = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    const result = editFA
+      ? await updateFunctionalArea(editFA.id, faForm.name, faForm.description)
+      : await createFunctionalArea(faForm.name, faForm.description)
+    if (result.success) { await loadData(); setShowAddFA(false); setEditFA(null) }
+    else alert(result.error || "Failed to save")
+    setSaving(false)
+  }
+
+  const handleDeleteFA = async (id: number, name: string) => {
+    if (confirm(`Delete functional area "${name}" and all its mappings?`)) {
+      const result = await deleteFunctionalArea(id)
+      if (result.success) loadData()
+      else alert(result.error || "Failed to delete")
+    }
+  }
+
+  const handleAddMapping = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    const result = await addFunctionalAreaMapping(Number(mappingForm.functionalAreaId), Number(mappingForm.targetBusinessGroupId))
+    if (result.success) { await loadData(); setShowAddMapping(false); setMappingForm({ functionalAreaId: "", targetBusinessGroupId: "" }) }
+    else alert(result.error || "Failed to add mapping")
+    setSaving(false)
+  }
+
+  const handleRemoveMapping = async (id: number) => {
+    if (confirm("Remove this mapping?")) {
+      const result = await removeFunctionalAreaMapping(id)
+      if (result.success) loadData()
+      else alert(result.error || "Failed to remove")
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
+        <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+        <p className="text-sm text-amber-800">
+          <strong>Super Admin Only</strong> — Changes here affect how Functional Areas map to Business Groups system-wide.
+        </p>
  </div>
 
- {/* Account Settings */}
- <div className="bg-white border border-border rounded-xl p-6 space-y-6 ">
- <div>
- <h3 className="font-sans font-semibold text-foreground mb-4">Account Settings</h3>
- <div className="space-y-4">
- <div>
- <label className="block text-sm font-medium text-foreground mb-2">Display Name</label>
- <input
- type="text"
- placeholder="Your name"
- className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
- />
- </div>
- <div>
- <label className="block text-sm font-medium text-foreground mb-2">Email Address</label>
- <input
- type="email"
- placeholder="your@email.com"
- className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
- />
- </div>
+      {/* Functional Areas List */}
+      <div className="bg-card border rounded-lg shadow-sm p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold">Functional Areas</h3>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={loadData}><RefreshCw className="w-3.5 h-3.5" /></Button>
+            <Button size="sm" className="bg-black hover:bg-gray-800" onClick={() => { setEditFA(null); setFaForm({ name: "", description: "" }); setShowAddFA(true) }}>
+              <Plus className="w-4 h-4 mr-1" /> Add FA
+            </Button>
  </div>
  </div>
 
- <div className="border-t border-border pt-6">
- <h3 className="font-sans font-semibold text-foreground mb-4">Notifications</h3>
- <div className="space-y-3">
- <label className="flex items-center gap-3 cursor-pointer">
- <input type="checkbox" className="w-4 h-4" defaultChecked />
- <span className="text-foreground text-sm">Email notifications for ticket updates</span>
- </label>
- <label className="flex items-center gap-3 cursor-pointer">
- <input type="checkbox" className="w-4 h-4" defaultChecked />
- <span className="text-foreground text-sm">Email notifications for team changes</span>
- </label>
- <label className="flex items-center gap-3 cursor-pointer">
- <input type="checkbox" className="w-4 h-4" defaultChecked />
- <span className="text-foreground text-sm">Daily summary report</span>
- </label>
- </div>
- </div>
-
- <div className="border-t border-border pt-6 flex gap-3 justify-end">
- <button className="px-6 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors">
- Cancel
+        {loading ? (
+          <div className="text-center py-6"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Name</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Description</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Mappings</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground w-24">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {functionalAreas.map((fa) => (
+                  <tr key={fa.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <td className="py-2 font-medium">{fa.name}</td>
+                    <td className="py-2 text-muted-foreground">{fa.description || "—"}</td>
+                    <td className="py-2">
+                      <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">{fa.mapping_count}</span>
+                    </td>
+                    <td className="py-2">
+                      <div className="flex gap-1">
+                        <button className="p-1 hover:bg-muted rounded" onClick={() => { setEditFA(fa); setFaForm({ name: fa.name, description: fa.description || "" }); setShowAddFA(true) }}>
+                          <Edit className="w-3.5 h-3.5" />
  </button>
- <button className="px-6 py-2 bg-black hover:bg-gray-800 text-white rounded-lg hover: transition-all">
- Save Changes
+                        <button className="p-1 hover:bg-destructive/10 hover:text-destructive rounded" onClick={() => handleDeleteFA(fa.id, fa.name)}>
+                          <Trash2 className="w-3.5 h-3.5" />
  </button>
  </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Unified Mappings & SPOC Table */}
+      <div className="bg-card border rounded-lg shadow-sm p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold">FA → Business Group Mappings & SPOC Assignment</h3>
+          <Button size="sm" className="bg-black hover:bg-gray-800" onClick={() => { setMappingForm({ functionalAreaId: "", targetBusinessGroupId: "" }); setShowAddMapping(true) }}>
+            <Plus className="w-4 h-4 mr-1" /> Add Mapping
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-6"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
+        ) : mappings.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No mappings found</p>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Functional Area</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground w-8">→</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Business Group</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">SPOC</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground w-16">Remove</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mappings.map((m) => (
+                  <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 ${mappingSaving === m.id ? "opacity-50" : ""}`}>
+                    <td className="py-2">
+                      <select
+                        value={m.functional_area_id}
+                        onChange={(e) => handleUpdateMapping(m.id, "fa", e.target.value, m)}
+                        disabled={mappingSaving === m.id}
+                        className="px-2 py-1 border rounded text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer w-full bg-transparent"
+                      >
+                        {functionalAreas.map((fa) => (
+                          <option key={fa.id} value={fa.id}>{fa.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 text-center"><ChevronRight className="w-4 h-4 text-muted-foreground mx-auto" /></td>
+                    <td className="py-2">
+                      <select
+                        value={m.target_business_group_id}
+                        onChange={(e) => handleUpdateMapping(m.id, "bg", e.target.value, m)}
+                        disabled={mappingSaving === m.id}
+                        className="px-2 py-1 border rounded text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer w-full bg-transparent"
+                      >
+                        {businessGroups.map((bg) => (
+                          <option key={bg.id} value={bg.id}>{bg.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2">
+                      {spocSaving === m.target_business_group_id ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <select
+                          value={m.spoc_name || ""}
+                          onChange={(e) => handleSpocChange(m.target_business_group_id, m.business_group_name, e.target.value)}
+                          className="px-2 py-1 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer w-full bg-transparent"
+                        >
+                          <option value="">— None —</option>
+                          {allUsers.map((u: any) => (
+                            <option key={u.id} value={u.full_name || u.name}>{u.full_name || u.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="py-2">
+                      <button className="p-1 hover:bg-destructive/10 hover:text-destructive rounded" onClick={() => handleRemoveMapping(m.id)} disabled={mappingSaving === m.id}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
  </div>
+        )}
  </div>
 
- {showTeamModal && (
+      {/* Add/Edit FA Modal */}
+      {showAddFA && (
  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
  <div className="bg-white rounded-xl p-6 max-w-md w-full">
- <div className="flex justify-between items-center mb-6">
- <h3 className="font-sans font-bold text-xl text-foreground">
- {editTeam ? "Edit Team" : "Create New Team"}
- </h3>
- <button
- onClick={() => setShowTeamModal(false)}
- className="text-muted-foreground hover:text-foreground transition-colors"
- >
- <X className="w-5 h-5" />
- </button>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">{editFA ? "Edit Functional Area" : "Add Functional Area"}</h3>
+              <button onClick={() => { setShowAddFA(false); setEditFA(null) }}><X className="w-5 h-5" /></button>
  </div>
-
- <form onSubmit={handleSaveTeam} className="space-y-5">
+            <form onSubmit={handleSaveFA} className="space-y-4">
  <div>
- <label className="block text-sm font-semibold text-foreground mb-2">
- Team Name <span className="text-destructive">*</span>
- </label>
- <input
- type="text"
- value={teamFormData.name}
- onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
- required
- placeholder="e.g. Development Team"
- className="w-full px-4 py-3 border-2 border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-sm"
- />
+                <label className="block text-sm font-medium mb-1">Name *</label>
+                <input type="text" value={faForm.name} onChange={(e) => setFaForm({ ...faForm, name: e.target.value })} required
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
  </div>
-
  <div>
- <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
- <textarea
- value={teamFormData.description}
- onChange={(e) => setTeamFormData({ ...teamFormData, description: e.target.value })}
- placeholder="Describe the team's purpose and responsibilities..."
- className="w-full px-4 py-3 border-2 border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-sm resize-none"
- rows={4}
- />
- <p className="text-xs text-muted-foreground mt-1">Optional but recommended</p>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <input type="text" value={faForm.description} onChange={(e) => setFaForm({ ...faForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
  </div>
-
- <div className="flex gap-3 justify-end pt-6 border-t border-border">
- <Button
- type="button"
- variant="outline"
- onClick={() => setShowTeamModal(false)}
- disabled={saving}
- className="px-6"
- >
- Cancel
+              <div className="flex gap-2 justify-end pt-2 border-t">
+                <Button variant="outline" type="button" onClick={() => { setShowAddFA(false); setEditFA(null) }}>Cancel</Button>
+                <Button type="submit" disabled={saving || !faForm.name.trim()} className="bg-black hover:bg-gray-800">
+                  {saving ? "Saving..." : editFA ? "Update" : "Create"}
  </Button>
- <Button
- type="submit"
- disabled={saving || !teamFormData.name.trim()}
- className="bg-black hover:bg-gray-800 px-6"
- >
- {saving ? (
- <>
- <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
- Saving...
- </>
- ) : (
- <>{editTeam ? "Update Team" : "Create Team"}</>
- )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Mapping Modal */}
+      {showAddMapping && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Add FA Mapping</h3>
+              <button onClick={() => setShowAddMapping(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleAddMapping} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Functional Area *</label>
+                <select value={mappingForm.functionalAreaId} onChange={(e) => setMappingForm({ ...mappingForm, functionalAreaId: e.target.value })} required
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none">
+                  <option value="">Select...</option>
+                  {functionalAreas.map((fa) => <option key={fa.id} value={fa.id}>{fa.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Target Business Group *</label>
+                <select value={mappingForm.targetBusinessGroupId} onChange={(e) => setMappingForm({ ...mappingForm, targetBusinessGroupId: e.target.value })} required
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none">
+                  <option value="">Select...</option>
+                  {businessGroups.map((bg) => <option key={bg.id} value={bg.id}>{bg.name}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-2 justify-end pt-2 border-t">
+                <Button variant="outline" type="button" onClick={() => setShowAddMapping(false)}>Cancel</Button>
+                <Button type="submit" disabled={saving || !mappingForm.functionalAreaId || !mappingForm.targetBusinessGroupId} className="bg-black hover:bg-gray-800">
+                  {saving ? "Saving..." : "Add Mapping"}
  </Button>
  </div>
  </form>
  </div>
  </div>
  )}
- </DashboardLayout>
+    </div>
+  )
+}
+
+// ==================== ROLE MANAGEMENT TAB (SUPERADMIN ONLY) ====================
+function RoleManagementTab({ currentUserId }: { currentUserId: number }) {
+  const [users, setUsers] = useState<any[]>([])
+  const [roles, setRoles] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [saving, setSaving] = useState<number | null>(null)
+
+  const loadData = async () => {
+    setLoading(true)
+    const [usersRes, rolesRes] = await Promise.all([
+      getAllUsers(),
+      getUserRoles(true), // include superadmin
+    ])
+    if (usersRes.success) setUsers(usersRes.data || [])
+    if (rolesRes.success) setRoles(rolesRes.data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { loadData() }, [])
+
+  const handleRoleChange = async (userId: number, newRole: string) => {
+    if (userId === currentUserId) {
+      alert("Cannot change your own role")
+      return
+    }
+    const user = users.find(u => u.id === userId)
+    if (!confirm(`Change ${user?.full_name}'s role to "${newRole}"?`)) return
+
+    setSaving(userId)
+    const result = await updateUserRole(userId, newRole)
+    if (result.success) {
+      await loadData()
+    } else {
+      alert(result.error || "Failed to update role")
+    }
+    setSaving(null)
+  }
+
+  const filteredUsers = users.filter((u) => {
+    if (!search) return true
+    const s = search.toLowerCase()
+    return u.full_name?.toLowerCase().includes(s) || u.email?.toLowerCase().includes(s)
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
+        <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+        <p className="text-sm text-amber-800">
+          <strong>Super Admin Only</strong> — Changing roles affects what users can access across the entire system.
+        </p>
+      </div>
+
+      <div className="bg-card border rounded-lg shadow-sm p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold">User Roles</h3>
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-4 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64"
+              />
+            </div>
+            <Button size="sm" variant="outline" onClick={loadData}><RefreshCw className="w-3.5 h-3.5" /></Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-6"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
+        ) : (
+          <div className="overflow-auto max-h-[500px]">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-card">
+                <tr className="border-b text-left">
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Name</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Email</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Current Role</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground w-48">Change Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => {
+                  const isCurrentUser = user.id === currentUserId
+                  return (
+                    <tr key={user.id} className={`border-b last:border-0 ${isCurrentUser ? "bg-amber-50/50" : "hover:bg-muted/30"}`}>
+                      <td className="py-2 font-medium">
+                        {user.full_name}
+                        {isCurrentUser && <span className="ml-1 text-xs text-amber-600">(You)</span>}
+                      </td>
+                      <td className="py-2 text-muted-foreground">{user.email}</td>
+                      <td className="py-2">
+                        <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                          user.role === "superadmin" ? "bg-amber-100 text-amber-800" :
+                          user.role === "admin" ? "bg-blue-100 text-blue-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="py-2">
+                        {isCurrentUser ? (
+                          <span className="text-xs text-muted-foreground italic">Cannot change own role</span>
+                        ) : saving === user.id ? (
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <select
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                            className="px-2 py-1 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                          >
+                            {roles.map((r: any) => (
+                              <option key={r.value} value={r.value}>{r.label}</option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ==================== AUDIT LOGS TAB (SUPERADMIN ONLY) ====================
+function AuditLogsTab() {
+  const [logs, setLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [total, setTotal] = useState(0)
+  const [filters, setFilters] = useState({ entityType: "", actionType: "", limit: 50, offset: 0 })
+
+  const loadLogs = useCallback(async () => {
+    setLoading(true)
+    const result = await getSystemAuditLogs(filters)
+    if (result.success) {
+      setLogs(result.data || [])
+      setTotal(result.total || 0)
+    }
+    setLoading(false)
+  }, [filters])
+
+  useEffect(() => { loadLogs() }, [loadLogs])
+
+  const entityTypes = ["user", "functional_area", "fa_mapping", "business_group", "category", "subcategory", "mapping"]
+  const actionTypes = ["create", "update", "delete", "role_change", "spoc_update"]
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" })
+    } catch { return dateStr }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
+        <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+        <p className="text-sm text-amber-800">
+          <strong>Super Admin Only</strong> — System-wide audit trail of all admin actions.
+        </p>
+      </div>
+
+      <div className="bg-card border rounded-lg shadow-sm p-4">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <h3 className="font-semibold">System Audit Logs</h3>
+          <div className="flex gap-2 ml-auto">
+            <select
+              value={filters.entityType}
+              onChange={(e) => setFilters((p) => ({ ...p, entityType: e.target.value, offset: 0 }))}
+              className="px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+            >
+              <option value="">All Entities</option>
+              {entityTypes.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+            </select>
+            <select
+              value={filters.actionType}
+              onChange={(e) => setFilters((p) => ({ ...p, actionType: e.target.value, offset: 0 }))}
+              className="px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+            >
+              <option value="">All Actions</option>
+              {actionTypes.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+            </select>
+            <Button size="sm" variant="outline" onClick={loadLogs}><RefreshCw className="w-3.5 h-3.5" /></Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-6"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
+        ) : logs.length === 0 ? (
+          <div className="text-center py-8">
+            <ScrollText className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-sm text-muted-foreground">No audit logs found</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-auto max-h-[500px]">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="border-b text-left">
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">Time</th>
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">Action</th>
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">Entity</th>
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">Old Value</th>
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">New Value</th>
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">By</th>
+                    <th className="pb-2 text-xs font-medium text-muted-foreground">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30">
+                      <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">{formatDate(log.created_at)}</td>
+                      <td className="py-2">
+                        <span className={`px-1.5 py-0.5 text-xs rounded ${
+                          log.action_type === "create" ? "bg-green-100 text-green-800" :
+                          log.action_type === "delete" ? "bg-red-100 text-red-800" :
+                          log.action_type === "role_change" ? "bg-amber-100 text-amber-800" :
+                          "bg-blue-100 text-blue-800"
+                        }`}>
+                          {log.action_type}
+                        </span>
+                      </td>
+                      <td className="py-2 text-xs">{log.entity_type?.replace(/_/g, " ") || "—"}</td>
+                      <td className="py-2 text-xs text-muted-foreground max-w-[120px] truncate">{log.old_value || "—"}</td>
+                      <td className="py-2 text-xs max-w-[120px] truncate">{log.new_value || "—"}</td>
+                      <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">{log.performed_by_name || log.performer_email || "—"}</td>
+                      <td className="py-2 text-xs text-muted-foreground max-w-[150px] truncate">{log.notes || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-between items-center mt-3 pt-3 border-t">
+              <p className="text-xs text-muted-foreground">
+                Showing {filters.offset + 1}–{Math.min(filters.offset + filters.limit, total)} of {total}
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={filters.offset === 0}
+                  onClick={() => setFilters((p) => ({ ...p, offset: Math.max(0, p.offset - p.limit) }))}>
+                  Previous
+                </Button>
+                <Button size="sm" variant="outline" disabled={filters.offset + filters.limit >= total}
+                  onClick={() => setFilters((p) => ({ ...p, offset: p.offset + p.limit }))}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
  )
 }

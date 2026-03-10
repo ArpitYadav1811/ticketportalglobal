@@ -157,7 +157,8 @@ export default function EditTicketPage() {
   }
 
   // Permission checks
-  const isAdmin = currentUser?.role?.toLowerCase() === "admin"
+  const currentRole = currentUser?.role?.toLowerCase()
+  const isAdmin = currentRole === "admin" || currentRole === "superadmin"
   const isInitiator = currentUser && originalTicket && currentUser.id === originalTicket.created_by
   const isAssignee = currentUser && originalTicket && currentUser.id === originalTicket.assigned_to
   const isSPOC = currentUser && originalTicket && currentUser.id === originalTicket.spoc_user_id
@@ -217,8 +218,10 @@ export default function EditTicketPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
+        <div className="px-6 py-6">
+          <div className="bg-white border border-border rounded-lg shadow-sm p-6 text-center">
           <p className="text-foreground-secondary">Loading...</p>
+          </div>
         </div>
       </DashboardLayout>
     )
@@ -227,8 +230,10 @@ export default function EditTicketPage() {
   if (!originalTicket) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
+        <div className="px-6 py-6">
+          <div className="bg-white border border-border rounded-lg shadow-sm p-6 text-center">
           <p className="text-foreground-secondary">Ticket not found</p>
+          </div>
         </div>
       </DashboardLayout>
     )
@@ -239,51 +244,55 @@ export default function EditTicketPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-full px-2">
-        <div className="flex items-center gap-2 mb-3">
-          <button onClick={() => router.back()} className="p-1.5 hover:bg-surface rounded-md transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <h1 className="text-lg font-poppins font-bold text-foreground">
-            Edit Ticket{" "}
-            {originalTicket.ticket_number && (
-              <span className="font-mono text-sm text-foreground-secondary">#{originalTicket.ticket_number}</span>
-            )}
-          </h1>
-        </div>
-
-        {/* Info Banner */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 mb-3">
-          <div className="flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              Ticket details are read-only. You can only add comments and attachments.
-            </p>
+      <div className="w-full max-w-full px-6 py-6 bg-gray-50">
+        <div className="bg-white border border-border rounded-lg shadow-sm p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <button onClick={() => router.back()} className="p-1.5 hover:bg-surface rounded-md transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-lg font-poppins font-bold text-foreground flex items-center gap-2">
+              <span>Edit Ticket</span>
+              {originalTicket.ticket_id && (
+                <span className="text-lg font-poppins font-bold text-foreground">
+                  #{String(originalTicket.ticket_id).replace(/^TKT-\d{6}-/, "")}
+                </span>
+              )}
+            </h1>
           </div>
-        </div>
 
-        {/* Redirect View for SPOC Users */}
-        {isSPOCUser && (
-          <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 mb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-poppins font-semibold text-sm text-foreground">Redirect Ticket</h3>
-                <p className="text-xs text-foreground-secondary mt-0.5">
-                  As the SPOC, you can redirect this ticket to another Target Business Group.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsRedirectModalOpen(true)}
-                className="px-3 py-1.5 bg-black hover:bg-gray-700 text-white rounded-md font-medium text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={redirecting}
-              >
-                {redirecting ? "Redirecting..." : "Redirect Ticket"}
-              </button>
+          {/* Info Banner */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 mb-3">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Ticket details are read-only. You can only add comments and attachments.
+              </p>
             </div>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 pb-4">
+          {/* Redirect View for SPOC Users */}
+          {isSPOCUser && (
+            <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 mb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-poppins font-semibold text-sm text-foreground">Redirect Ticket</h3>
+                  <p className="text-xs text-foreground-secondary mt-0.5">
+                    As the SPOC, you can redirect this ticket to another Target Business Group.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsRedirectModalOpen(true)}
+                  className="px-3 py-1.5 bg-black hover:bg-gray-700 text-white rounded-md font-medium text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={redirecting}
+                  type="button"
+                >
+                  {redirecting ? "Redirecting..." : "Redirect Ticket"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3">
           {/* Read-only Ticket Details */}
           <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 space-y-3">
             <h3 className="font-poppins font-semibold text-sm text-foreground">Ticket Details (Read-Only)</h3>
@@ -560,17 +569,19 @@ export default function EditTicketPage() {
               {saving || uploading ? "Saving..." : "Save Attachments"}
             </button>
           </div>
-        </form>
+          </form>
 
-        {/* Redirect Modal */}
-        <RedirectModal
-          isOpen={isRedirectModalOpen}
-          onClose={() => setIsRedirectModalOpen(false)}
-          onConfirm={handleRedirect}
-          currentBusinessUnitGroupId={originalTicket?.target_business_group_id || null}
-          currentBusinessUnitGroupName={originalTicket?.target_business_group_name || null}
-          ticketTitle={originalTicket?.title || ""}
-        />
+          {/* Redirect Modal */}
+          <RedirectModal
+            isOpen={isRedirectModalOpen}
+            onClose={() => setIsRedirectModalOpen(false)}
+            onConfirm={handleRedirect}
+            currentBusinessUnitGroupId={originalTicket?.target_business_group_id || null}
+            currentBusinessUnitGroupName={originalTicket?.target_business_group_name || null}
+            ticketTitle={originalTicket?.title || ""}
+            ticketId={originalTicket?.ticket_id || null}
+          />
+        </div>
       </div>
     </DashboardLayout>
   )

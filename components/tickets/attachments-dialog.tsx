@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Download, FileText, Paperclip } from "lucide-react"
+import { X, Download, FileText, Paperclip, Building2 } from "lucide-react"
 
 interface Attachment {
   id: number
@@ -15,14 +15,16 @@ interface AttachmentsDialogProps {
   isOpen: boolean
   onClose: () => void
   attachments: Attachment[]
-  ticketNumber: number
+  ticketId?: string | null
+  businessGroupName?: string | null
 }
 
 export default function AttachmentsDialog({
   isOpen,
   onClose,
   attachments,
-  ticketNumber,
+  ticketId,
+  businessGroupName,
 }: AttachmentsDialogProps) {
   if (!isOpen) return null
 
@@ -44,15 +46,27 @@ export default function AttachmentsDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Paperclip className="w-5 h-5 text-foreground" />
-            <h2 className="text-lg font-semibold text-foreground">
-              Attachments #{ticketNumber}
-            </h2>
-            <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded">
-              {attachments.length}
-            </span>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Paperclip className="w-5 h-5 text-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">
+                Attachments
+              </h2>
+              {ticketId && (
+                <span className="text-lg font-semibold text-foreground">
+                  #{ticketId.replace(/^TKT-\d{6}-/, '')}
+                </span>
+              )}
+            </div>
+            {businessGroupName && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5" />
+                <span className="font-medium">
+                  {businessGroupName}
+                </span>
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -104,7 +118,7 @@ export default function AttachmentsDialog({
                       download={attachment.file_name}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Download className="w-4 h-4" />

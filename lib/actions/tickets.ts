@@ -513,7 +513,8 @@ export async function updateTicketStatus(ticketId: number, status: string, reaso
     const ticket = ticketBefore[0]
     const oldStatus = ticket.status
     const userId = currentUser.id
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
     const isInitiator = userId === ticket.created_by
     const isAssignee = userId === ticket.assigned_to
     const isSPOC = userId === ticket.spoc_user_id
@@ -684,7 +685,8 @@ export async function updateComment(commentId: number, content: string) {
     }
 
     const comment = commentBefore[0]
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
 
     // Only comment owner or admin can edit
     if (comment.user_id !== currentUser.id && !isAdmin) {
@@ -842,7 +844,8 @@ export async function softDeleteTicket(ticketId: number) {
       return { success: false, error: "User not authenticated" }
     }
 
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
 
     // Check if user is the ticket creator and get current status
     const ticket = await sql`
@@ -935,7 +938,8 @@ export async function redirectTicket(
     }
 
     const ticket = ticketBefore[0]
-    const isAdmin = currentUser.role?.toLowerCase() === "admin"
+    const _role = currentUser.role?.toLowerCase()
+    const isAdmin = _role === "admin" || _role === "superadmin"
     const isSPOC = currentUser.id === ticket.spoc_user_id
 
     // Check permissions per permissions matrix:

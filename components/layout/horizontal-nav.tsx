@@ -10,6 +10,7 @@ import {
   TicketIcon,
   BarChart3,
   Database,
+  Shield,
   LogOut,
   ChevronDown,
   Menu,
@@ -63,15 +64,17 @@ export default function HorizontalNav() {
     }
   }, [status, session])
 
+  const userRole = user?.role?.toLowerCase()
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/tickets", label: "Tickets", icon: TicketIcon },
     { href: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
     { href: "/master-data", label: "Master Settings", icon: Database, adminOnly: true },
+    { href: "/admin", label: "Admin Dashboard", icon: Shield, adminOnly: true },
   ]
 
   const filteredNavItems = navItems.filter((item) => {
-    if (item.adminOnly && user?.role?.toLowerCase() !== "admin") {
+    if (item.adminOnly && userRole !== "admin" && userRole !== "superadmin") {
       return false
     }
     return true

@@ -22,7 +22,7 @@ export default function MasterDataPage() {
       const userRole = parsedUser.role?.toLowerCase()
 
       // Admins have full access
-      if (userRole === "admin") {
+      if (userRole === "admin" || userRole === "superadmin") {
         setUser(parsedUser)
         setIsLoading(false)
         return

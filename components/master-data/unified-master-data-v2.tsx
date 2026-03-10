@@ -37,7 +37,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   const [activeTab, setActiveTab] = useState("business-groups")
   const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
   const [selectedBusinessGroupFilter, setSelectedBusinessGroupFilter] = useState<string>("")
-  const isAdmin = userRole === "admin"
+  const isAdmin = userRole === "admin" || userRole === "superadmin"
 
   // Data states
   const [targetBusinessGroups, setTargetBusinessGroups] = useState<any[]>([])
