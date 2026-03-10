@@ -164,8 +164,7 @@ export default function TicketDetailPage() {
     setRedirecting(true)
     const result = await redirectTicket(Number(ticketId), businessUnitGroupId, spocUserId, remarks)
     if (result.success) {
-      await loadTicket()
-      setIsRedirectModalOpen(false)
+      router.push("/tickets")
     } else {
       alert(result.error || "Failed to redirect ticket")
     }

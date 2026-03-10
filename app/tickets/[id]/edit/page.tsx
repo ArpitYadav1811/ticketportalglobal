@@ -208,7 +208,7 @@ export default function EditTicketPage() {
     setRedirecting(false)
 
     if (result.success) {
-      router.push(`/tickets/${ticketId}`)
+      router.push("/tickets")
     } else {
       alert("Failed to redirect ticket: " + (result.error || "Unknown error"))
     }
@@ -239,24 +239,24 @@ export default function EditTicketPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-full">
-        <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => router.back()} className="p-2 hover:bg-surface rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+      <div className="w-full max-w-full px-2">
+        <div className="flex items-center gap-2 mb-3">
+          <button onClick={() => router.back()} className="p-1.5 hover:bg-surface rounded-md transition-colors">
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-2xl font-poppins font-bold text-foreground">
+          <h1 className="text-lg font-poppins font-bold text-foreground">
             Edit Ticket{" "}
             {originalTicket.ticket_number && (
-              <span className="font-mono text-lg text-foreground-secondary">#{originalTicket.ticket_number}</span>
+              <span className="font-mono text-sm text-foreground-secondary">#{originalTicket.ticket_number}</span>
             )}
           </h1>
         </div>
 
         {/* Info Banner */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 mb-3">
+          <div className="flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <p className="text-xs text-blue-700 dark:text-blue-300">
               Ticket details are read-only. You can only add comments and attachments.
             </p>
           </div>
@@ -264,145 +264,150 @@ export default function EditTicketPage() {
 
         {/* Redirect View for SPOC Users */}
         {isSPOCUser && (
-          <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-poppins font-semibold text-foreground">Redirect Ticket</h3>
+          <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 mb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-poppins font-semibold text-sm text-foreground">Redirect Ticket</h3>
+                <p className="text-xs text-foreground-secondary mt-0.5">
+                  As the SPOC, you can redirect this ticket to another Target Business Group.
+                </p>
+              </div>
               <button
                 onClick={() => setIsRedirectModalOpen(true)}
-                className="px-4 py-2 bg-black hover:bg-gray-700 text-white rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 bg-black hover:bg-gray-700 text-white rounded-md font-medium text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={redirecting}
               >
                 {redirecting ? "Redirecting..." : "Redirect Ticket"}
               </button>
             </div>
-            <p className="text-sm text-foreground-secondary">
-              As the SPOC for this ticket, you can redirect it to another Target Business Group.
-            </p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3 pb-4">
           {/* Read-only Ticket Details */}
-          <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6 space-y-4">
-            <h3 className="font-poppins font-semibold text-foreground">Ticket Details (Read-Only)</h3>
+          <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 space-y-3">
+            <h3 className="font-poppins font-semibold text-sm text-foreground">Ticket Details (Read-Only)</h3>
 
             {/* Dynamic Layout based on Ticket Type */}
             {isSupportTicket ? (
               /* Support Ticket Layout */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Status</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Status</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground">
                     {originalTicket.status ? originalTicket.status.charAt(0).toUpperCase() + originalTicket.status.slice(1) : "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Category</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Category</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.category_name || "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Subcategory</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Subcategory</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.subcategory_name || "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">SPOC</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">SPOC</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.spoc_name || "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Target Business Group</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Target Business Group</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.target_business_group_name || "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Assignee</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Assignee</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.assignee_name || "Unassigned"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Estimated Duration</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Estimated Duration</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground">
                     {originalTicket.estimated_duration || "-"}
                   </div>
                 </div>
               </div>
             ) : (
               /* Requirement Ticket Layout */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Title</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="col-span-2 md:col-span-3">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Title</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground">
                     {originalTicket.title || "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Status</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Status</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground">
                     {originalTicket.status ? originalTicket.status.charAt(0).toUpperCase() + originalTicket.status.slice(1) : "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Priority</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Priority</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground">
                     {originalTicket.priority ? originalTicket.priority.charAt(0).toUpperCase() + originalTicket.priority.slice(1) : "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Project</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Project</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.project_name || "-"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Assignee</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Assignee</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground truncate">
                     {originalTicket.assignee_name || "Unassigned"}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground-secondary mb-1">Estimated Release Date</label>
-                  <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground">
+                  <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Est. Release Date</label>
+                  <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground">
                     {originalTicket.estimated_release_date ? new Date(originalTicket.estimated_release_date).toLocaleDateString() : "-"}
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-foreground-secondary mb-1">Description</label>
-              <div className="px-4 py-2.5 bg-surface dark:bg-gray-700 rounded-lg text-sm text-foreground whitespace-pre-wrap">
+            <div>
+              <label className="block text-xs font-medium text-foreground-secondary mb-0.5">Description</label>
+              <div className="px-3 py-1.5 bg-surface dark:bg-gray-700 rounded-md text-xs text-foreground whitespace-pre-wrap max-h-32 overflow-y-auto">
                 {originalTicket.description || "-"}
               </div>
             </div>
           </div>
 
           {/* Comments Section */}
-          <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6 space-y-4">
-            <h3 className="font-poppins font-semibold text-foreground">Comments</h3>
+          <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 space-y-2">
+            <h3 className="font-poppins font-semibold text-xs text-foreground flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Comments {originalTicket.comments?.length > 0 && <span className="text-xs text-foreground-secondary">({originalTicket.comments.length})</span>}
+            </h3>
 
             {/* Existing Comments */}
             {originalTicket.comments && originalTicket.comments.length > 0 && (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
+              <div className="space-y-2 max-h-48 overflow-y-auto">
                 {originalTicket.comments.map((comment: any) => (
-                  <div key={comment.id} className="flex gap-3 pb-3 border-b border-border last:border-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
+                  <div key={comment.id} className="flex gap-2 pb-2 border-b border-border last:border-0">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-medium text-[10px] flex-shrink-0">
                       {comment.user_name?.charAt(0) || "U"}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-foreground text-sm">{comment.user_name}</span>
-                        <span className="text-xs text-foreground-secondary">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="font-medium text-foreground text-xs">{comment.user_name}</span>
+                        <span className="text-[10px] text-foreground-secondary">
                           {new Date(comment.created_at).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-sm text-foreground-secondary whitespace-pre-wrap">{comment.content}</p>
+                      <p className="text-xs text-foreground-secondary whitespace-pre-wrap">{comment.content}</p>
                     </div>
                   </div>
                 ))}
@@ -410,19 +415,19 @@ export default function EditTicketPage() {
             )}
 
             {/* Add Comment */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Add a comment..."
-                rows={4}
-                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm resize-none"
+                rows={2}
+                className="w-full px-3 py-1.5 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-xs resize-none"
               />
               <button
                 type="button"
                 onClick={handleAddComment}
                 disabled={!comment.trim() || addingComment}
-                className="px-4 py-2 bg-black hover:bg-gray-700 text-white rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 bg-black hover:bg-gray-700 text-white rounded-md font-medium text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {addingComment ? "Adding..." : "Add Comment"}
               </button>
@@ -430,58 +435,56 @@ export default function EditTicketPage() {
           </div>
 
           {/* Attachments Section */}
-          <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-poppins font-semibold text-foreground flex items-center gap-2">
-                <Paperclip className="w-5 h-5" />
-                Attachments ({attachments.length + newFiles.length})
-              </h3>
-            </div>
+          <div className="bg-white dark:bg-gray-800 border border-border rounded-lg px-4 py-3 space-y-2">
+            <h3 className="font-poppins font-semibold text-xs text-foreground flex items-center gap-1.5">
+              <Paperclip className="w-3.5 h-3.5" />
+              Attachments ({attachments.length + newFiles.length})
+            </h3>
 
             {uploadError && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
+              <div className="px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-xs text-red-700 dark:text-red-300">
                 {uploadError}
               </div>
             )}
 
             {/* Existing Attachments */}
             {attachments.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Existing Files</p>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Existing Files</p>
                 {attachments.map((attachment: any) => (
                   <div
                     key={attachment.id}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-surface dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-between px-2.5 py-1.5 border border-border rounded-md hover:bg-surface dark:hover:bg-gray-700 transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{attachment.file_name}</p>
-                        <p className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-foreground truncate">{attachment.file_name}</p>
+                        <p className="text-[10px] text-muted-foreground">
                           {attachment.file_size ? `${(attachment.file_size / 1024).toFixed(1)} KB` : "Unknown size"}
-                          {attachment.uploader_name && ` • Uploaded by ${attachment.uploader_name}`}
+                          {attachment.uploader_name && ` • ${attachment.uploader_name}`}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       {attachment.file_url && (
                         <a
                           href={attachment.file_url}
                           download={attachment.file_name}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
+                          className="p-1 text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-md transition-colors"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-3.5 h-3.5" />
                         </a>
                       )}
                       <button
                         type="button"
                         onClick={() => deleteAttachment(attachment.id)}
                         disabled={!canEditAttachments}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -491,18 +494,18 @@ export default function EditTicketPage() {
 
             {/* New Files to Upload */}
             {newFiles.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">New Files (will be uploaded on save)</p>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">New Files (uploaded on save)</p>
                 {newFiles.map((file, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+                    className="flex items-center justify-between px-2.5 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md"
                   >
-                    <div className="flex items-center gap-3">
-                      <Upload className="w-5 h-5 text-blue-500" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Upload className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
                           {(file.size / 1024).toFixed(1)} KB • Ready to upload
                         </p>
                       </div>
@@ -510,9 +513,9 @@ export default function EditTicketPage() {
                     <button
                       type="button"
                       onClick={() => removeNewFile(idx)}
-                      className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0"
                     >
-                      <X className="w-4 h-4 text-red-500" />
+                      <X className="w-3.5 h-3.5 text-red-500" />
                     </button>
                   </div>
                 ))}
@@ -520,15 +523,15 @@ export default function EditTicketPage() {
             )}
 
             {/* Upload New Files */}
-            <label className={`flex items-center justify-center w-full px-4 py-4 border-2 border-dashed border-border rounded-lg transition-colors ${
+            <label className={`flex items-center justify-center w-full px-3 py-2.5 border-2 border-dashed border-border rounded-md transition-colors ${
               canEditAttachments 
                 ? "cursor-pointer hover:border-primary dark:hover:border-primary" 
                 : "opacity-50 cursor-not-allowed"
             }`}>
               <div className="text-center">
-                <Plus className="w-5 h-5 text-foreground-secondary mx-auto mb-1" />
-                <span className="text-sm font-medium text-foreground">Add attachments</span>
-                <p className="text-xs text-foreground-secondary">Max 5MB per file</p>
+                <Plus className="w-4 h-4 text-foreground-secondary mx-auto mb-0.5" />
+                <span className="text-xs font-medium text-foreground">Add attachments</span>
+                <p className="text-[10px] text-foreground-secondary">Max 5MB per file</p>
               </div>
               <input 
                 type="file" 
@@ -540,20 +543,20 @@ export default function EditTicketPage() {
             </label>
           </div>
 
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-all duration-200"
+              className="px-4 py-1.5 border border-gray-300 rounded-md text-gray-700 font-medium text-xs hover:bg-gray-50 transition-all duration-200"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || uploading}
-              className="px-6 py-2.5 bg-black hover:bg-gray-700 text-white rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-black hover:bg-gray-700 text-white rounded-md font-medium text-xs shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5" />
               {saving || uploading ? "Saving..." : "Save Attachments"}
             </button>
           </div>

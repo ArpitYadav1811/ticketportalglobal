@@ -678,6 +678,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  currentAssigneeId={selectedTicketForAssignment?.assigned_to || null}
  ticketTitle={selectedTicketForAssignment?.title || ""}
  ticketBusinessUnitGroupId={selectedTicketForAssignment?.business_unit_group_id || null}
+ isAdmin={currentUser?.role?.toLowerCase() === "admin"}
  />
 
   {/* Project Modal */}

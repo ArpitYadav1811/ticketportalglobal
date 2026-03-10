@@ -328,6 +328,15 @@ export default function TicketsTableBody({
           </div>
          </button>
 
+         {/* Edit - Always visible */}
+         <button
+          className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+          title="Edit"
+          onClick={() => router.push(`/tickets/${ticket.id}/edit`)}
+         >
+          <Edit className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+         </button>
+
          {/* Activity History - Always visible */}
          <TicketHistoryTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
           <button
@@ -354,15 +363,6 @@ export default function TicketsTableBody({
            </div>
           </button>
          </TicketReferencesTooltip>
-
-         {/* Edit - Always visible */}
-         <button
-          className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
-          title="Edit"
-          onClick={() => router.push(`/tickets/${ticket.id}/edit`)}
-         >
-          <Edit className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
-         </button>
         </div>
        </td>
       </tr>

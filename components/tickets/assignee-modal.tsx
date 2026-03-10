@@ -21,6 +21,7 @@ interface AssigneeModalProps {
   currentAssigneeId: number | null
   ticketTitle: string
   ticketBusinessUnitGroupId?: number | null
+  isAdmin?: boolean
 }
 
 export default function AssigneeModal({
@@ -30,6 +31,7 @@ export default function AssigneeModal({
   currentAssigneeId,
   ticketTitle,
   ticketBusinessUnitGroupId,
+  isAdmin = false,
 }: AssigneeModalProps) {
   const [users, setUsers] = useState<User[]>([])
   const [businessGroups, setBusinessGroups] = useState<any[]>([])
@@ -71,18 +73,27 @@ export default function AssigneeModal({
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    // If no ticketBusinessUnitGroupId is provided, show all users in target group section
-    const isInTargetGroup = ticketBusinessUnitGroupId 
-      ? user.business_unit_group_id === ticketBusinessUnitGroupId
-      : true  // Show all users if no group specified
-    
-    // Always include current assignee even if from different group
-    const isCurrentAssignee = user.id === currentAssigneeId
-    
-    return matchesSearch && (isInTargetGroup || isCurrentAssignee)
+    // Admin sees all users in target group section if no group specified
+    // SPOC only sees users from the ticket's target business group
+    if (isAdmin) {
+      const isInTargetGroup = ticketBusinessUnitGroupId 
+        ? user.business_unit_group_id === ticketBusinessUnitGroupId
+        : true
+      const isCurrentAssignee = user.id === currentAssigneeId
+      return matchesSearch && (isInTargetGroup || isCurrentAssignee)
+    } else {
+      // SPOC: only show users from ticket's target business group
+      if (!ticketBusinessUnitGroupId) return matchesSearch
+      const isInTargetGroup = user.business_unit_group_id === ticketBusinessUnitGroupId
+      const isCurrentAssignee = user.id === currentAssigneeId
+      return matchesSearch && (isInTargetGroup || isCurrentAssignee)
+    }
   })
 
   const usersInOtherGroups = users.filter((user) => {
+    // SPOC cannot see users from other groups
+    if (!isAdmin) return false
+
     const matchesSearch =
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -164,22 +175,24 @@ export default function AssigneeModal({
             />
           </div>
 
-          {/* BU Group Filter */}
-          <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-muted-foreground" />
-            <select
-              value={selectedBUGroup}
-              onChange={(e) => setSelectedBUGroup(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="all">All Business Units</option>
-              {businessGroups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* BU Group Filter - Only visible for Admin */}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={selectedBUGroup}
+                onChange={(e) => setSelectedBUGroup(e.target.value)}
+                className="flex-1 px-3 py-2 border border-border rounded-lg bg-white dark:bg-slate-700 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">All Business Units</option>
+                {businessGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* User List */}
