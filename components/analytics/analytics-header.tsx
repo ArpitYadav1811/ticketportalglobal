@@ -35,9 +35,7 @@ export default function AnalyticsHeader({ userId, userRole, groupName, userName 
 
   const subtitle = isAdmin
     ? "All tickets across all Business Groups"
-    : isSpoc
-      ? "Analytics for your Business Group"
-      : "Analytics for your tickets"
+    : "Analytics for your Business Group"
 
   return (
     <>
@@ -47,16 +45,10 @@ export default function AnalyticsHeader({ userId, userRole, groupName, userName 
       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
         {subtitle}
       </p>
-      {isSpoc && (spocGroupName || groupName) && (
-        <div className="flex items-center gap-1.5 mt-2 text-sm  text-blue-700 font-medium text-blue-700">
+      {!isAdmin && (spocGroupName || groupName) && (
+        <div className="flex items-center gap-1.5 mt-2 text-sm text-blue-700 font-medium">
           <Building2 className="w-4 h-4" />
           <span>{spocGroupName || groupName}</span>
-        </div>
-      )}
-      {!isAdmin && !isSpoc && userName && (
-        <div className="flex items-center gap-1.5 mt-2 text-sm text-primary font-medium">
-          <User className="w-4 h-4" />
-          <span>{userName}</span>
         </div>
       )}
     </>

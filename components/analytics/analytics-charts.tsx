@@ -107,56 +107,66 @@ const ChartCard = ({ title, children, className = "" }: { title: string; childre
 interface AnalyticsChartsProps {
   userId?: number
   userRole?: string
+  userGroupId?: number
 }
 
-export default function AnalyticsCharts({ userId, userRole }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({ userId, userRole, userGroupId }: AnalyticsChartsProps) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [daysFilter, setDaysFilter] = useState(30)
-  const [spocGroupIds, setSpocGroupIds] = useState<number[] | undefined>(undefined)
-  const [isSpoc, setIsSpoc] = useState(false)
+  const [businessGroupIds, setBusinessGroupIds] = useState<number[] | undefined>(undefined)
   const [filtersReady, setFiltersReady] = useState(false)
 
   const isAdmin = userRole === "admin" || userRole === "superadmin"
 
-  // Load SPOC business groups — check both role AND DB mapping
+  // Load business groups for non-admin users (both SPOC and regular users)
   useEffect(() => {
-    const loadSpocGroups = async () => {
-      if (isAdmin || !userId) {
+    const loadBusinessGroups = async () => {
+      if (isAdmin) {
         setFiltersReady(true)
         return
       }
+
+      if (!userId) {
+        setFiltersReady(true)
+        return
+      }
+
+      // First, check if user is a SPOC (manages multiple groups)
       const roleIsManager = userRole === "manager"
       const spocCheck = await isUserSpoc(userId)
       const userIsSpoc = roleIsManager || spocCheck
 
       if (userIsSpoc) {
-        setIsSpoc(true)
+        // SPOC: Get all groups they manage
         const result = await getBusinessGroupsForSpoc(userId)
         if (result.success && result.data && result.data.length > 0) {
-          setSpocGroupIds(result.data.map((bg: any) => bg.id))
+          setBusinessGroupIds(result.data.map((bg: any) => bg.id))
         } else {
-          setSpocGroupIds([])
+          setBusinessGroupIds([])
         }
+      } else if (userGroupId) {
+        // Regular User: Use their assigned business group
+        setBusinessGroupIds([userGroupId])
+      } else {
+        setBusinessGroupIds([])
       }
+
       setFiltersReady(true)
     }
-    loadSpocGroups()
-  }, [userId, userRole, isAdmin])
-
-  const isRegularUser = !isAdmin && !isSpoc
+    loadBusinessGroups()
+  }, [userId, userRole, userGroupId, isAdmin])
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const options = isSpoc && spocGroupIds && spocGroupIds.length > 0
-      ? { businessGroupIds: spocGroupIds }
-      : isRegularUser && userId
-        ? { userId }
-        : undefined
+    // For non-admin users, always filter by business group
+    const options = !isAdmin && businessGroupIds && businessGroupIds.length > 0
+      ? { businessGroupIds }
+      : undefined
     const result = await getAnalyticsData(daysFilter, options)
     if (result.success) setData(result.data)
     setLoading(false)
-  }, [daysFilter, isSpoc, spocGroupIds, isRegularUser, userId])
+  }, [daysFilter, isAdmin, businessGroupIds])
 
   useEffect(() => {
     if (!filtersReady) return

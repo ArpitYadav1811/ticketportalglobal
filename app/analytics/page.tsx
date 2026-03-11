@@ -29,6 +29,7 @@ export default function AnalyticsPage() {
   }
 
   const userRole = user?.role?.toLowerCase()
+  const userGroupId = user?.business_unit_group_id
 
   return (
     <DashboardLayout>
@@ -38,7 +39,7 @@ export default function AnalyticsPage() {
         </div>
         <div className="border-b border-slate-200 dark:border-slate-700 mb-4" />
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4">
-          <AnalyticsCharts userId={user?.id} userRole={userRole} />
+          <AnalyticsCharts userId={user?.id} userRole={userRole} userGroupId={userGroupId} />
         </div>
       </div>
     </DashboardLayout>
