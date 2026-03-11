@@ -2,6 +2,7 @@
 
 import { sql } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { getCurrentUser } from "./auth"
 
 export async function getAllUsers(filters?: {
   role?: string
@@ -264,19 +265,19 @@ export async function resetUserPassword(id: number) {
 
 export async function deleteUser(id: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+
+    const isSuperAdmin = currentUser.role?.toLowerCase() === "superadmin"
+
     // Check if user has assigned tickets
     const ticketCheck = await sql`
       SELECT COUNT(*) as count FROM tickets WHERE assigned_to = ${id}
     `
 
     const ticketCount = ticketCheck[0]?.count || 0
-
-    if (ticketCount > 0) {
-      return {
-        success: false,
-        error: `Cannot delete user: ${ticketCount} ticket(s) are assigned to this user. Please reassign tickets first or deactivate the user instead.`,
-      }
-    }
 
     // Check if user created tickets
     const createdTicketCheck = await sql`
@@ -285,17 +286,50 @@ export async function deleteUser(id: number) {
 
     const createdCount = createdTicketCheck[0]?.count || 0
 
-    if (createdCount > 0) {
-      return {
-        success: false,
-        error: `Cannot delete user: ${createdCount} ticket(s) were created by this user. Deactivate the user instead.`,
+    // Super Admin: Can delete even if user has tickets (will cascade delete related data)
+    if (!isSuperAdmin) {
+      if (ticketCount > 0) {
+        return {
+          success: false,
+          error: `Cannot delete user: ${ticketCount} ticket(s) are assigned to this user. Please reassign tickets first or deactivate the user instead.`,
+        }
+      }
+
+      if (createdCount > 0) {
+        return {
+          success: false,
+          error: `Cannot delete user: ${createdCount} ticket(s) were created by this user. Deactivate the user instead.`,
+        }
+      }
+    } else {
+      // Super Admin: Log the permanent deletion
+      try {
+        const { addSystemAuditLog } = await import("./admin")
+        const userToDelete = await sql`SELECT email, full_name FROM users WHERE id = ${id}`
+        if (userToDelete.length > 0) {
+          await addSystemAuditLog({
+            actionType: "hard_delete",
+            entityType: "user",
+            oldValue: `${userToDelete[0].full_name} (${userToDelete[0].email})`,
+            performedBy: currentUser.id,
+            performedByName: currentUser.full_name || currentUser.email,
+            notes: `User permanently deleted by Super Admin. ${ticketCount} assigned tickets and ${createdCount} created tickets will be deleted.`
+          })
+        }
+      } catch (auditError) {
+        console.log("Could not log to system audit:", auditError)
       }
     }
 
-    // Delete user (cascade will handle team_members)
+    // Delete user (cascade will handle team_members, and if Super Admin, related tickets will be handled)
     await sql`DELETE FROM users WHERE id = ${id}`
 
-    return { success: true }
+    return { 
+      success: true, 
+      message: isSuperAdmin 
+        ? "User permanently deleted. All related tickets and data have been removed." 
+        : "User deleted successfully"
+    }
   } catch (error) {
     console.error("Error deleting user:", error)
     return { success: false, error: "Failed to delete user" }

@@ -168,6 +168,7 @@ export async function loginUser(email: string, password: string) {
 
     const user = result[0]
 
+    // Handle SSO users (no password_hash)
     if (!user.password_hash) {
       return { success: false, error: "This account uses Microsoft SSO. Please sign in with Microsoft." }
     }
@@ -175,8 +176,30 @@ export async function loginUser(email: string, password: string) {
     if (user.auth_provider === "microsoft" && !user.password_hash) {
       return { success: false, error: "This account uses Microsoft SSO. Please sign in with Microsoft." }
     }
+
+    // Validate password_hash format (bcrypt hashes start with $2a$, $2b$, or $2y$ and are 60 chars)
+    const isBcryptHash = user.password_hash.startsWith('$2a$') || 
+                         user.password_hash.startsWith('$2b$') || 
+                         user.password_hash.startsWith('$2y$')
+    
+    if (!isBcryptHash || user.password_hash.length !== 60) {
+      console.error(`[LoginUser] User ${user.email} has invalid password hash format. Password needs to be migrated.`)
+      return { 
+        success: false, 
+        error: "Password format error. Please contact administrator to reset your password." 
+      }
+    }
+
+    // Compare password with bcrypt hash
     // console.log(`==========[LoginUser] Comparing password: ${password} with hash: ${user.password_hash}`)
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash)
+    let isPasswordValid = false
+    try {
+      isPasswordValid = await bcrypt.compare(password, user.password_hash)
+    } catch (compareError) {
+      console.error(`[LoginUser] Error comparing password for ${user.email}:`, compareError)
+      return { success: false, error: "Invalid email or password" }
+    }
+    
     // console.log(`==========[LoginUser] isPasswordValid: ${isPasswordValid}`)
     if (!isPasswordValid) {
       // console.log(`==========[LoginUser] Password is invalid`)

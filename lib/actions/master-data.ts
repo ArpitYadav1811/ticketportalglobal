@@ -2,6 +2,7 @@
 
 import { sql } from "@/lib/db"
 import { getCurrentUser } from "@/lib/actions/auth"
+import { revalidatePath } from "next/cache"
 
 // Business Unit Groups
 export async function getBusinessUnitGroups() {
@@ -162,15 +163,56 @@ export async function deleteBusinessUnitGroup(id: number) {
       return { success: false, error: "User not authenticated" }
     }
     
+    const userRole = currentUser.role?.toLowerCase()
+    const isSuperAdmin = userRole === "superadmin"
+    
     // Only admins can delete business groups
-    if (currentUser.role?.toLowerCase() !== "admin") {
+    if (userRole !== "admin" && !isSuperAdmin) {
       return { success: false, error: "Only admins can delete business groups" }
     }
     
+    // Super Admin: Log permanent deletion
+    if (isSuperAdmin) {
+      try {
+        const { addSystemAuditLog } = await import("./admin")
+        const bgToDelete = await sql`SELECT name FROM business_unit_groups WHERE id = ${id}`
+        if (bgToDelete.length > 0) {
+          await addSystemAuditLog({
+            actionType: "hard_delete",
+            entityType: "business_unit_group",
+            oldValue: bgToDelete[0].name,
+            performedBy: currentUser.id,
+            performedByName: currentUser.full_name || currentUser.email,
+            notes: "Business Group permanently deleted by Super Admin. All related data will be cascade deleted."
+          })
+        }
+      } catch (auditError) {
+        console.log("Could not log to system audit:", auditError)
+      }
+    }
+    
+    // Hard delete: Permanently remove (cascade will handle related tickets, users, mappings, etc.)
     await sql`DELETE FROM business_unit_groups WHERE id = ${id}`
-    return { success: true }
-  } catch (error) {
+    
+    // Revalidate cache to ensure UI updates
+    revalidatePath("/master-data")
+    revalidatePath("/admin")
+    
+    return { 
+      success: true, 
+      message: isSuperAdmin 
+        ? "Business Group permanently deleted. All related tickets, users, and mappings have been removed." 
+        : "Business Group deleted successfully"
+    }
+  } catch (error: any) {
     console.error("Error deleting business unit group:", error)
+    // Check if it's a foreign key constraint error
+    if (error.message?.includes("foreign key") || error.code === "23503") {
+      return { 
+        success: false, 
+        error: "Cannot delete business group: It is still referenced by other records. Please remove all references first." 
+      }
+    }
     return { success: false, error: "Failed to delete business unit group" }
   }
 }
@@ -259,13 +301,42 @@ export async function deleteCategory(id: number) {
       return { success: false, error: "User not authenticated" }
     }
     
+    const userRole = currentUser.role?.toLowerCase()
+    const isSuperAdmin = userRole === "superadmin"
+    
     // Only admins can delete categories
-    if (currentUser.role?.toLowerCase() !== "admin") {
+    if (userRole !== "admin" && !isSuperAdmin) {
       return { success: false, error: "Only admins can delete categories" }
     }
     
+    // Super Admin: Log permanent deletion
+    if (isSuperAdmin) {
+      try {
+        const { addSystemAuditLog } = await import("./admin")
+        const catToDelete = await sql`SELECT name FROM categories WHERE id = ${id}`
+        if (catToDelete.length > 0) {
+          await addSystemAuditLog({
+            actionType: "hard_delete",
+            entityType: "category",
+            oldValue: catToDelete[0].name,
+            performedBy: currentUser.id,
+            performedByName: currentUser.full_name || currentUser.email,
+            notes: "Category permanently deleted by Super Admin. All related subcategories, tickets, and mappings will be cascade deleted."
+          })
+        }
+      } catch (auditError) {
+        console.log("Could not log to system audit:", auditError)
+      }
+    }
+    
+    // Hard delete: Permanently remove (cascade will handle related subcategories, tickets, mappings)
     await sql`DELETE FROM categories WHERE id = ${id}`
-    return { success: true }
+    return { 
+      success: true, 
+      message: isSuperAdmin 
+        ? "Category permanently deleted. All related subcategories, tickets, and mappings have been removed." 
+        : "Category deleted successfully"
+    }
   } catch (error) {
     console.error("Error deleting category:", error)
     return { success: false, error: "Failed to delete category" }
@@ -384,8 +455,11 @@ export async function deleteSubcategory(id: number) {
       return { success: false, error: "User not authenticated" }
     }
     
+    const userRole = currentUser.role?.toLowerCase()
+    const isSuperAdmin = userRole === "superadmin"
+    
     // Only admins can delete subcategories
-    if (currentUser.role?.toLowerCase() !== "admin") {
+    if (userRole !== "admin" && !isSuperAdmin) {
       return { success: false, error: "Only admins can delete subcategories" }
     }
     
@@ -396,14 +470,6 @@ export async function deleteSubcategory(id: number) {
 
     const ticketCount = Number(ticketsCheck[0]?.count || 0)
 
-    if (ticketCount > 0) {
-      return {
-        success: false,
-        error: `Cannot delete subcategory: ${ticketCount} ticket(s) still reference this subcategory. Please reassign or delete the tickets first.`,
-        dependentCount: ticketCount,
-      }
-    }
-
     // Check if there are any mappings referencing this subcategory
     const mappingsCheck = await sql`
       SELECT COUNT(*) as count FROM ticket_classification_mapping WHERE subcategory_id = ${id}
@@ -411,16 +477,51 @@ export async function deleteSubcategory(id: number) {
 
     const mappingCount = Number(mappingsCheck[0]?.count || 0)
 
-    if (mappingCount > 0) {
-      return {
-        success: false,
-        error: `Cannot delete subcategory: ${mappingCount} ticket classification mapping(s) still reference this subcategory. Please delete the mappings first.`,
-        dependentCount: mappingCount,
+    // Super Admin: Can delete even with dependencies (cascade will handle it)
+    if (!isSuperAdmin) {
+      if (ticketCount > 0) {
+        return {
+          success: false,
+          error: `Cannot delete subcategory: ${ticketCount} ticket(s) still reference this subcategory. Please reassign or delete the tickets first.`,
+          dependentCount: ticketCount,
+        }
+      }
+
+      if (mappingCount > 0) {
+        return {
+          success: false,
+          error: `Cannot delete subcategory: ${mappingCount} ticket classification mapping(s) still reference this subcategory. Please delete the mappings first.`,
+          dependentCount: mappingCount,
+        }
+      }
+    } else {
+      // Super Admin: Log permanent deletion
+      try {
+        const { addSystemAuditLog } = await import("./admin")
+        const subcatToDelete = await sql`SELECT name FROM subcategories WHERE id = ${id}`
+        if (subcatToDelete.length > 0) {
+          await addSystemAuditLog({
+            actionType: "hard_delete",
+            entityType: "subcategory",
+            oldValue: subcatToDelete[0].name,
+            performedBy: currentUser.id,
+            performedByName: currentUser.full_name || currentUser.email,
+            notes: `Subcategory permanently deleted by Super Admin. ${ticketCount} tickets and ${mappingCount} mappings will be cascade deleted.`
+          })
+        }
+      } catch (auditError) {
+        console.log("Could not log to system audit:", auditError)
       }
     }
 
+    // Hard delete: Permanently remove (cascade will handle related tickets and mappings)
     await sql`DELETE FROM subcategories WHERE id = ${id}`
-    return { success: true }
+    return { 
+      success: true, 
+      message: isSuperAdmin 
+        ? `Subcategory permanently deleted. ${ticketCount} tickets and ${mappingCount} mappings have been cascade deleted.` 
+        : "Subcategory deleted successfully"
+    }
   } catch (error) {
     console.error("Error deleting subcategory:", error)
     return { success: false, error: "Failed to delete subcategory" }
@@ -434,15 +535,16 @@ export async function getTicketClassificationMappings() {
       SELECT 
         tcm.*,
         bug.name as target_business_group_name,
+        bug.name as business_unit_group_name,
         c.name as category_name,
         s.name as subcategory_name,
         u.full_name as spoc_name
       FROM ticket_classification_mapping tcm
-      JOIN business_unit_groups bug ON tcm.target_business_group_id = bug.id
-      JOIN categories c ON tcm.category_id = c.id
-      JOIN subcategories s ON tcm.subcategory_id = s.id
+      INNER JOIN business_unit_groups bug ON tcm.target_business_group_id = bug.id
+      INNER JOIN categories c ON tcm.category_id = c.id
+      INNER JOIN subcategories s ON tcm.subcategory_id = s.id
       LEFT JOIN users u ON tcm.spoc_user_id = u.id
-      ORDER BY tbg.name, c.name, s.name
+      ORDER BY bug.name, c.name, s.name
     `
     return { success: true, data: result }
   } catch (error) {
@@ -652,6 +754,7 @@ export async function deleteTicketClassificationMapping(id: number) {
     
     const _role = currentUser.role?.toLowerCase()
     const isAdmin = _role === "admin" || _role === "superadmin"
+    const isSuperAdmin = _role === "superadmin"
     
     // If user is SPOC (not admin), check if they have access to this mapping's business group
     if (!isAdmin) {
@@ -668,8 +771,42 @@ export async function deleteTicketClassificationMapping(id: number) {
       }
     }
     
+    // Super Admin: Log permanent deletion
+    if (isSuperAdmin) {
+      try {
+        const { addSystemAuditLog } = await import("./admin")
+        const mappingToDelete = await sql`
+          SELECT tcm.*, tbg.name as bg_name, c.name as cat_name, sc.name as subcat_name
+          FROM ticket_classification_mapping tcm
+          LEFT JOIN business_unit_groups tbg ON tcm.target_business_group_id = tbg.id
+          LEFT JOIN categories c ON tcm.category_id = c.id
+          LEFT JOIN subcategories sc ON tcm.subcategory_id = sc.id
+          WHERE tcm.id = ${id}
+        `
+        if (mappingToDelete.length > 0) {
+          const mapping = mappingToDelete[0]
+          await addSystemAuditLog({
+            actionType: "hard_delete",
+            entityType: "ticket_classification_mapping",
+            oldValue: `${mapping.bg_name} → ${mapping.cat_name} → ${mapping.subcat_name || 'N/A'}`,
+            performedBy: currentUser.id,
+            performedByName: currentUser.full_name || currentUser.email,
+            notes: "Ticket Classification Mapping permanently deleted by Super Admin"
+          })
+        }
+      } catch (auditError) {
+        console.log("Could not log to system audit:", auditError)
+      }
+    }
+    
+    // Hard delete: Permanently remove
     await sql`DELETE FROM ticket_classification_mapping WHERE id = ${id}`
-    return { success: true }
+    return { 
+      success: true, 
+      message: isSuperAdmin 
+        ? "Mapping permanently deleted" 
+        : "Mapping deleted successfully"
+    }
   } catch (error) {
     console.error("Error deleting ticket classification mapping:", error)
     return { success: false, error: "Failed to delete mapping" }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -35,6 +36,7 @@ interface UnifiedMasterDataV2Props {
 }
 
 export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterDataV2Props) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("business-groups")
   const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
   const [selectedBusinessGroupFilter, setSelectedBusinessGroupFilter] = useState<string>("")
@@ -193,6 +195,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const bg = businessGroups.find(b => b.id === id)
     if (!bg) return
     
+    const isSuperAdmin = userRole === "superadmin"
     const relatedMappings = mappings.filter(m => m.business_unit_group_id === id || m.target_business_group_id === id)
     const changes: ChangeDetail[] = [{
       label: "Business Group",
@@ -202,7 +205,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     if (relatedMappings.length > 0) {
       changes.push({
         label: "Related Mappings",
-        oldValue: `${relatedMappings.length} mapping(s) will be affected`,
+        oldValue: `${relatedMappings.length} mapping(s) will be ${isSuperAdmin ? 'permanently deleted' : 'affected'}`,
         type: "delete"
       })
     }
@@ -213,7 +216,10 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         setConfirmDialog(prev => ({ ...prev, loading: true }))
         const result = await deleteBusinessUnitGroup(id)
         if (result.success) {
+          // Force refresh to clear any cached data
+          router.refresh()
           await loadData()
+          if (result.message) alert(result.message)
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
           alert(result.error || "Failed to delete")
@@ -221,7 +227,9 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         }
       },
       title: "Delete Business Group",
-      description: "Are you sure? This will affect related mappings.",
+      description: isSuperAdmin 
+        ? "⚠️ PERMANENT DELETION: This will permanently delete the Business Group and ALL related data (tickets, users, mappings). This action cannot be undone!"
+        : "Are you sure? This will affect related mappings.",
       actionType: "delete",
       changes
     })
@@ -252,6 +260,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const category = categories.find(c => c.id === id)
     if (!category) return
     
+    const isSuperAdmin = userRole === "superadmin"
     const relatedSubcategories = subcategories.filter(s => s.category_id === id)
     const relatedMappings = mappings.filter(m => m.category_id === id)
     const changes: ChangeDetail[] = [{
@@ -262,14 +271,14 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     if (relatedSubcategories.length > 0) {
       changes.push({
         label: "Related Subcategories",
-        oldValue: `${relatedSubcategories.length} subcategory(ies) will be deleted`,
+        oldValue: `${relatedSubcategories.length} subcategory(ies) will be ${isSuperAdmin ? 'permanently deleted' : 'deleted'}`,
         type: "delete"
       })
     }
     if (relatedMappings.length > 0) {
       changes.push({
         label: "Related Mappings",
-        oldValue: `${relatedMappings.length} mapping(s) will be deleted`,
+        oldValue: `${relatedMappings.length} mapping(s) will be ${isSuperAdmin ? 'permanently deleted' : 'deleted'}`,
         type: "delete"
       })
     }
@@ -281,6 +290,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         const result = await deleteCategory(id)
         if (result.success) {
           await loadData()
+          if (result.message) alert(result.message)
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
           alert(result.error || "Failed to delete")
@@ -288,7 +298,9 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         }
       },
       title: "Delete Category",
-      description: "Are you sure? This will delete all related subcategories and mappings.",
+      description: isSuperAdmin
+        ? "⚠️ PERMANENT DELETION: This will permanently delete the Category and ALL related data (subcategories, tickets, mappings). This action cannot be undone!"
+        : "Are you sure? This will delete all related subcategories and mappings.",
       actionType: "delete",
       changes
     })
@@ -319,6 +331,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const subcategory = subcategories.find(s => s.id === id)
     if (!subcategory) return
     
+    const isSuperAdmin = userRole === "superadmin"
     const relatedMappings = mappings.filter(m => m.subcategory_id === id)
     const changes: ChangeDetail[] = [{
       label: "Subcategory",
@@ -328,7 +341,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     if (relatedMappings.length > 0) {
       changes.push({
         label: "Related Mappings",
-        oldValue: `${relatedMappings.length} mapping(s) will be deleted`,
+        oldValue: `${relatedMappings.length} mapping(s) will be ${isSuperAdmin ? 'permanently deleted' : 'deleted'}`,
         type: "delete"
       })
     }
@@ -340,6 +353,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         const result = await deleteSubcategory(id)
         if (result.success) {
           await loadData()
+          if (result.message) alert(result.message)
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
           alert(result.error || "Failed to delete")
@@ -347,7 +361,9 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         }
       },
       title: "Delete Subcategory",
-      description: "Are you sure? This will delete all related mappings.",
+      description: isSuperAdmin
+        ? "⚠️ PERMANENT DELETION: This will permanently delete the Subcategory and ALL related data (tickets, mappings). This action cannot be undone!"
+        : "Are you sure? This will delete all related mappings.",
       actionType: "delete",
       changes
     })
@@ -391,6 +407,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     const mapping = mappings.find(m => m.id === id)
     if (!mapping) return
     
+    const isSuperAdmin = userRole === "superadmin"
     const bgName = targetBusinessGroups.find(bg => bg.id === mapping.target_business_group_id)?.name || "Unknown"
     const catName = categories.find(c => c.id === mapping.category_id)?.name || "Unknown"
     const subcatName = subcategories.find(s => s.id === mapping.subcategory_id)?.name || "Unknown"
@@ -402,6 +419,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         const result = await deleteTicketClassificationMapping(id)
         if (result.success) {
           await loadData()
+          if (result.message) alert(result.message)
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
           alert(result.error || "Failed to delete")
@@ -409,7 +427,9 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         }
       },
       title: "Delete Ticket Classification Mapping",
-      description: "Are you sure you want to delete this mapping?",
+      description: isSuperAdmin
+        ? "⚠️ PERMANENT DELETION: This mapping will be permanently deleted. This action cannot be undone!"
+        : "Are you sure you want to delete this mapping?",
       actionType: "delete",
       changes: [{
         label: "Mapping",

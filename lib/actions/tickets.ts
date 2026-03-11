@@ -846,6 +846,7 @@ export async function softDeleteTicket(ticketId: number) {
 
     const _role = currentUser.role?.toLowerCase()
     const isAdmin = _role === "admin" || _role === "superadmin"
+    const isSuperAdmin = _role === "superadmin"
 
     // Check if user is the ticket creator and get current status
     const ticket = await sql`
@@ -861,7 +862,40 @@ export async function softDeleteTicket(ticketId: number) {
       return { success: false, error: "Only the ticket initiator or admin can delete this ticket" }
     }
 
-    // Soft delete: set is_deleted flag ONLY, keep status unchanged
+    // Super Admin: Hard delete (permanently remove from database)
+    if (isSuperAdmin) {
+      // Delete all related data first (cascade will handle some, but we'll be explicit)
+      await sql`DELETE FROM ticket_audit_log WHERE ticket_id = ${ticketId}`
+      await sql`DELETE FROM comments WHERE ticket_id = ${ticketId}`
+      await sql`DELETE FROM attachments WHERE ticket_id = ${ticketId}`
+      await sql`DELETE FROM ticket_references WHERE source_ticket_id = ${ticketId} OR reference_ticket_id = ${ticketId}`
+      
+      // Finally delete the ticket itself
+      await sql`DELETE FROM tickets WHERE id = ${ticketId}`
+
+      // Log to system audit (if available)
+      try {
+        const { addSystemAuditLog } = await import("./admin")
+        await addSystemAuditLog({
+          actionType: "hard_delete",
+          entityType: "ticket",
+          oldValue: `Ticket ID: ${ticketId}`,
+          performedBy: currentUser.id,
+          performedByName: currentUser.full_name || currentUser.email,
+          notes: `Ticket permanently deleted by Super Admin`
+        })
+      } catch (auditError) {
+        // System audit log might not be available, continue anyway
+        console.log("Could not log to system audit:", auditError)
+      }
+
+      revalidatePath("/tickets")
+      revalidatePath("/dashboard")
+
+      return { success: true, message: "Ticket permanently deleted" }
+    }
+
+    // Regular Admin/Initiator: Soft delete (set is_deleted flag ONLY, keep status unchanged)
     await sql`
       UPDATE tickets
       SET is_deleted = TRUE,
@@ -886,7 +920,7 @@ export async function softDeleteTicket(ticketId: number) {
 
     return { success: true }
   } catch (error) {
-    console.error("[v0] Error soft deleting ticket:", error)
+    console.error("[v0] Error deleting ticket:", error)
     return { success: false, error: "Failed to delete ticket" }
   }
 }

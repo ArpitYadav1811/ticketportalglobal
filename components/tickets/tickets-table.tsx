@@ -443,28 +443,40 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  setIsStatusChangeModalOpen(true)
  }
 
- const handleStatusChangeConfirm = async (reason: string, remarks: string) => {
- if (!selectedTicketForStatusChange) return
+  const handleStatusChangeConfirm = async (reason: string, remarks: string) => {
+    if (!selectedTicketForStatusChange) return
 
- setChangingStatus(true)
- const result = await updateTicketStatus(
- selectedTicketForStatusChange.id,
- selectedNewStatus,
- reason,
- remarks
- )
- setChangingStatus(false)
+    setChangingStatus(true)
+    
+    // If deleting, use softDeleteTicket (which does hard delete for Super Admin)
+    let result
+    if (selectedNewStatus === "deleted") {
+      const { softDeleteTicket } = await import("@/lib/actions/tickets")
+      result = await softDeleteTicket(selectedTicketForStatusChange.id)
+      if (result.success && result.message) {
+        alert(result.message)
+      }
+    } else {
+      result = await updateTicketStatus(
+        selectedTicketForStatusChange.id,
+        selectedNewStatus,
+        reason,
+        remarks
+      )
+    }
+    
+    setChangingStatus(false)
 
- if (result.success) {
- setIsStatusChangeModalOpen(false)
- setSelectedTicketForStatusChange(null)
- setSelectedNewStatus("")
- // Reload tickets to get updated status
- loadTicketsMemo()
- } else {
- alert("Failed to update status: " + (result.error || "Unknown error"))
- }
- }
+    if (result.success) {
+      setIsStatusChangeModalOpen(false)
+      setSelectedTicketForStatusChange(null)
+      setSelectedNewStatus("")
+      // Reload tickets to get updated status
+      loadTicketsMemo()
+    } else {
+      alert("Failed to update status: " + (result.error || "Unknown error"))
+    }
+  }
 
  const handleDelete = async (ticket: Ticket) => {
  // Open status change modal for delete
@@ -706,20 +718,21 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  {/* Activity History is now shown in tooltip, no modal needed */}
 
  {/* Status Change Modal */}
- <StatusChangeModal
- isOpen={isStatusChangeModalOpen}
- onClose={() => {
- setIsStatusChangeModalOpen(false)
- setSelectedTicketForStatusChange(null)
- setSelectedNewStatus("")
- }}
- onConfirm={handleStatusChangeConfirm}
- oldStatus={selectedTicketForStatusChange?.status || ""}
- newStatus={selectedNewStatus}
- ticketId={selectedTicketForStatusChange?.ticket_id || null}
- businessGroupName={selectedTicketForStatusChange?.target_business_group_name || null}
- loading={changingStatus}
- />
+        <StatusChangeModal
+          isOpen={isStatusChangeModalOpen}
+          onClose={() => {
+            setIsStatusChangeModalOpen(false)
+            setSelectedTicketForStatusChange(null)
+            setSelectedNewStatus("")
+          }}
+          onConfirm={handleStatusChangeConfirm}
+          oldStatus={selectedTicketForStatusChange?.status || ""}
+          newStatus={selectedNewStatus}
+          ticketId={selectedTicketForStatusChange?.ticket_id || null}
+          businessGroupName={selectedTicketForStatusChange?.target_business_group_name || null}
+          loading={changingStatus}
+          isSuperAdmin={currentUser?.role?.toLowerCase() === "superadmin"}
+        />
 
  {/* Attachments Dialog */}
  <AttachmentsDialog

@@ -13,6 +13,7 @@ interface StatusChangeModalProps {
   ticketId?: string | null
   businessGroupName?: string | null
   loading?: boolean
+  isSuperAdmin?: boolean
 }
 
 export default function StatusChangeModal({
@@ -24,6 +25,7 @@ export default function StatusChangeModal({
   ticketId,
   businessGroupName,
   loading = false,
+  isSuperAdmin = false,
 }: StatusChangeModalProps) {
   const [reason, setReason] = useState("")
   const [remarks, setRemarks] = useState("")
@@ -96,12 +98,28 @@ export default function StatusChangeModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              Status will be changed from <span className="font-medium">{oldStatusLabel}</span> to{" "}
-              <span className="font-medium">{newStatusLabel}</span>
-            </p>
-          </div>
+          {newStatus === "deleted" && isSuperAdmin ? (
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-3">
+              <p className="text-sm font-bold text-red-800 dark:text-red-300 mb-1">
+                ⚠️ PERMANENT DELETION
+              </p>
+              <p className="text-xs text-red-700 dark:text-red-400">
+                As Super Admin, this ticket will be <strong>permanently deleted</strong> from the database. 
+                All related data (comments, attachments, audit logs) will also be permanently removed. 
+                This action <strong>cannot be undone</strong>!
+              </p>
+            </div>
+          ) : (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5">
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Status will be changed from <span className="font-medium">{oldStatusLabel}</span> to{" "}
+                <span className="font-medium">{newStatusLabel}</span>
+                {newStatus === "deleted" && !isSuperAdmin && (
+                  <span className="block mt-1">(Soft delete - can be restored)</span>
+                )}
+              </p>
+            </div>
+          )}
 
           {/* Reason */}
           <div>
