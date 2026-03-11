@@ -4,6 +4,17 @@ import { sql } from "@/lib/db"
 import { getCurrentUser } from "@/lib/actions/auth"
 import { revalidatePath } from "next/cache"
 
+// Helper function to revalidate all paths that might show master data
+// This ensures Super Admin changes are visible to all roles immediately
+function revalidateAllMasterDataPaths() {
+  revalidatePath("/master-data")
+  revalidatePath("/admin")
+  revalidatePath("/dashboard")
+  revalidatePath("/tickets")
+  revalidatePath("/tickets/create")
+  revalidatePath("/analytics")
+}
+
 // Business Unit Groups
 export async function getBusinessUnitGroups() {
   try {
@@ -114,6 +125,7 @@ export async function createBusinessUnitGroup(name: string, description?: string
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to create business unit group - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error: any) {
     if (error.message?.includes("duplicate key") || error.detail?.includes("already exists")) {
@@ -146,6 +158,7 @@ export async function updateBusinessUnitGroup(id: number, name: string, descript
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update business unit group - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error: any) {
     if (error.message?.includes("duplicate key") || error.detail?.includes("already exists")) {
@@ -210,9 +223,8 @@ export async function deleteBusinessUnitGroup(id: number) {
     // For regular admin, cascade should handle it if constraints are set up correctly
     await sql`DELETE FROM business_unit_groups WHERE id = ${id}`
     
-    // Revalidate cache to ensure UI updates
-    revalidatePath("/master-data")
-    revalidatePath("/admin")
+    // Revalidate cache to ensure UI updates for all roles
+    revalidateAllMasterDataPaths()
     
     return { 
       success: true, 
@@ -268,6 +280,7 @@ export async function createCategory(name: string, description?: string) {
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to create category - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error: any) {
     if (error.message?.includes("duplicate key") || error.detail?.includes("already exists")) {
@@ -300,6 +313,7 @@ export async function updateCategory(id: number, name: string, description?: str
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update category - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error: any) {
     if (error.message?.includes("duplicate key") || error.detail?.includes("already exists")) {
@@ -347,6 +361,7 @@ export async function deleteCategory(id: number) {
     
     // Hard delete: Permanently remove (cascade will handle related subcategories, tickets, mappings)
     await sql`DELETE FROM categories WHERE id = ${id}`
+    revalidateAllMasterDataPaths()
     return { 
       success: true, 
       message: isSuperAdmin 
@@ -426,6 +441,7 @@ export async function createSubcategory(categoryId: number, name: string, descri
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to create subcategory - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error: any) {
     if (error.message?.includes("duplicate key") || error.detail?.includes("already exists")) {
@@ -457,6 +473,7 @@ export async function updateSubcategory(id: number, name: string, description?: 
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update subcategory - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error) {
     console.error("Error updating subcategory:", error)
@@ -532,6 +549,7 @@ export async function deleteSubcategory(id: number) {
 
     // Hard delete: Permanently remove (cascade will handle related tickets and mappings)
     await sql`DELETE FROM subcategories WHERE id = ${id}`
+    revalidateAllMasterDataPaths()
     return { 
       success: true, 
       message: isSuperAdmin 
@@ -704,6 +722,7 @@ export async function createTicketClassificationMapping(
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to create mapping - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error) {
     console.error("Error creating ticket classification mapping:", error)
@@ -754,6 +773,7 @@ export async function updateTicketClassificationMapping(
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update mapping - no data returned" }
     }
+    revalidateAllMasterDataPaths()
     return { success: true, data: result[0] }
   } catch (error) {
     console.error("Error updating ticket classification mapping:", error)
@@ -817,6 +837,7 @@ export async function deleteTicketClassificationMapping(id: number) {
     
     // Hard delete: Permanently remove
     await sql`DELETE FROM ticket_classification_mapping WHERE id = ${id}`
+    revalidateAllMasterDataPaths()
     return { 
       success: true, 
       message: isSuperAdmin 

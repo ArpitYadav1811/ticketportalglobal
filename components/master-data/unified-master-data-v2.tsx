@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -219,10 +220,14 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
           // Force refresh to clear any cached data
           router.refresh()
           await loadData()
-          if (result.message) alert(result.message)
+          if (result.message) {
+            toast.success(result.message)
+          } else {
+            toast.success("Business Group deleted successfully")
+          }
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
-          alert(result.error || "Failed to delete")
+          toast.error(result.error || "Failed to delete business group")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
       },
@@ -290,10 +295,14 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         const result = await deleteCategory(id)
         if (result.success) {
           await loadData()
-          if (result.message) alert(result.message)
+          if (result.message) {
+            toast.success(result.message)
+          } else {
+            toast.success("Category deleted successfully")
+          }
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
-          alert(result.error || "Failed to delete")
+          toast.error(result.error || "Failed to delete category")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
       },
@@ -353,10 +362,14 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         const result = await deleteSubcategory(id)
         if (result.success) {
           await loadData()
-          if (result.message) alert(result.message)
+          if (result.message) {
+            toast.success(result.message)
+          } else {
+            toast.success("Subcategory deleted successfully")
+          }
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
-          alert(result.error || "Failed to delete")
+          toast.error(result.error || "Failed to delete subcategory")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
       },
@@ -419,10 +432,14 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         const result = await deleteTicketClassificationMapping(id)
         if (result.success) {
           await loadData()
-          if (result.message) alert(result.message)
+          if (result.message) {
+            toast.success(result.message)
+          } else {
+            toast.success("Mapping deleted successfully")
+          }
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
-          alert(result.error || "Failed to delete")
+          toast.error(result.error || "Failed to delete mapping")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
       },

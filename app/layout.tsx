@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/components/error-boundary"
 import { NextAuthSessionProvider } from "@/components/providers/session-provider"
 import { SessionRefresher } from "@/components/providers/session-refresher"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -63,6 +64,7 @@ export default function RootLayout({
             </NextAuthSessionProvider>
           </ErrorBoundary>
         </ThemeProvider>
+        <Toaster />
         <Analytics />
       </body>
     </html>

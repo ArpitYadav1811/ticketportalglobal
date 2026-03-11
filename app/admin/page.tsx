@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import {
   Shield,
@@ -289,16 +290,25 @@ function TeamsTab() {
       const result = editTeam
         ? await updateTeam(editTeam.id, formData.name, formData.description)
         : await createTeam(formData.name, formData.description)
-      if (result.success) { await loadTeams(); setShowModal(false) }
-      else alert(result.error || "Failed to save team")
+      if (result.success) { 
+        await loadTeams(); 
+        setShowModal(false)
+        toast.success("Team saved successfully")
+      } else {
+        toast.error(result.error || "Failed to save team")
+      }
     } finally { setSaving(false) }
   }
 
   const handleDelete = async (id: number, name: string) => {
     if (confirm(`Delete team "${name}"?`)) {
       const result = await deleteTeam(id)
-      if (result.success) loadTeams()
-      else alert(result.error || "Failed to delete team")
+      if (result.success) {
+        loadTeams()
+        toast.success("Team deleted successfully")
+      } else {
+        toast.error(result.error || "Failed to delete team")
+      }
  }
  }
 
@@ -453,9 +463,10 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
         const result = await updateBusinessGroupSpoc(bgId, newSpocName, spocType)
         if (result.success) {
           await loadData()
+          toast.success(`${spocLabel} updated successfully`)
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "update" })
         } else {
-          alert(result.error || `Failed to update ${spocLabel}`)
+          toast.error(result.error || `Failed to update ${spocLabel}`)
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
         setSpocSaving(null)
@@ -505,9 +516,10 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
         const result = await updateFunctionalAreaMapping(mappingId, newFaId, newBgId)
         if (result.success) {
           await loadData()
+          toast.success("Mapping updated successfully")
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "update" })
         } else {
-          alert(result.error || "Failed to update mapping")
+          toast.error(result.error || "Failed to update mapping")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
         setMappingSaving(null)
@@ -525,8 +537,14 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
     const result = editFA
       ? await updateFunctionalArea(editFA.id, faForm.name, faForm.description)
       : await createFunctionalArea(faForm.name, faForm.description)
-    if (result.success) { await loadData(); setShowAddFA(false); setEditFA(null) }
-    else alert(result.error || "Failed to save")
+    if (result.success) { 
+      await loadData(); 
+      setShowAddFA(false); 
+      setEditFA(null)
+      toast.success("Functional Area saved successfully")
+    } else {
+      toast.error(result.error || "Failed to save")
+    }
     setSaving(false)
   }
 
@@ -552,9 +570,10 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
         const result = await deleteFunctionalArea(id)
         if (result.success) {
           await loadData()
+          toast.success("Functional Area deleted successfully")
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
         } else {
-          alert(result.error || "Failed to delete")
+          toast.error(result.error || "Failed to delete")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
       },
@@ -580,9 +599,10 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
           await loadData()
           setShowAddMapping(false)
           setMappingForm({ functionalAreaId: "", targetBusinessGroupId: "" })
+          toast.success("Mapping added successfully")
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "add" })
         } else {
-          alert(result.error || "Failed to add mapping")
+          toast.error(result.error || "Failed to add mapping")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
         setSaving(false)
@@ -609,9 +629,10 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
         const result = await removeFunctionalAreaMapping(id)
         if (result.success) {
           await loadData()
+          toast.success("Mapping removed successfully")
           setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "remove" })
         } else {
-          alert(result.error || "Failed to remove")
+          toast.error(result.error || "Failed to remove")
           setConfirmDialog(prev => ({ ...prev, loading: false }))
         }
       },
