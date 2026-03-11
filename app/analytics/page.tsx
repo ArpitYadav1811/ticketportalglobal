@@ -32,9 +32,14 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 bg-card dark:bg-gray-800 p-4 shadow-lg rounded-md border border-border">
-        <AnalyticsHeader userId={user?.id} userRole={userRole} groupName={user?.group_name} userName={user?.full_name} />
-        <AnalyticsCharts userId={user?.id} userRole={userRole} />
+      <div className="pl-6 pr-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
+        <div className="px-1 py-4">
+          <AnalyticsHeader userId={user?.id} userRole={userRole} groupName={user?.group_name} userName={user?.full_name} />
+        </div>
+        <div className="border-b border-slate-200 dark:border-slate-700 mb-4" />
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4">
+          <AnalyticsCharts userId={user?.id} userRole={userRole} />
+        </div>
       </div>
     </DashboardLayout>
   )
