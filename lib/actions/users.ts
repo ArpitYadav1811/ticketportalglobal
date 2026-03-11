@@ -338,33 +338,23 @@ export async function deleteUser(id: number) {
 
 export async function getUserRoles(includeSuper = false) {
   try {
-    // Fetch distinct roles that actually exist in the database
-    const result = await sql`
-      SELECT DISTINCT role FROM users WHERE role IS NOT NULL ORDER BY role ASC
-    `
-
-    // Format role values into label-value pairs
-    const formatLabel = (role: string) => {
-      return role
-        .split("_")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ")
-    }
-
-    let roles = result.map((r: any) => ({
-      value: r.role,
-      label: formatLabel(r.role),
-    }))
-
-    // Filter out superadmin unless explicitly requested
-    if (!includeSuper) {
-      roles = roles.filter((r: any) => r.value !== "superadmin")
-    }
-
+    // Only allow these 4 roles in the system
+    const allowedRoles = [
+      { value: "user", label: "User" },
+      { value: "admin", label: "Admin" },
+      { value: "manager", label: "Manager (SPOC)" },
+      { value: "superadmin", label: "Super Admin" },
+    ]
+    
+    // Filter based on includeSuper parameter
+    const roles = includeSuper 
+      ? allowedRoles 
+      : allowedRoles.filter((r) => r.value !== "superadmin")
+    
     return { success: true, data: roles }
   } catch (error) {
     console.error("Error fetching roles:", error)
-    return { success: true, data: [{ value: "user", label: "User" }, { value: "admin", label: "Admin" }] }
+    return { success: true, data: [{ value: "user", label: "User" }, { value: "admin", label: "Admin" }, { value: "manager", label: "Manager (SPOC)" }] }
   }
 }
 

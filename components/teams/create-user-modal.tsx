@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getUserRoles } from "@/lib/actions/users"
 
 interface CreateUserModalProps {
  isOpen: boolean
@@ -12,25 +13,31 @@ interface CreateUserModalProps {
 }
 
 export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalProps) {
- const [formData, setFormData] = useState({
- full_name: "",
- email: "",
- role: "Support Agent",
- })
- const [saving, setSaving] = useState(false)
- const [error, setError] = useState("")
- const [tempPassword, setTempPassword] = useState("")
+  const [formData, setFormData] = useState({
+    full_name: "",
+    email: "",
+    role: "user",
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [tempPassword, setTempPassword] = useState("")
+  const [roleOptions, setRoleOptions] = useState<{ value: string; label: string }[]>([])
 
- const roleOptions = [
- "Support Agent",
- "Team Lead",
- "Manager",
- "Developer",
- "Admin",
- "QA Engineer",
- "Designer",
- "Senior Engineer",
- ]
+  useEffect(() => {
+    const loadRoles = async () => {
+      const result = await getUserRoles(false) // Don't include superadmin for user creation
+      if (result.success && result.data) {
+        setRoleOptions(result.data)
+        // Set default role to first available role
+        if (result.data.length > 0 && !formData.role) {
+          setFormData(prev => ({ ...prev, role: result.data[0].value }))
+        }
+      }
+    }
+    if (isOpen) {
+      loadRoles()
+    }
+  }, [isOpen])
 
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault()
@@ -63,7 +70,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
  navigator.clipboard.writeText(`Email: ${formData.email}\nTemporary Password: ${data.tempPassword}`)
  }
 
- setFormData({ full_name: "", email: "", role: "Support Agent" })
+    setFormData({ full_name: "", email: "", role: roleOptions[0]?.value || "user" })
  onSuccess()
  setTimeout(() => {
  onClose()
@@ -136,17 +143,22 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
 
  <div>
  <label className="block text-sm font-semibold text-foreground mb-2">Role</label>
- <select
- value={formData.role}
- onChange={(e) => setFormData({ ...formData, role: e.target.value })}
- className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
- >
- {roleOptions.map((role) => (
- <option key={role} value={role}>
- {role}
- </option>
- ))}
- </select>
+          <select
+            value={formData.role}
+            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            required
+          >
+            {roleOptions.length === 0 ? (
+              <option value="">Loading roles...</option>
+            ) : (
+              roleOptions.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))
+            )}
+          </select>
  </div>
 
  <div className="flex gap-3 justify-end pt-6 border-t border-border">
