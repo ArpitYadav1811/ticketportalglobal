@@ -348,7 +348,7 @@ export default function TicketsTableBody({
 
          {/* References - Always visible */}
          <TicketReferencesTooltip ticketId={ticket.id} ticketNumber={ticket.ticket_number}>
-          <button
+         <button
            className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all duration-200 group border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
           >
            <div className="relative">
@@ -359,7 +359,7 @@ export default function TicketsTableBody({
              </span>
             )}
            </div>
-          </button>
+         </button>
          </TicketReferencesTooltip>
         </div>
        </td>

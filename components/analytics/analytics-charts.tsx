@@ -421,6 +421,31 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
         </ChartCard>
       </div>
 
+      {/* ── Tickets by Initiator Groups ────────────────────── */}
+      {data.ticketsByInitiatorGroup?.length > 0 && (
+        <ChartCard title="Tickets by Initiator Groups">
+          <div className="overflow-x-auto">
+            <div style={{ minWidth: Math.max(600, data.ticketsByInitiatorGroup.length * 80) }}>
+              <ResponsiveContainer width="100%" height={230}>
+                <BarChart data={data.ticketsByInitiatorGroup} barSize={28}>
+                  <defs>
+                    <linearGradient id="initiatorGroupGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.9} />
+                      <stop offset="100%" stopColor={CHART_COLORS.teal} stopOpacity={0.5} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid {...GRID} />
+                  <XAxis dataKey="initiator_group" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(20,184,166,0.06)" }} />
+                  <Bar dataKey="ticket_count" fill="url(#initiatorGroupGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </ChartCard>
+      )}
+
       {/* ── Full Width Charts ──────────────────────────────── */}
       <div className="space-y-4">
 

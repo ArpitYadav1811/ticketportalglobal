@@ -424,6 +424,39 @@ export async function getAnalyticsData(
             GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
           `
 
+    // --- Tickets by Initiator Groups ---
+    const ticketsByInitiatorGroup = hasUserFilter
+      ? await sql`
+          SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN users u ON t.created_by = u.id
+          LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
+          WHERE bug.name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY bug.name ORDER BY ticket_count DESC
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users u ON t.created_by = u.id
+            LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
+            WHERE bug.name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY bug.name ORDER BY ticket_count DESC
+          `
+        : await sql`
+            SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users u ON t.created_by = u.id
+            LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
+            WHERE bug.name IS NOT NULL
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY bug.name ORDER BY ticket_count DESC
+          `
+
     // --- Monthly Trend ---
     const ticketsByMonth = hasUserFilter
       ? await sql`
@@ -464,6 +497,7 @@ export async function getAnalyticsData(
         teamPerformance: teamPerformance || [],
         topInitiators: topInitiators || [],
         assignmentDistribution: assignmentDistribution || [],
+        ticketsByInitiatorGroup: ticketsByInitiatorGroup || [],
         avgResolutionTime: Number(avgResolutionTime[0]?.avg_hours || 0).toFixed(1),
         ticketsByMonth: ticketsByMonth || [],
         summaryStats: summaryStats[0] || { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
@@ -485,6 +519,7 @@ export async function getAnalyticsData(
         teamPerformance: [],
         topInitiators: [],
         assignmentDistribution: [],
+        ticketsByInitiatorGroup: [],
         avgResolutionTime: "0",
         ticketsByMonth: [],
         summaryStats: { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
