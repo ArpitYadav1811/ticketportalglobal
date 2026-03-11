@@ -89,6 +89,7 @@ export async function getAnalyticsData(
           FROM tickets t
           LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
           WHERE bu.name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY bu.name ORDER BY ticket_count DESC
@@ -99,6 +100,7 @@ export async function getAnalyticsData(
             FROM tickets t
             LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
             WHERE bu.name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.target_business_group_id = ANY(${businessGroupIds})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY bu.name ORDER BY ticket_count DESC
@@ -108,6 +110,7 @@ export async function getAnalyticsData(
             FROM tickets t
             LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
             WHERE bu.name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY bu.name ORDER BY ticket_count DESC
           `
@@ -118,6 +121,7 @@ export async function getAnalyticsData(
           SELECT c.name as category, COUNT(t.id) as ticket_count
           FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
           WHERE c.name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY c.name ORDER BY ticket_count DESC
@@ -127,6 +131,7 @@ export async function getAnalyticsData(
             SELECT c.name as category, COUNT(t.id) as ticket_count
             FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
             WHERE c.name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.target_business_group_id = ANY(${businessGroupIds})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY c.name ORDER BY ticket_count DESC
@@ -135,6 +140,7 @@ export async function getAnalyticsData(
             SELECT c.name as category, COUNT(t.id) as ticket_count
             FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
             WHERE c.name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY c.name ORDER BY ticket_count DESC
           `
@@ -191,24 +197,27 @@ export async function getAnalyticsData(
     const ticketsByStatus = hasUserFilter
       ? await sql`
           SELECT status, COUNT(*) as count FROM tickets
-          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            AND (created_by = ${userId} OR assigned_to = ${userId})
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY status ORDER BY count DESC
         `
       : hasGroupFilter
         ? await sql`
             SELECT status, COUNT(*) as count FROM tickets
-            WHERE target_business_group_id = ANY(${businessGroupIds})
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND target_business_group_id = ANY(${businessGroupIds})
               AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY status ORDER BY count DESC
           `
         : await sql`
             SELECT status, COUNT(*) as count FROM tickets
-            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY status ORDER BY count DESC
           `
 
-    // --- Summary Stats ---
+    // --- Summary Stats (excluding deleted tickets) ---
     const summaryStats = hasUserFilter
       ? await sql`
           SELECT
@@ -218,7 +227,8 @@ export async function getAnalyticsData(
             COUNT(*) FILTER (WHERE status = 'closed') as closed,
             COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
           FROM tickets
-          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            AND (created_by = ${userId} OR assigned_to = ${userId})
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
         `
       : hasGroupFilter
@@ -230,7 +240,8 @@ export async function getAnalyticsData(
               COUNT(*) FILTER (WHERE status = 'closed') as closed,
               COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
             FROM tickets
-            WHERE target_business_group_id = ANY(${businessGroupIds})
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND target_business_group_id = ANY(${businessGroupIds})
               AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           `
         : await sql`
@@ -241,27 +252,31 @@ export async function getAnalyticsData(
               COUNT(*) FILTER (WHERE status = 'closed') as closed,
               COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
             FROM tickets
-            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           `
 
     // --- Tickets by Type ---
     const ticketsByType = hasUserFilter
       ? await sql`
           SELECT ticket_type, COUNT(*) as count FROM tickets
-          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            AND (created_by = ${userId} OR assigned_to = ${userId})
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY ticket_type ORDER BY count DESC
         `
       : hasGroupFilter
         ? await sql`
             SELECT ticket_type, COUNT(*) as count FROM tickets
-            WHERE target_business_group_id = ANY(${businessGroupIds})
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND target_business_group_id = ANY(${businessGroupIds})
               AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY ticket_type ORDER BY count DESC
           `
         : await sql`
             SELECT ticket_type, COUNT(*) as count FROM tickets
-            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY ticket_type ORDER BY count DESC
           `
 
@@ -290,20 +305,23 @@ export async function getAnalyticsData(
     const ticketTrend = hasUserFilter
       ? await sql`
           SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
-          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            AND (created_by = ${userId} OR assigned_to = ${userId})
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
         `
       : hasGroupFilter
         ? await sql`
             SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
-            WHERE target_business_group_id = ANY(${businessGroupIds})
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND target_business_group_id = ANY(${businessGroupIds})
               AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
           `
         : await sql`
             SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
-            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
           `
 
@@ -371,6 +389,7 @@ export async function getAnalyticsData(
           FROM tickets t
           LEFT JOIN users u ON t.created_by = u.id
           WHERE u.full_name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
@@ -381,6 +400,7 @@ export async function getAnalyticsData(
             FROM tickets t
             LEFT JOIN users u ON t.created_by = u.id
             WHERE u.full_name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.target_business_group_id = ANY(${businessGroupIds})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
@@ -390,6 +410,7 @@ export async function getAnalyticsData(
             FROM tickets t
             LEFT JOIN users u ON t.created_by = u.id
             WHERE u.full_name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
           `
@@ -401,6 +422,7 @@ export async function getAnalyticsData(
           FROM tickets t
           LEFT JOIN users u ON t.assigned_to = u.id
           WHERE u.full_name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
           GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
@@ -411,6 +433,7 @@ export async function getAnalyticsData(
             FROM tickets t
             LEFT JOIN users u ON t.assigned_to = u.id
             WHERE u.full_name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.target_business_group_id = ANY(${businessGroupIds})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
@@ -420,6 +443,7 @@ export async function getAnalyticsData(
             FROM tickets t
             LEFT JOIN users u ON t.assigned_to = u.id
             WHERE u.full_name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
           `
@@ -432,9 +456,10 @@ export async function getAnalyticsData(
           LEFT JOIN users u ON t.created_by = u.id
           LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
           WHERE bug.name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY bug.name ORDER BY ticket_count DESC
+          GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
         `
       : hasGroupFilter
         ? await sql`
@@ -443,9 +468,10 @@ export async function getAnalyticsData(
             LEFT JOIN users u ON t.created_by = u.id
             LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
             WHERE bug.name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.target_business_group_id = ANY(${businessGroupIds})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY bug.name ORDER BY ticket_count DESC
+            GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
           `
         : await sql`
             SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
@@ -453,8 +479,51 @@ export async function getAnalyticsData(
             LEFT JOIN users u ON t.created_by = u.id
             LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
             WHERE bug.name IS NOT NULL
+              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY bug.name ORDER BY ticket_count DESC
+            GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
+          `
+
+    // --- Tickets by SPOC ---
+    const ticketsBySpoc = hasUserFilter
+      ? await sql`
+          SELECT 
+            COALESCE(spoc.full_name, 'Unassigned') as spoc_name, 
+            COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY spoc.full_name
+          ORDER BY ticket_count DESC
+          LIMIT 10
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT 
+              COALESCE(spoc.full_name, 'Unassigned') as spoc_name, 
+              COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
+            WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY spoc.full_name
+            ORDER BY ticket_count DESC
+            LIMIT 10
+          `
+        : await sql`
+            SELECT 
+              COALESCE(spoc.full_name, 'Unassigned') as spoc_name, 
+              COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
+            WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY spoc.full_name
+            ORDER BY ticket_count DESC
+            LIMIT 10
           `
 
     // --- Monthly Trend ---
@@ -462,7 +531,8 @@ export async function getAnalyticsData(
       ? await sql`
           SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
           FROM tickets
-          WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            AND created_at >= CURRENT_DATE - INTERVAL '12 months'
             AND (created_by = ${userId} OR assigned_to = ${userId})
           GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
           ORDER BY DATE_TRUNC('month', created_at) ASC
@@ -471,7 +541,8 @@ export async function getAnalyticsData(
         ? await sql`
             SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
             FROM tickets
-            WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND created_at >= CURRENT_DATE - INTERVAL '12 months'
               AND target_business_group_id = ANY(${businessGroupIds})
             GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
             ORDER BY DATE_TRUNC('month', created_at) ASC
@@ -479,7 +550,8 @@ export async function getAnalyticsData(
         : await sql`
             SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
             FROM tickets
-            WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+            WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+              AND created_at >= CURRENT_DATE - INTERVAL '12 months'
             GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
             ORDER BY DATE_TRUNC('month', created_at) ASC
           `
@@ -489,16 +561,13 @@ export async function getAnalyticsData(
       data: {
         ticketsByBU: ticketsByBU || [],
         ticketsByCategory: ticketsByCategory || [],
-        teamMemberStatusBreakdown: teamMemberStatusBreakdown || [],
         ticketsByStatus: ticketsByStatus || [],
         ticketsByType: ticketsByType || [],
-        ticketsByPriority: ticketsByPriority || [],
         ticketTrend: ticketTrend || [],
-        teamPerformance: teamPerformance || [],
         topInitiators: topInitiators || [],
         assignmentDistribution: assignmentDistribution || [],
         ticketsByInitiatorGroup: ticketsByInitiatorGroup || [],
-        avgResolutionTime: Number(avgResolutionTime[0]?.avg_hours || 0).toFixed(1),
+        ticketsBySpoc: ticketsBySpoc || [],
         ticketsByMonth: ticketsByMonth || [],
         summaryStats: summaryStats[0] || { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
       },
@@ -511,16 +580,13 @@ export async function getAnalyticsData(
       data: {
         ticketsByBU: [],
         ticketsByCategory: [],
-        teamMemberStatusBreakdown: [],
         ticketsByStatus: [],
         ticketsByType: [],
-        ticketsByPriority: [],
         ticketTrend: [],
-        teamPerformance: [],
         topInitiators: [],
         assignmentDistribution: [],
         ticketsByInitiatorGroup: [],
-        avgResolutionTime: "0",
+        ticketsBySpoc: [],
         ticketsByMonth: [],
         summaryStats: { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
       },

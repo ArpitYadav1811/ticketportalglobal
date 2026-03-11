@@ -108,9 +108,10 @@ interface AnalyticsChartsProps {
   userId?: number
   userRole?: string
   userGroupId?: number
+  selectedGroupId?: number | "all" | null
 }
 
-export default function AnalyticsCharts({ userId, userRole, userGroupId }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({ userId, userRole, userGroupId, selectedGroupId }: AnalyticsChartsProps) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [daysFilter, setDaysFilter] = useState(30)
@@ -118,10 +119,22 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
   const [filtersReady, setFiltersReady] = useState(false)
 
   const isAdmin = userRole === "admin" || userRole === "superadmin"
+  const isSuperAdmin = userRole === "superadmin"
 
   // Load business groups for non-admin users (both SPOC and regular users)
   useEffect(() => {
     const loadBusinessGroups = async () => {
+      // For Super Admin, use selectedGroupId from dropdown
+      if (isSuperAdmin) {
+        if (selectedGroupId === "all" || selectedGroupId === null) {
+          setBusinessGroupIds(undefined) // Show all tickets
+        } else {
+          setBusinessGroupIds([selectedGroupId as number]) // Filter by selected group
+        }
+        setFiltersReady(true)
+        return
+      }
+
       if (isAdmin) {
         setFiltersReady(true)
         return
@@ -155,18 +168,21 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
       setFiltersReady(true)
     }
     loadBusinessGroups()
-  }, [userId, userRole, userGroupId, isAdmin])
+  }, [userId, userRole, userGroupId, isAdmin, isSuperAdmin, selectedGroupId])
 
   const loadData = useCallback(async () => {
     setLoading(true)
+    // For Super Admin with selected group, filter by that group
     // For non-admin users, always filter by business group
-    const options = !isAdmin && businessGroupIds && businessGroupIds.length > 0
-      ? { businessGroupIds }
-      : undefined
+    const options = (isSuperAdmin && selectedGroupId !== "all" && selectedGroupId !== null)
+      ? { businessGroupIds: [selectedGroupId as number] }
+      : (!isAdmin && businessGroupIds && businessGroupIds.length > 0)
+        ? { businessGroupIds }
+        : undefined
     const result = await getAnalyticsData(daysFilter, options)
     if (result.success) setData(result.data)
     setLoading(false)
-  }, [daysFilter, isAdmin, businessGroupIds])
+  }, [daysFilter, isAdmin, isSuperAdmin, businessGroupIds, selectedGroupId])
 
   useEffect(() => {
     if (!filtersReady) return
@@ -272,18 +288,14 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
           <div className="hidden md:block w-px h-12 bg-border" />
 
           {/* Key Metrics */}
-          <div className="flex flex-wrap gap-x-5 gap-y-2 flex-shrink-0">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-foreground-secondary mb-0.5">Avg Resolution</p>
-              <p className="text-base font-poppins font-bold text-foreground">{data.avgResolutionTime}h</p>
-            </div>
-            {isAdmin && (
+          {isAdmin && (
+            <div className="flex flex-wrap gap-x-5 gap-y-2 flex-shrink-0">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-foreground-secondary mb-0.5">Business Units</p>
                 <p className="text-base font-poppins font-bold text-foreground">{data.ticketsByBU.length}</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -353,26 +365,30 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
           </ChartCard>
         )}
 
-        {/* Team Member Status Breakdown */}
-        <ChartCard title="Team Member Status Breakdown (Top 10)">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, data.teamMemberStatusBreakdown.length * 80) }}>
-              <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={data.teamMemberStatusBreakdown} barSize={18} barGap={1}>
-                  <CartesianGrid {...GRID} />
-                  <XAxis dataKey="member" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(99,102,241,0.04)" }} />
-                  <Legend content={<CustomLegend />} />
-                  <Bar dataKey="open" stackId="status" fill="#3b82f6" radius={[0, 0, 0, 0]} name="Open" />
-                  <Bar dataKey="resolved" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} name="Resolved" />
-                  <Bar dataKey="closed" stackId="status" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Closed" />
-                  <Bar dataKey="on_hold" stackId="status" fill="#f59e0b" radius={[3, 3, 0, 0]} name="On-Hold" />
-                </BarChart>
-              </ResponsiveContainer>
+        {/* Tickets by SPOC */}
+        {data.ticketsBySpoc?.length > 0 && (
+          <ChartCard title="Tickets by SPOC">
+            <div className="overflow-x-auto">
+              <div style={{ minWidth: Math.max(600, data.ticketsBySpoc.length * 80) }}>
+                <ResponsiveContainer width="100%" height={230}>
+                  <BarChart data={data.ticketsBySpoc} barSize={28}>
+                    <defs>
+                      <linearGradient id="spocGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_COLORS.pink} stopOpacity={0.9} />
+                        <stop offset="100%" stopColor={CHART_COLORS.pink} stopOpacity={0.5} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID} />
+                    <XAxis dataKey="spoc_name" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(236,72,153,0.06)" }} />
+                    <Bar dataKey="ticket_count" fill="url(#spocGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
-        </ChartCard>
+          </ChartCard>
+        )}
       </div>
 
       {/* ── Charts (vertical stack) ────────────────────────────── */}
@@ -403,22 +419,6 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
           </ChartCard>
         )}
 
-        {/* Priority Distribution */}
-        <ChartCard title="Priority Distribution">
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={data.ticketsByPriority} barSize={32}>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="priority" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(16,185,129,0.06)" }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Tickets">
-                {data.ticketsByPriority.map((_: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={GRADIENT_BAR[index % GRADIENT_BAR.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
       </div>
 
       {/* ── Tickets by Initiator Groups ────────────────────── */}
@@ -477,25 +477,6 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId }: Analy
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* Team Performance */}
-        <ChartCard title="Team Performance (Top 10)">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, data.teamPerformance.length * 80) }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.teamPerformance} barSize={14} barGap={2}>
-                  <CartesianGrid {...GRID} />
-                  <XAxis dataKey="assignee" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(99,102,241,0.04)" }} />
-                  <Legend content={<CustomLegend />} />
-                  <Bar dataKey="closed_count" fill={CHART_COLORS.success} radius={[3, 3, 0, 0]} name="Closed" />
-                  <Bar dataKey="open_count" fill={CHART_COLORS.accent} radius={[3, 3, 0, 0]} name="Open" />
-                  <Bar dataKey="total_count" fill={CHART_COLORS.primary} radius={[3, 3, 0, 0]} name="Total" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </ChartCard>
 
         {/* Monthly Trend */}
         <ChartCard title="Monthly Ticket Trend (Last 12 Months)">
