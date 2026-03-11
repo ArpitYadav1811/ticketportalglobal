@@ -139,37 +139,52 @@ export async function getAnalyticsData(
             GROUP BY c.name ORDER BY ticket_count DESC
           `
 
-    // --- Tickets by Subcategory ---
-    const ticketsBySubcategory = hasUserFilter
+    // --- Team Member Status Breakdown (stacked bar: each member's ticket status) ---
+    const teamMemberStatusBreakdown = hasUserFilter
       ? await sql`
-          SELECT s.name as subcategory, c.name as category, COUNT(t.id) as ticket_count
+          SELECT 
+            u.full_name as member,
+            COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open,
+            COUNT(CASE WHEN t.status = 'resolved' THEN 1 END) as resolved,
+            COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed,
+            COUNT(CASE WHEN t.status = 'hold' OR t.status = 'on-hold' THEN 1 END) as on_hold,
+            COUNT(*) as total
           FROM tickets t
-          LEFT JOIN subcategories s ON t.subcategory_id = s.id
-          LEFT JOIN categories c ON t.category_id = c.id
-          WHERE s.name IS NOT NULL
+          LEFT JOIN users u ON t.assigned_to = u.id
+          WHERE u.full_name IS NOT NULL
             AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY s.name, c.name ORDER BY ticket_count DESC LIMIT 10
+          GROUP BY u.full_name ORDER BY total DESC LIMIT 10
         `
       : hasGroupFilter
         ? await sql`
-            SELECT s.name as subcategory, c.name as category, COUNT(t.id) as ticket_count
+            SELECT 
+              u.full_name as member,
+              COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open,
+              COUNT(CASE WHEN t.status = 'resolved' THEN 1 END) as resolved,
+              COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed,
+              COUNT(CASE WHEN t.status = 'hold' OR t.status = 'on-hold' THEN 1 END) as on_hold,
+              COUNT(*) as total
             FROM tickets t
-            LEFT JOIN subcategories s ON t.subcategory_id = s.id
-            LEFT JOIN categories c ON t.category_id = c.id
-            WHERE s.name IS NOT NULL
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE u.full_name IS NOT NULL
               AND t.target_business_group_id = ANY(${businessGroupIds})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY s.name, c.name ORDER BY ticket_count DESC LIMIT 10
+            GROUP BY u.full_name ORDER BY total DESC LIMIT 10
           `
         : await sql`
-            SELECT s.name as subcategory, c.name as category, COUNT(t.id) as ticket_count
+            SELECT 
+              u.full_name as member,
+              COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open,
+              COUNT(CASE WHEN t.status = 'resolved' THEN 1 END) as resolved,
+              COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed,
+              COUNT(CASE WHEN t.status = 'hold' OR t.status = 'on-hold' THEN 1 END) as on_hold,
+              COUNT(*) as total
             FROM tickets t
-            LEFT JOIN subcategories s ON t.subcategory_id = s.id
-            LEFT JOIN categories c ON t.category_id = c.id
-            WHERE s.name IS NOT NULL
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE u.full_name IS NOT NULL
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY s.name, c.name ORDER BY ticket_count DESC LIMIT 10
+            GROUP BY u.full_name ORDER BY total DESC LIMIT 10
           `
 
     // --- Tickets by Status ---
@@ -274,22 +289,22 @@ export async function getAnalyticsData(
     // --- Ticket Trend ---
     const ticketTrend = hasUserFilter
       ? await sql`
-          SELECT DATE(created_at) as date, COUNT(*) as count FROM tickets
+          SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
           WHERE (created_by = ${userId} OR assigned_to = ${userId})
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY DATE(created_at) ORDER BY date ASC
+          GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
         `
       : hasGroupFilter
         ? await sql`
-            SELECT DATE(created_at) as date, COUNT(*) as count FROM tickets
+            SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
             WHERE target_business_group_id = ANY(${businessGroupIds})
               AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY DATE(created_at) ORDER BY date ASC
+            GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
           `
         : await sql`
-            SELECT DATE(created_at) as date, COUNT(*) as count FROM tickets
+            SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
             WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY DATE(created_at) ORDER BY date ASC
+            GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
           `
 
     // --- Team Performance ---
@@ -441,7 +456,7 @@ export async function getAnalyticsData(
       data: {
         ticketsByBU: ticketsByBU || [],
         ticketsByCategory: ticketsByCategory || [],
-        ticketsBySubcategory: ticketsBySubcategory || [],
+        teamMemberStatusBreakdown: teamMemberStatusBreakdown || [],
         ticketsByStatus: ticketsByStatus || [],
         ticketsByType: ticketsByType || [],
         ticketsByPriority: ticketsByPriority || [],
@@ -462,7 +477,7 @@ export async function getAnalyticsData(
       data: {
         ticketsByBU: [],
         ticketsByCategory: [],
-        ticketsBySubcategory: [],
+        teamMemberStatusBreakdown: [],
         ticketsByStatus: [],
         ticketsByType: [],
         ticketsByPriority: [],

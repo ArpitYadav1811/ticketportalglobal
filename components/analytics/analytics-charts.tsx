@@ -39,6 +39,7 @@ const DURATION_OPTIONS = [
   { label: "1 Week", value: 7 },
   { label: "1 Month", value: 30 },
   { label: "3 Months", value: 90 },
+  { label: "All", value: 0 },
 ]
 
 /* ── Shared custom tooltip ─────────────────────────────────── */
@@ -194,7 +195,7 @@ export default function AnalyticsCharts({ userId, userRole }: AnalyticsChartsPro
     { label: "On-Hold", value: onHold, pct: pctHold, color: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
   ]
 
-  const durationLabel = DURATION_OPTIONS.find(o => o.value === daysFilter)?.label || `${daysFilter}d`
+  const durationLabel = daysFilter === 0 ? "All Time" : (DURATION_OPTIONS.find(o => o.value === daysFilter)?.label || `${daysFilter}d`)
 
   return (
     <div className="space-y-4">
@@ -319,15 +320,19 @@ export default function AnalyticsCharts({ userId, userRole }: AnalyticsChartsPro
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* Top 10 Subcategories */}
-        <ChartCard title="Top 10 Subcategories">
+        {/* Team Member Status Breakdown */}
+        <ChartCard title="Team Member Status Breakdown (Top 10)">
           <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={data.ticketsBySubcategory} layout="vertical" barSize={16}>
+            <BarChart data={data.teamMemberStatusBreakdown} barSize={18} barGap={1}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="subcategory" type="category" width={110} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(59,130,246,0.06)" }} />
-              <Bar dataKey="ticket_count" fill={CHART_COLORS.accent} radius={[0, 4, 4, 0]} name="Tickets" />
+              <XAxis dataKey="member" angle={-35} textAnchor="end" height={90} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(99,102,241,0.04)" }} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="open" stackId="status" fill="#3b82f6" radius={[0, 0, 0, 0]} name="Open" />
+              <Bar dataKey="resolved" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} name="Resolved" />
+              <Bar dataKey="closed" stackId="status" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Closed" />
+              <Bar dataKey="on_hold" stackId="status" fill="#f59e0b" radius={[3, 3, 0, 0]} name="On-Hold" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
