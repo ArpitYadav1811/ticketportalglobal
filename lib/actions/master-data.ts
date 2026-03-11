@@ -171,19 +171,34 @@ export async function deleteBusinessUnitGroup(id: number) {
       return { success: false, error: "Only admins can delete business groups" }
     }
     
-    // Super Admin: Log permanent deletion
+    // Super Admin: Log permanent deletion and delete all related records first
     if (isSuperAdmin) {
       try {
         const { addSystemAuditLog } = await import("./admin")
         const bgToDelete = await sql`SELECT name FROM business_unit_groups WHERE id = ${id}`
         if (bgToDelete.length > 0) {
+          // For Super Admin, delete all related records first to avoid foreign key constraints
+          // Delete ticket classification mappings
+          await sql`DELETE FROM ticket_classification_mapping WHERE target_business_group_id = ${id}`
+          
+          // Delete functional area mappings
+          await sql`DELETE FROM functional_area_business_group_mapping WHERE target_business_group_id = ${id}`
+          
+          // Update users to remove business_unit_group_id reference (set to NULL)
+          await sql`UPDATE users SET business_unit_group_id = NULL WHERE business_unit_group_id = ${id}`
+          
+          // Update tickets to remove business_unit_group_id and target_business_group_id references
+          await sql`UPDATE tickets SET business_unit_group_id = NULL WHERE business_unit_group_id = ${id}`
+          await sql`UPDATE tickets SET target_business_group_id = NULL WHERE target_business_group_id = ${id}`
+          await sql`UPDATE tickets SET assignee_group_id = NULL WHERE assignee_group_id = ${id}`
+          
           await addSystemAuditLog({
             actionType: "hard_delete",
             entityType: "business_unit_group",
             oldValue: bgToDelete[0].name,
             performedBy: currentUser.id,
             performedByName: currentUser.full_name || currentUser.email,
-            notes: "Business Group permanently deleted by Super Admin. All related data will be cascade deleted."
+            notes: "Business Group permanently deleted by Super Admin. All related data has been removed."
           })
         }
       } catch (auditError) {
@@ -191,7 +206,8 @@ export async function deleteBusinessUnitGroup(id: number) {
       }
     }
     
-    // Hard delete: Permanently remove (cascade will handle related tickets, users, mappings, etc.)
+    // Hard delete: Permanently remove (for Super Admin, related records already deleted above)
+    // For regular admin, cascade should handle it if constraints are set up correctly
     await sql`DELETE FROM business_unit_groups WHERE id = ${id}`
     
     // Revalidate cache to ensure UI updates
