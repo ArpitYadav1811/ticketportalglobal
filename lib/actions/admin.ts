@@ -130,7 +130,9 @@ export async function getFunctionalAreaMappings() {
         fa.name as functional_area_name,
         fabgm.target_business_group_id,
         bug.name as business_group_name,
-        bug.spoc_name
+        bug.spoc_name,
+        bug.primary_spoc_name,
+        bug.secondary_spoc_name
       FROM functional_area_business_group_mapping fabgm
       JOIN functional_areas fa ON fabgm.functional_area_id = fa.id
       JOIN business_unit_groups bug ON fabgm.target_business_group_id = bug.id
@@ -453,34 +455,150 @@ export async function updateUserBusinessGroup(userId: number, businessGroupId: n
 
 // ==================== BUSINESS GROUP SPOC MANAGEMENT ====================
 
-export async function updateBusinessGroupSpoc(businessGroupId: number, spocName: string) {
+export async function updateBusinessGroupSpoc(
+  businessGroupId: number,
+  spocName: string,
+  spocType: "primary" | "secondary" = "primary"
+) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser) return { success: false, error: "Not authenticated" }
 
     const role = currentUser.role?.toLowerCase()
-    if (role !== "superadmin" && role !== "admin") {
-      return { success: false, error: "Only Admin or Super Admin can update SPOC" }
+    const isSuperAdmin = role === "superadmin"
+    const isAdmin = role === "admin"
+
+    // Get business group info
+    const bgInfo = await sql`
+      SELECT name, spoc_name, primary_spoc_name, secondary_spoc_name
+      FROM business_unit_groups
+      WHERE id = ${businessGroupId}
+    `
+    if (bgInfo.length === 0) {
+      return { success: false, error: "Business group not found" }
     }
 
-    const old = await sql`SELECT name, spoc_name FROM business_unit_groups WHERE id = ${businessGroupId}`
+    const bg = bgInfo[0]
 
-    await sql`UPDATE business_unit_groups SET spoc_name = ${spocName} WHERE id = ${businessGroupId}`
+    // Check permissions
+    if (spocType === "primary") {
+      // Only Super Admin or Admin can update Primary SPOC
+      if (!isSuperAdmin && !isAdmin) {
+        return { success: false, error: "Only Admin or Super Admin can update Primary SPOC" }
+      }
+    } else if (spocType === "secondary") {
+      // Secondary SPOC can be updated by:
+      // 1. Super Admin
+      // 2. Admin
+      // 3. Primary SPOC (if current user is the primary SPOC)
+      
+      if (!isSuperAdmin && !isAdmin) {
+        // Check if current user is the Primary SPOC
+        const primarySpocName = bg.primary_spoc_name || bg.spoc_name
+        if (!primarySpocName) {
+          return { success: false, error: "No Primary SPOC assigned. Cannot update Secondary SPOC." }
+        }
+        
+        // Check if current user matches primary SPOC
+        const userMatchesPrimary = await sql`
+          SELECT id FROM users
+          WHERE id = ${currentUser.id}
+          AND LOWER(TRIM(full_name)) = LOWER(TRIM(${primarySpocName}))
+        `
+        
+        if (userMatchesPrimary.length === 0) {
+          return { success: false, error: "Only Primary SPOC can update Secondary SPOC" }
+        }
+      }
+    }
+
+    // Update the appropriate SPOC field
+    if (spocType === "primary") {
+      // Update both spoc_name (for backward compatibility) and primary_spoc_name
+      await sql`
+        UPDATE business_unit_groups
+        SET spoc_name = ${spocName}, 
+            primary_spoc_name = ${spocName}, 
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${businessGroupId}
+      `
+    } else {
+      // Only update secondary_spoc_name
+      await sql`
+        UPDATE business_unit_groups
+        SET secondary_spoc_name = ${spocName}, 
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${businessGroupId}
+      `
+    }
+
+    const oldValue = spocType === "primary" 
+      ? (bg.primary_spoc_name || bg.spoc_name || "None")
+      : (bg.secondary_spoc_name || "None")
 
     await addSystemAuditLog({
       actionType: "spoc_update",
       entityType: "business_group",
       entityId: businessGroupId,
-      oldValue: old[0]?.spoc_name || "None",
-      newValue: spocName,
+      oldValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${oldValue}`,
+      newValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${spocName || "None"}`,
       performedBy: currentUser.id,
       performedByName: currentUser.full_name || currentUser.email,
-      notes: `Updated SPOC for ${old[0]?.name} to ${spocName}`,
+      notes: `Updated ${spocType === "primary" ? "Primary" : "Secondary"} SPOC for ${bg.name} to ${spocName || "None"}`,
     })
 
     return { success: true }
   } catch (error) {
     console.error("Error updating BG SPOC:", error)
     return { success: false, error: "Failed to update SPOC" }
+  }
+}
+
+export async function getBusinessGroupSpocs(businessGroupId: number) {
+  try {
+    const result = await sql`
+      SELECT 
+        bug.id,
+        bug.name,
+        bug.spoc_name,
+        bug.primary_spoc_name,
+        bug.secondary_spoc_name,
+        pspoc.id as primary_spoc_user_id,
+        pspoc.full_name as primary_spoc_full_name,
+        pspoc.email as primary_spoc_email,
+        sspoc.id as secondary_spoc_user_id,
+        sspoc.full_name as secondary_spoc_full_name,
+        sspoc.email as secondary_spoc_email
+      FROM business_unit_groups bug
+      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
+      LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+      WHERE bug.id = ${businessGroupId}
+      LIMIT 1
+    `
+    
+    if (result.length === 0) {
+      return { success: false, error: "Business group not found", data: null }
+    }
+    
+    return {
+      success: true,
+      data: {
+        business_group_id: result[0].id,
+        business_group_name: result[0].name,
+        primary_spoc: result[0].primary_spoc_user_id ? {
+          id: result[0].primary_spoc_user_id,
+          full_name: result[0].primary_spoc_full_name,
+          email: result[0].primary_spoc_email,
+        } : null,
+        secondary_spoc: result[0].secondary_spoc_user_id ? {
+          id: result[0].secondary_spoc_user_id,
+          full_name: result[0].secondary_spoc_full_name,
+          email: result[0].secondary_spoc_email,
+        } : null,
+      },
+    }
+  } catch (error) {
+    console.error("Error fetching business group SPOCs:", error)
+    return { success: false, error: "Failed to fetch SPOCs", data: null }
   }
 }

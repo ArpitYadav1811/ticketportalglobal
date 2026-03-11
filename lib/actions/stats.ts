@@ -63,80 +63,138 @@ export async function getRecentTickets(limit = 5) {
   }
 }
 
-export async function getAnalyticsData(daysFilter: number = 30) {
+/**
+ * Analytics data fetcher with role-based filtering:
+ * - Super Admin / Admin: All tickets (no filter)
+ * - Manager (SPOC): Only tickets targeted to their business groups
+ * - User: Only tickets where they are the creator (initiator) or assignee
+ */
+export async function getAnalyticsData(
+  daysFilter: number = 30,
+  options?: { businessGroupIds?: number[]; userId?: number }
+) {
   try {
-    const daysInterval = daysFilter > 0 ? daysFilter : 30
-    
-    // Build queries conditionally based on daysFilter
-    const ticketsByBU = daysFilter > 0
+    // Use a large interval for "all time" so we always have a valid WHERE clause
+    // (avoids nested sql`` template fragments which Neon doesn't support)
+    const daysInterval = daysFilter > 0 ? daysFilter : 36500 // 100 years ≈ all time
+    const businessGroupIds = options?.businessGroupIds
+    const userId = options?.userId
+    const hasGroupFilter = businessGroupIds && businessGroupIds.length > 0
+    const hasUserFilter = !!userId
+
+    // --- Tickets by Business Unit ---
+    const ticketsByBU = hasUserFilter
       ? await sql`
-          SELECT
-            bu.name as business_unit,
-            COUNT(t.id) as ticket_count
+          SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
           FROM tickets t
           LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
-          WHERE bu.name IS NOT NULL 
+          WHERE bu.name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY bu.name
-          ORDER BY ticket_count DESC
+          GROUP BY bu.name ORDER BY ticket_count DESC
         `
-      : await sql`
-      SELECT
-        bu.name as business_unit,
-        COUNT(t.id) as ticket_count
-      FROM tickets t
-      LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
-      WHERE bu.name IS NOT NULL
-      GROUP BY bu.name
-      ORDER BY ticket_count DESC
-    `
+      : hasGroupFilter
+        ? await sql`
+            SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+            WHERE bu.name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY bu.name ORDER BY ticket_count DESC
+          `
+        : await sql`
+            SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+            WHERE bu.name IS NOT NULL
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY bu.name ORDER BY ticket_count DESC
+          `
 
-    const ticketsByCategory = await sql`
-      SELECT
-        c.name as category,
-        COUNT(t.id) as ticket_count
-      FROM tickets t
-      LEFT JOIN categories c ON t.category_id = c.id
-      WHERE c.name IS NOT NULL
-      GROUP BY c.name
-      ORDER BY ticket_count DESC
-    `
-
-    const ticketsBySubcategory = await sql`
-      SELECT
-        s.name as subcategory,
-        c.name as category,
-        COUNT(t.id) as ticket_count
-      FROM tickets t
-      LEFT JOIN subcategories s ON t.subcategory_id = s.id
-      LEFT JOIN categories c ON t.category_id = c.id
-      WHERE s.name IS NOT NULL
-      GROUP BY s.name, c.name
-      ORDER BY ticket_count DESC
-      LIMIT 10
-    `
-
-    const ticketsByStatus = daysFilter > 0
+    // --- Tickets by Category ---
+    const ticketsByCategory = hasUserFilter
       ? await sql`
-          SELECT
-            status,
-            COUNT(*) as count
-          FROM tickets
-          WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY status
-          ORDER BY count DESC
+          SELECT c.name as category, COUNT(t.id) as ticket_count
+          FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
+          WHERE c.name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY c.name ORDER BY ticket_count DESC
         `
-      : await sql`
-      SELECT
-        status,
-        COUNT(*) as count
-      FROM tickets
-      GROUP BY status
-      ORDER BY count DESC
-    `
+      : hasGroupFilter
+        ? await sql`
+            SELECT c.name as category, COUNT(t.id) as ticket_count
+            FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
+            WHERE c.name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY c.name ORDER BY ticket_count DESC
+          `
+        : await sql`
+            SELECT c.name as category, COUNT(t.id) as ticket_count
+            FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
+            WHERE c.name IS NOT NULL
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY c.name ORDER BY ticket_count DESC
+          `
 
-    // Get summary stats for the date range
-    const summaryStats = daysFilter > 0
+    // --- Tickets by Subcategory ---
+    const ticketsBySubcategory = hasUserFilter
+      ? await sql`
+          SELECT s.name as subcategory, c.name as category, COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN subcategories s ON t.subcategory_id = s.id
+          LEFT JOIN categories c ON t.category_id = c.id
+          WHERE s.name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY s.name, c.name ORDER BY ticket_count DESC LIMIT 10
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT s.name as subcategory, c.name as category, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN subcategories s ON t.subcategory_id = s.id
+            LEFT JOIN categories c ON t.category_id = c.id
+            WHERE s.name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY s.name, c.name ORDER BY ticket_count DESC LIMIT 10
+          `
+        : await sql`
+            SELECT s.name as subcategory, c.name as category, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN subcategories s ON t.subcategory_id = s.id
+            LEFT JOIN categories c ON t.category_id = c.id
+            WHERE s.name IS NOT NULL
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY s.name, c.name ORDER BY ticket_count DESC LIMIT 10
+          `
+
+    // --- Tickets by Status ---
+    const ticketsByStatus = hasUserFilter
+      ? await sql`
+          SELECT status, COUNT(*) as count FROM tickets
+          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY status ORDER BY count DESC
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT status, COUNT(*) as count FROM tickets
+            WHERE target_business_group_id = ANY(${businessGroupIds})
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY status ORDER BY count DESC
+          `
+        : await sql`
+            SELECT status, COUNT(*) as count FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY status ORDER BY count DESC
+          `
+
+    // --- Summary Stats ---
+    const summaryStats = hasUserFilter
       ? await sql`
           SELECT
             COUNT(*) as total,
@@ -145,85 +203,238 @@ export async function getAnalyticsData(daysFilter: number = 30) {
             COUNT(*) FILTER (WHERE status = 'closed') as closed,
             COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
           FROM tickets
-          WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
         `
-      : await sql`
-          SELECT
-            COUNT(*) as total,
-            COUNT(*) FILTER (WHERE status = 'open') as open,
-            COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
-            COUNT(*) FILTER (WHERE status = 'closed') as closed,
-            COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
-          FROM tickets
+      : hasGroupFilter
+        ? await sql`
+            SELECT
+              COUNT(*) as total,
+              COUNT(*) FILTER (WHERE status = 'open') as open,
+              COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+              COUNT(*) FILTER (WHERE status = 'closed') as closed,
+              COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
+            FROM tickets
+            WHERE target_business_group_id = ANY(${businessGroupIds})
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          `
+        : await sql`
+            SELECT
+              COUNT(*) as total,
+              COUNT(*) FILTER (WHERE status = 'open') as open,
+              COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+              COUNT(*) FILTER (WHERE status = 'closed') as closed,
+              COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
+            FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          `
+
+    // --- Tickets by Type ---
+    const ticketsByType = hasUserFilter
+      ? await sql`
+          SELECT ticket_type, COUNT(*) as count FROM tickets
+          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY ticket_type ORDER BY count DESC
         `
+      : hasGroupFilter
+        ? await sql`
+            SELECT ticket_type, COUNT(*) as count FROM tickets
+            WHERE target_business_group_id = ANY(${businessGroupIds})
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY ticket_type ORDER BY count DESC
+          `
+        : await sql`
+            SELECT ticket_type, COUNT(*) as count FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY ticket_type ORDER BY count DESC
+          `
 
-    const ticketsByType = await sql`
-      SELECT
-        ticket_type,
-        COUNT(*) as count
-      FROM tickets
-      GROUP BY ticket_type
-      ORDER BY count DESC
-    `
+    // --- Tickets by Priority ---
+    const ticketsByPriority = hasUserFilter
+      ? await sql`
+          SELECT priority, COUNT(*) as count FROM tickets
+          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY priority ORDER BY count DESC
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT priority, COUNT(*) as count FROM tickets
+            WHERE target_business_group_id = ANY(${businessGroupIds})
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY priority ORDER BY count DESC
+          `
+        : await sql`
+            SELECT priority, COUNT(*) as count FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY priority ORDER BY count DESC
+          `
 
-    const ticketsByPriority = await sql`
-      SELECT
-        priority,
-        COUNT(*) as count
-      FROM tickets
-      GROUP BY priority
-      ORDER BY count DESC
-    `
+    // --- Ticket Trend ---
+    const ticketTrend = hasUserFilter
+      ? await sql`
+          SELECT DATE(created_at) as date, COUNT(*) as count FROM tickets
+          WHERE (created_by = ${userId} OR assigned_to = ${userId})
+            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY DATE(created_at) ORDER BY date ASC
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT DATE(created_at) as date, COUNT(*) as count FROM tickets
+            WHERE target_business_group_id = ANY(${businessGroupIds})
+              AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY DATE(created_at) ORDER BY date ASC
+          `
+        : await sql`
+            SELECT DATE(created_at) as date, COUNT(*) as count FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY DATE(created_at) ORDER BY date ASC
+          `
 
-    const ticketTrend = daysFilter > 0
+    // --- Team Performance ---
+    const teamPerformance = hasUserFilter
       ? await sql`
           SELECT
-            DATE(created_at) as date,
-            COUNT(*) as count
-          FROM tickets
-          WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY DATE(created_at)
-          ORDER BY date ASC
+            u.full_name as assignee,
+            COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed_count,
+            COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open_count,
+            COUNT(*) as total_count
+          FROM tickets t
+          LEFT JOIN users u ON t.assigned_to = u.id
+          WHERE u.full_name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+          GROUP BY u.full_name ORDER BY total_count DESC LIMIT 10
         `
-      : await sql`
-      SELECT
-        DATE(created_at) as date,
-        COUNT(*) as count
-      FROM tickets
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `
+      : hasGroupFilter
+        ? await sql`
+            SELECT
+              u.full_name as assignee,
+              COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed_count,
+              COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open_count,
+              COUNT(*) as total_count
+            FROM tickets t
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE u.full_name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+            GROUP BY u.full_name ORDER BY total_count DESC LIMIT 10
+          `
+        : await sql`
+            SELECT
+              u.full_name as assignee,
+              COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed_count,
+              COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open_count,
+              COUNT(*) as total_count
+            FROM tickets t
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE u.full_name IS NOT NULL
+            GROUP BY u.full_name ORDER BY total_count DESC LIMIT 10
+          `
 
-    const teamPerformance = await sql`
-      SELECT
-        u.full_name as assignee,
-        COUNT(CASE WHEN t.status = 'closed' THEN 1 END) as closed_count,
-        COUNT(CASE WHEN t.status = 'open' THEN 1 END) as open_count,
-        COUNT(*) as total_count
-      FROM tickets t
-      LEFT JOIN users u ON t.assigned_to = u.id
-      WHERE u.full_name IS NOT NULL
-      GROUP BY u.full_name
-      ORDER BY total_count DESC
-      LIMIT 10
-    `
+    // --- Avg Resolution Time ---
+    const avgResolutionTime = hasUserFilter
+      ? await sql`
+          SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
+          FROM tickets
+          WHERE resolved_at IS NOT NULL AND (created_by = ${userId} OR assigned_to = ${userId})
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
+            FROM tickets
+            WHERE resolved_at IS NOT NULL AND target_business_group_id = ANY(${businessGroupIds})
+          `
+        : await sql`
+            SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
+            FROM tickets WHERE resolved_at IS NOT NULL
+          `
 
-    const avgResolutionTime = await sql`
-      SELECT
-        AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
-      FROM tickets
-      WHERE resolved_at IS NOT NULL
-    `
+    // --- Top Initiators (who creates the most tickets) ---
+    const topInitiators = hasUserFilter
+      ? await sql`
+          SELECT u.full_name as initiator, COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN users u ON t.created_by = u.id
+          WHERE u.full_name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT u.full_name as initiator, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users u ON t.created_by = u.id
+            WHERE u.full_name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
+          `
+        : await sql`
+            SELECT u.full_name as initiator, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users u ON t.created_by = u.id
+            WHERE u.full_name IS NOT NULL
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
+          `
 
-    const ticketsByMonth = await sql`
-      SELECT
-        TO_CHAR(created_at, 'Mon YYYY') as month,
-        COUNT(*) as count
-      FROM tickets
-      WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
-      GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
-      ORDER BY DATE_TRUNC('month', created_at) ASC
-    `
+    // --- Assignment Distribution (who gets assigned the most tickets) ---
+    const assignmentDistribution = hasUserFilter
+      ? await sql`
+          SELECT u.full_name as assignee, COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN users u ON t.assigned_to = u.id
+          WHERE u.full_name IS NOT NULL
+            AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT u.full_name as assignee, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE u.full_name IS NOT NULL
+              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
+          `
+        : await sql`
+            SELECT u.full_name as assignee, COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE u.full_name IS NOT NULL
+              AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
+          `
+
+    // --- Monthly Trend ---
+    const ticketsByMonth = hasUserFilter
+      ? await sql`
+          SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
+          FROM tickets
+          WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+            AND (created_by = ${userId} OR assigned_to = ${userId})
+          GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
+          ORDER BY DATE_TRUNC('month', created_at) ASC
+        `
+      : hasGroupFilter
+        ? await sql`
+            SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
+            FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+              AND target_business_group_id = ANY(${businessGroupIds})
+            GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
+            ORDER BY DATE_TRUNC('month', created_at) ASC
+          `
+        : await sql`
+            SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
+            FROM tickets
+            WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+            GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
+            ORDER BY DATE_TRUNC('month', created_at) ASC
+          `
 
     return {
       success: true,
@@ -236,6 +447,8 @@ export async function getAnalyticsData(daysFilter: number = 30) {
         ticketsByPriority: ticketsByPriority || [],
         ticketTrend: ticketTrend || [],
         teamPerformance: teamPerformance || [],
+        topInitiators: topInitiators || [],
+        assignmentDistribution: assignmentDistribution || [],
         avgResolutionTime: Number(avgResolutionTime[0]?.avg_hours || 0).toFixed(1),
         ticketsByMonth: ticketsByMonth || [],
         summaryStats: summaryStats[0] || { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
@@ -255,6 +468,8 @@ export async function getAnalyticsData(daysFilter: number = 30) {
         ticketsByPriority: [],
         ticketTrend: [],
         teamPerformance: [],
+        topInitiators: [],
+        assignmentDistribution: [],
         avgResolutionTime: "0",
         ticketsByMonth: [],
         summaryStats: { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },

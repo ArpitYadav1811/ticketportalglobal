@@ -68,21 +68,21 @@ export default function HorizontalNav() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/tickets", label: "Tickets", icon: TicketIcon },
-    { href: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
-    { href: "/master-data", label: "Master Settings", icon: Database, adminOnly: true },
-    { href: "/admin", label: "Admin Dashboard", icon: Shield, adminOnly: true },
+    { href: "/analytics", label: "Analytics", icon: BarChart3 },
+    { href: "/master-data", label: "Master Settings", icon: Database, minRole: "manager" },
+    { href: "/admin", label: "Admin Dashboard", icon: Shield, minRole: "superadmin" },
   ]
 
+  const allowedRoles: Record<string, string[]> = {
+    manager: ["manager", "admin", "superadmin"],
+    admin: ["admin", "superadmin"],
+    superadmin: ["superadmin"],
+  }
+
   const filteredNavItems = navItems.filter((item) => {
-    // Admin Dashboard is only for Super Admins
-    if (item.href === "/admin" && userRole !== "superadmin") {
-      return false
-    }
-    // Other admin-only items are for both admin and superadmin
-    if (item.adminOnly && item.href !== "/admin" && userRole !== "admin" && userRole !== "superadmin") {
-      return false
-    }
-    return true
+    if (!item.minRole) return true
+    const rolesAllowed = allowedRoles[item.minRole] || []
+    return rolesAllowed.includes(userRole || "")
   })
 
   const handleLogout = async () => {

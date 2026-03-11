@@ -668,7 +668,8 @@ export default function TicketDetailPage() {
         onConfirm={handleStatusChangeConfirm}
         oldStatus={ticket?.status || ""}
         newStatus={selectedNewStatus}
-        ticketNumber={ticket?.ticket_number || 0}
+        ticketId={ticket?.ticket_id || null}
+        businessGroupName={ticket?.target_business_group_name || null}
         loading={changingStatus}
       />
 

@@ -21,14 +21,15 @@ export default function MasterDataPage() {
       const parsedUser = JSON.parse(userData)
       const userRole = parsedUser.role?.toLowerCase()
 
-      // Admins have full access
-      if (userRole === "admin" || userRole === "superadmin") {
+      // Admins, superadmins, and managers (SPOC) have access
+      const allowedRoles = ["admin", "superadmin", "manager"]
+      if (allowedRoles.includes(userRole)) {
         setUser(parsedUser)
         setIsLoading(false)
         return
       }
 
-      // Check if user is a SPOC
+      // Check if user is a SPOC (for any other role)
       const { isUserSpoc } = await import("@/lib/actions/master-data")
       const isSpoc = await isUserSpoc(parsedUser.id)
       
@@ -38,7 +39,7 @@ export default function MasterDataPage() {
         return
       }
 
-      // Not admin or SPOC - redirect
+      // Not allowed - redirect
       router.push("/dashboard")
     }
 

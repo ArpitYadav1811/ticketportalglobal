@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
           {isSuperAdmin && (
             <>
               <TabsContent value="fa-mappings" className="mt-4">
-                <FAMappingsTab />
+                <FAMappingsTab currentUser={user} />
               </TabsContent>
               <TabsContent value="audit-logs" className="mt-4">
                 <AuditLogsTab />
@@ -377,7 +377,7 @@ function TeamsTab() {
 }
 
 // ==================== FA MAPPINGS TAB (SUPERADMIN ONLY) ====================
-function FAMappingsTab() {
+function FAMappingsTab({ currentUser }: { currentUser: any }) {
   const [functionalAreas, setFunctionalAreas] = useState<any[]>([])
   const [mappings, setMappings] = useState<any[]>([])
   const [businessGroups, setBusinessGroups] = useState<any[]>([])
@@ -389,8 +389,20 @@ function FAMappingsTab() {
   const [faForm, setFaForm] = useState({ name: "", description: "" })
   const [mappingForm, setMappingForm] = useState({ functionalAreaId: "", targetBusinessGroupId: "" })
   const [saving, setSaving] = useState(false)
-  const [spocSaving, setSpocSaving] = useState<number | null>(null)
+  const [spocSaving, setSpocSaving] = useState<{ bgId: number; type: "primary" | "secondary" } | null>(null)
   const [mappingSaving, setMappingSaving] = useState<number | null>(null)
+  
+  const isSuperAdmin = currentUser?.role?.toLowerCase() === "superadmin"
+  const isAdmin = currentUser?.role?.toLowerCase() === "admin"
+  
+  // Helper to check if current user is Primary SPOC for a business group
+  const isPrimarySpoc = (mapping: any) => {
+    if (isSuperAdmin || isAdmin) return true
+    const primarySpocName = mapping.primary_spoc_name || mapping.spoc_name
+    if (!primarySpocName) return false
+    return currentUser?.full_name && 
+           primarySpocName.toLowerCase().trim() === currentUser.full_name.toLowerCase().trim()
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -409,14 +421,15 @@ function FAMappingsTab() {
 
   useEffect(() => { loadData() }, [])
 
-  const handleSpocChange = async (bgId: number, bgName: string, newSpocName: string) => {
-    if (!confirm(`Change SPOC for "${bgName}" to "${newSpocName || 'None'}"?`)) return
-    setSpocSaving(bgId)
-    const result = await updateBusinessGroupSpoc(bgId, newSpocName)
+  const handleSpocChange = async (bgId: number, bgName: string, newSpocName: string, spocType: "primary" | "secondary") => {
+    const spocLabel = spocType === "primary" ? "Primary SPOC" : "Secondary SPOC"
+    if (!confirm(`Change ${spocLabel} for "${bgName}" to "${newSpocName || 'None'}"?`)) return
+    setSpocSaving({ bgId, type: spocType })
+    const result = await updateBusinessGroupSpoc(bgId, newSpocName, spocType)
     if (result.success) {
       await loadData()
     } else {
-      alert(result.error || "Failed to update SPOC")
+      alert(result.error || `Failed to update ${spocLabel}`)
     }
     setSpocSaving(null)
   }
@@ -557,7 +570,8 @@ function FAMappingsTab() {
                   <th className="pb-2 text-xs font-medium text-muted-foreground">Functional Area</th>
                   <th className="pb-2 text-xs font-medium text-muted-foreground w-8">→</th>
                   <th className="pb-2 text-xs font-medium text-muted-foreground">Business Group</th>
-                  <th className="pb-2 text-xs font-medium text-muted-foreground">SPOC</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Primary SPOC</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">Secondary SPOC</th>
                   <th className="pb-2 text-xs font-medium text-muted-foreground w-16">Remove</th>
                 </tr>
               </thead>
@@ -590,13 +604,39 @@ function FAMappingsTab() {
                       </select>
                     </td>
                     <td className="py-2">
-                      {spocSaving === m.target_business_group_id ? (
+                      {spocSaving?.bgId === m.target_business_group_id && spocSaving?.type === "primary" ? (
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <select
-                          value={m.spoc_name || ""}
-                          onChange={(e) => handleSpocChange(m.target_business_group_id, m.business_group_name, e.target.value)}
+                          value={m.primary_spoc_name || m.spoc_name || ""}
+                          onChange={(e) => handleSpocChange(m.target_business_group_id, m.business_group_name, e.target.value, "primary")}
                           className="px-2 py-1 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer w-full bg-transparent"
+                        >
+                          <option value="">— None —</option>
+                          {allUsers.map((u: any) => (
+                            <option key={u.id} value={u.full_name || u.name}>{u.full_name || u.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="py-2">
+                      {spocSaving?.bgId === m.target_business_group_id && spocSaving?.type === "secondary" ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <select
+                          value={m.secondary_spoc_name || ""}
+                          onChange={(e) => handleSpocChange(m.target_business_group_id, m.business_group_name, e.target.value, "secondary")}
+                          disabled={!isPrimarySpoc(m) && !isSuperAdmin && !isAdmin}
+                          className={`px-2 py-1 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary appearance-none w-full bg-transparent ${
+                            !isPrimarySpoc(m) && !isSuperAdmin && !isAdmin 
+                              ? "cursor-not-allowed opacity-50" 
+                              : "cursor-pointer"
+                          }`}
+                          title={
+                            !isPrimarySpoc(m) && !isSuperAdmin && !isAdmin
+                              ? "Only Primary SPOC, Admin, or Super Admin can update Secondary SPOC"
+                              : ""
+                          }
                         >
                           <option value="">— None —</option>
                           {allUsers.map((u: any) => (

@@ -716,7 +716,8 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  onConfirm={handleStatusChangeConfirm}
  oldStatus={selectedTicketForStatusChange?.status || ""}
  newStatus={selectedNewStatus}
- ticketNumber={selectedTicketForStatusChange?.ticket_number || 0}
+ ticketId={selectedTicketForStatusChange?.ticket_id || null}
+ businessGroupName={selectedTicketForStatusChange?.target_business_group_name || null}
  loading={changingStatus}
  />
 

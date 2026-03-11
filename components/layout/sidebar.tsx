@@ -37,15 +37,20 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/teams", label: "Teams", icon: Users },
     { href: "/users", label: "User Management", icon: UserCog },
-    { href: "/master-data", label: "Masters", icon: Database },
-    { href: "/admin", label: "Admin", icon: Settings, superAdminOnly: true },
+    { href: "/master-data", label: "Masters", icon: Database, minRole: "manager" },
+    { href: "/admin", label: "Admin", icon: Settings, minRole: "superadmin" },
   ]
 
+  const allowedRoles: Record<string, string[]> = {
+    manager: ["manager", "admin", "superadmin"],
+    admin: ["admin", "superadmin"],
+    superadmin: ["superadmin"],
+  }
+
   const filteredNavItems = navItems.filter((item) => {
-    if (item.superAdminOnly && userRole !== "superadmin") {
-      return false
-    }
-    return true
+    if (!item.minRole) return true
+    const rolesAllowed = allowedRoles[item.minRole] || []
+    return rolesAllowed.includes(userRole || "")
   })
 
   const handleLogout = async () => {

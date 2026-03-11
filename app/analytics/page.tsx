@@ -19,28 +19,22 @@ export default function AnalyticsPage() {
     }
 
     const parsedUser = JSON.parse(userData)
-    const userRole = parsedUser.role?.toLowerCase()
-
-    // Only admins can access this page
-    if (userRole !== "admin") {
-      router.push("/dashboard")
-      return
-    }
-
     setUser(parsedUser)
     setIsLoading(false)
   }, [router])
 
-  // Show loading or nothing while checking permissions
-  if (isLoading || !user || user.role?.toLowerCase() !== "admin") {
+  // Show loading or nothing while checking auth
+  if (isLoading || !user) {
     return null
   }
 
+  const userRole = user?.role?.toLowerCase()
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 bg-card dark:bg-gray-800 p-4 shadow-lg rounded-md border border-border">
-        <AnalyticsHeader />
-        <AnalyticsCharts />
+      <div className="space-y-4 bg-card dark:bg-gray-800 p-4 shadow-lg rounded-md border border-border">
+        <AnalyticsHeader userId={user?.id} userRole={userRole} groupName={user?.group_name} userName={user?.full_name} />
+        <AnalyticsCharts userId={user?.id} userRole={userRole} />
       </div>
     </DashboardLayout>
   )
