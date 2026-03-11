@@ -27,6 +27,7 @@ import {
 import { getUsers } from "@/lib/actions/tickets"
 import EditDialog from "./edit-dialog"
 import ProjectNamesTab from "./project-names-tab"
+import ConfirmationDialog, { ChangeDetail } from "@/components/ui/confirmation-dialog"
 
 interface UnifiedMasterDataV2Props {
   userId?: number
@@ -56,6 +57,22 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   const [editCategory, setEditCategory] = useState<any>(null)
   const [editSubcategory, setEditSubcategory] = useState<any>(null)
   const [editMapping, setEditMapping] = useState<any>(null)
+  
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    action: () => void
+    title: string
+    description?: string
+    actionType: "add" | "delete" | "update" | "remove"
+    changes?: ChangeDetail[]
+    loading?: boolean
+  }>({
+    open: false,
+    action: () => {},
+    title: "",
+    actionType: "delete",
+  })
 
   const loadData = async () => {
     setLoading(true)
@@ -173,12 +190,41 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   }
 
   const handleDeleteBG = async (id: number) => {
-    if (confirm("Are you sure? This will affect related mappings.")) {
-      const result = await deleteBusinessUnitGroup(id)
-      if (result.success) {
-        await loadData()
-      }
+    const bg = businessGroups.find(b => b.id === id)
+    if (!bg) return
+    
+    const relatedMappings = mappings.filter(m => m.business_unit_group_id === id || m.target_business_group_id === id)
+    const changes: ChangeDetail[] = [{
+      label: "Business Group",
+      oldValue: bg.name,
+      type: "delete"
+    }]
+    if (relatedMappings.length > 0) {
+      changes.push({
+        label: "Related Mappings",
+        oldValue: `${relatedMappings.length} mapping(s) will be affected`,
+        type: "delete"
+      })
     }
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        const result = await deleteBusinessUnitGroup(id)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
+        } else {
+          alert(result.error || "Failed to delete")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+      },
+      title: "Delete Business Group",
+      description: "Are you sure? This will affect related mappings.",
+      actionType: "delete",
+      changes
+    })
   }
 
   // Category handlers
@@ -203,12 +249,49 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   }
 
   const handleDeleteCategory = async (id: number) => {
-    if (confirm("Are you sure? This will delete all related subcategories and mappings.")) {
-      const result = await deleteCategory(id)
-      if (result.success) {
-        await loadData()
-      }
+    const category = categories.find(c => c.id === id)
+    if (!category) return
+    
+    const relatedSubcategories = subcategories.filter(s => s.category_id === id)
+    const relatedMappings = mappings.filter(m => m.category_id === id)
+    const changes: ChangeDetail[] = [{
+      label: "Category",
+      oldValue: category.name,
+      type: "delete"
+    }]
+    if (relatedSubcategories.length > 0) {
+      changes.push({
+        label: "Related Subcategories",
+        oldValue: `${relatedSubcategories.length} subcategory(ies) will be deleted`,
+        type: "delete"
+      })
     }
+    if (relatedMappings.length > 0) {
+      changes.push({
+        label: "Related Mappings",
+        oldValue: `${relatedMappings.length} mapping(s) will be deleted`,
+        type: "delete"
+      })
+    }
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        const result = await deleteCategory(id)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
+        } else {
+          alert(result.error || "Failed to delete")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+      },
+      title: "Delete Category",
+      description: "Are you sure? This will delete all related subcategories and mappings.",
+      actionType: "delete",
+      changes
+    })
   }
 
   // Subcategory handlers
@@ -233,12 +316,41 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   }
 
   const handleDeleteSubcategory = async (id: number) => {
-    if (confirm("Are you sure? This will delete all related mappings.")) {
-      const result = await deleteSubcategory(id)
-      if (result.success) {
-        await loadData()
-      }
+    const subcategory = subcategories.find(s => s.id === id)
+    if (!subcategory) return
+    
+    const relatedMappings = mappings.filter(m => m.subcategory_id === id)
+    const changes: ChangeDetail[] = [{
+      label: "Subcategory",
+      oldValue: subcategory.name,
+      type: "delete"
+    }]
+    if (relatedMappings.length > 0) {
+      changes.push({
+        label: "Related Mappings",
+        oldValue: `${relatedMappings.length} mapping(s) will be deleted`,
+        type: "delete"
+      })
     }
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        const result = await deleteSubcategory(id)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
+        } else {
+          alert(result.error || "Failed to delete")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+      },
+      title: "Delete Subcategory",
+      description: "Are you sure? This will delete all related mappings.",
+      actionType: "delete",
+      changes
+    })
   }
 
   // Mapping handlers
@@ -276,12 +388,35 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   }
 
   const handleDeleteMapping = async (id: number) => {
-    if (confirm("Are you sure you want to delete this mapping?")) {
-      const result = await deleteTicketClassificationMapping(id)
-      if (result.success) {
-        await loadData()
-      }
-    }
+    const mapping = mappings.find(m => m.id === id)
+    if (!mapping) return
+    
+    const bgName = targetBusinessGroups.find(bg => bg.id === mapping.target_business_group_id)?.name || "Unknown"
+    const catName = categories.find(c => c.id === mapping.category_id)?.name || "Unknown"
+    const subcatName = subcategories.find(s => s.id === mapping.subcategory_id)?.name || "Unknown"
+    
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        const result = await deleteTicketClassificationMapping(id)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
+        } else {
+          alert(result.error || "Failed to delete")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+      },
+      title: "Delete Ticket Classification Mapping",
+      description: "Are you sure you want to delete this mapping?",
+      actionType: "delete",
+      changes: [{
+        label: "Mapping",
+        oldValue: `${bgName} → ${catName} → ${subcatName}`,
+        type: "delete"
+      }]
+    })
   }
 
   if (loading) {
@@ -289,6 +424,18 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   }
 
   return (
+    <>
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        onConfirm={confirmDialog.action}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        actionType={confirmDialog.actionType}
+        changes={confirmDialog.changes}
+        loading={confirmDialog.loading}
+        destructive={confirmDialog.actionType === "delete" || confirmDialog.actionType === "remove"}
+      />
     <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -724,5 +871,6 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         />
       )}
     </div>
+    </>
   )
 }

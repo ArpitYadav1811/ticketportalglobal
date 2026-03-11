@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import ConfirmationDialog, { ChangeDetail } from "@/components/ui/confirmation-dialog"
 
 // User Management imports
 import { getAllUsers, getUserRoles } from "@/lib/actions/users"
@@ -392,6 +393,22 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
   const [spocSaving, setSpocSaving] = useState<{ bgId: number; type: "primary" | "secondary" } | null>(null)
   const [mappingSaving, setMappingSaving] = useState<number | null>(null)
   
+  // Confirmation dialog states
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    action: () => void
+    title: string
+    description?: string
+    actionType: "add" | "delete" | "update" | "remove"
+    changes?: ChangeDetail[]
+    loading?: boolean
+  }>({
+    open: false,
+    action: () => {},
+    title: "",
+    actionType: "delete",
+  })
+  
   const isSuperAdmin = currentUser?.role?.toLowerCase() === "superadmin"
   const isAdmin = currentUser?.role?.toLowerCase() === "admin"
   
@@ -423,15 +440,36 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
 
   const handleSpocChange = async (bgId: number, bgName: string, newSpocName: string, spocType: "primary" | "secondary") => {
     const spocLabel = spocType === "primary" ? "Primary SPOC" : "Secondary SPOC"
-    if (!confirm(`Change ${spocLabel} for "${bgName}" to "${newSpocName || 'None'}"?`)) return
-    setSpocSaving({ bgId, type: spocType })
-    const result = await updateBusinessGroupSpoc(bgId, newSpocName, spocType)
-    if (result.success) {
-      await loadData()
-    } else {
-      alert(result.error || `Failed to update ${spocLabel}`)
-    }
-    setSpocSaving(null)
+    const currentMapping = mappings.find(m => m.target_business_group_id === bgId)
+    const oldSpocName = spocType === "primary" 
+      ? (currentMapping?.primary_spoc_name || currentMapping?.spoc_name || "None")
+      : (currentMapping?.secondary_spoc_name || "None")
+    
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        setSpocSaving({ bgId, type: spocType })
+        const result = await updateBusinessGroupSpoc(bgId, newSpocName, spocType)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "update" })
+        } else {
+          alert(result.error || `Failed to update ${spocLabel}`)
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+        setSpocSaving(null)
+      },
+      title: `Update ${spocLabel}`,
+      description: `Change ${spocLabel} for "${bgName}"?`,
+      actionType: "update",
+      changes: [{
+        label: `${spocLabel} for ${bgName}`,
+        oldValue: oldSpocName,
+        newValue: newSpocName || "None",
+        type: "update"
+      }]
+    })
   }
 
   const handleUpdateMapping = async (mappingId: number, field: "fa" | "bg", newValue: string, mapping: any) => {
@@ -441,16 +479,44 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
     const faName = field === "fa" ? functionalAreas.find(f => f.id === Number(newValue))?.name : mapping.functional_area_name
     const bgName = field === "bg" ? businessGroups.find(b => b.id === Number(newValue))?.name : mapping.business_group_name
 
-    if (!confirm(`Update mapping to "${faName} → ${bgName}"?`)) return
-
-    setMappingSaving(mappingId)
-    const result = await updateFunctionalAreaMapping(mappingId, newFaId, newBgId)
-    if (result.success) {
-      await loadData()
-    } else {
-      alert(result.error || "Failed to update mapping")
+    const changes: ChangeDetail[] = []
+    if (field === "fa") {
+      changes.push({
+        label: "Functional Area",
+        oldValue: mapping.functional_area_name,
+        newValue: faName,
+        type: "update"
+      })
     }
-    setMappingSaving(null)
+    if (field === "bg") {
+      changes.push({
+        label: "Business Group",
+        oldValue: mapping.business_group_name,
+        newValue: bgName,
+        type: "update"
+      })
+    }
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        setMappingSaving(mappingId)
+        const result = await updateFunctionalAreaMapping(mappingId, newFaId, newBgId)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "update" })
+        } else {
+          alert(result.error || "Failed to update mapping")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+        setMappingSaving(null)
+      },
+      title: "Update Functional Area Mapping",
+      description: `Update mapping to "${faName} → ${bgName}"?`,
+      actionType: "update",
+      changes
+    })
   }
 
   const handleSaveFA = async (e: React.FormEvent) => {
@@ -465,38 +531,120 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
   }
 
   const handleDeleteFA = async (id: number, name: string) => {
-    if (confirm(`Delete functional area "${name}" and all its mappings?`)) {
-      const result = await deleteFunctionalArea(id)
-      if (result.success) loadData()
-      else alert(result.error || "Failed to delete")
+    const relatedMappings = mappings.filter(m => m.functional_area_id === id)
+    const changes: ChangeDetail[] = [{
+      label: "Functional Area",
+      oldValue: name,
+      type: "delete"
+    }]
+    if (relatedMappings.length > 0) {
+      changes.push({
+        label: "Related Mappings",
+        oldValue: `${relatedMappings.length} mapping(s) will be deleted`,
+        type: "delete"
+      })
     }
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        const result = await deleteFunctionalArea(id)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "delete" })
+        } else {
+          alert(result.error || "Failed to delete")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+      },
+      title: "Delete Functional Area",
+      description: `Delete functional area "${name}" and all its mappings? This action cannot be undone.`,
+      actionType: "delete",
+      changes
+    })
   }
 
   const handleAddMapping = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
-    const result = await addFunctionalAreaMapping(Number(mappingForm.functionalAreaId), Number(mappingForm.targetBusinessGroupId))
-    if (result.success) { await loadData(); setShowAddMapping(false); setMappingForm({ functionalAreaId: "", targetBusinessGroupId: "" }) }
-    else alert(result.error || "Failed to add mapping")
-    setSaving(false)
+    const faName = functionalAreas.find(f => f.id === Number(mappingForm.functionalAreaId))?.name
+    const bgName = businessGroups.find(b => b.id === Number(mappingForm.targetBusinessGroupId))?.name
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        setSaving(true)
+        const result = await addFunctionalAreaMapping(Number(mappingForm.functionalAreaId), Number(mappingForm.targetBusinessGroupId))
+        if (result.success) {
+          await loadData()
+          setShowAddMapping(false)
+          setMappingForm({ functionalAreaId: "", targetBusinessGroupId: "" })
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "add" })
+        } else {
+          alert(result.error || "Failed to add mapping")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+        setSaving(false)
+      },
+      title: "Add Functional Area Mapping",
+      description: `Add mapping between "${faName}" and "${bgName}"?`,
+      actionType: "add",
+      changes: [{
+        label: "New Mapping",
+        newValue: `${faName} → ${bgName}`,
+        type: "add"
+      }]
+    })
   }
 
   const handleRemoveMapping = async (id: number) => {
-    if (confirm("Remove this mapping?")) {
-      const result = await removeFunctionalAreaMapping(id)
-      if (result.success) loadData()
-      else alert(result.error || "Failed to remove")
-    }
+    const mapping = mappings.find(m => m.id === id)
+    if (!mapping) return
+
+    setConfirmDialog({
+      open: true,
+      action: async () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }))
+        const result = await removeFunctionalAreaMapping(id)
+        if (result.success) {
+          await loadData()
+          setConfirmDialog({ open: false, action: () => {}, title: "", actionType: "remove" })
+        } else {
+          alert(result.error || "Failed to remove")
+          setConfirmDialog(prev => ({ ...prev, loading: false }))
+        }
+      },
+      title: "Remove Functional Area Mapping",
+      description: "Remove this mapping?",
+      actionType: "remove",
+      changes: [{
+        label: "Mapping",
+        oldValue: `${mapping.functional_area_name} → ${mapping.business_group_name}`,
+        type: "delete"
+      }]
+    })
   }
 
   return (
     <div className="space-y-4">
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        onConfirm={confirmDialog.action}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        actionType={confirmDialog.actionType}
+        changes={confirmDialog.changes}
+        loading={confirmDialog.loading}
+        destructive={confirmDialog.actionType === "delete" || confirmDialog.actionType === "remove"}
+      />
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
         <Lock className="w-4 h-4 text-amber-600 shrink-0" />
         <p className="text-sm text-amber-800">
           <strong>Super Admin Only</strong> — Changes here affect how Functional Areas map to Business Groups system-wide.
         </p>
- </div>
+      </div>
 
       {/* Functional Areas List */}
       <div className="bg-card border rounded-lg shadow-sm p-4">
