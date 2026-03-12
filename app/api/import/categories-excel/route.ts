@@ -41,8 +41,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Log first row to see actual column names
-    console.log('Excel columns detected:', Object.keys(data[0]));
+    const firstRowKeys = Object.keys(data[0]);
+    console.log('Excel columns detected:', firstRowKeys);
     console.log('First row data:', data[0]);
+    console.log('Total data rows:', data.length);
 
     // Parse data
     const categoriesMap = new Map();
@@ -87,10 +89,24 @@ export async function POST(request: NextRequest) {
                lower === 'est. time';
       });
 
-      const category = categoryKey ? row[categoryKey] : null;
-      const subcategory = subcategoryKey ? row[subcategoryKey] : null;
-      const description = descriptionKey ? row[descriptionKey] : '';
-      const estimatedHrs = estimatedKey ? row[estimatedKey] : '';
+      let category = categoryKey ? row[categoryKey] : null;
+      let subcategory = subcategoryKey ? row[subcategoryKey] : null;
+      let description = descriptionKey ? row[descriptionKey] : '';
+      let estimatedHrs = estimatedKey ? row[estimatedKey] : '';
+
+      // Fallback: If columns not found by name, try by position (assuming order: Category, Sub Category, Input, Estimated Time)
+      if (!category && keys.length >= 1) {
+        category = row[keys[0]]; // First column
+      }
+      if (!subcategory && keys.length >= 2) {
+        subcategory = row[keys[1]]; // Second column
+      }
+      if (!description && keys.length >= 3) {
+        description = row[keys[2]] || ''; // Third column
+      }
+      if (!estimatedHrs && keys.length >= 4) {
+        estimatedHrs = row[keys[3]] || ''; // Fourth column
+      }
 
       if (!category || !subcategory) {
         console.log(`Skipping row ${index + 2}: category="${category}", subcategory="${subcategory}", availableKeys:`, keys);
