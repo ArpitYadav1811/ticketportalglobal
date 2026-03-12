@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
+import { toast } from "sonner"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Trash2, Users, UserPlus } from "lucide-react"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
@@ -163,7 +164,7 @@ export default function SettingsPage() {
 
  const handleSaveBusinessGroup = async () => {
  if (!currentUser?.id || !selectedBusinessGroup) {
- alert("Please select a business group")
+ toast.error("Please select a business group")
  return
  }
 
@@ -186,13 +187,13 @@ export default function SettingsPage() {
  update().catch(console.error)
  }
 
- alert("Business group updated successfully!")
+ toast.success("Business group updated successfully!")
  } else {
- alert(result.error || "Failed to update business group")
+ toast.error(result.error || "Failed to update business group")
  }
  } catch (error) {
  console.error("Error updating business group:", error)
- alert("Failed to update business group")
+ toast.error("Failed to update business group")
  } finally {
  setSaving(false)
  }

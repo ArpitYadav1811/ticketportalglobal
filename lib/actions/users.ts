@@ -3,6 +3,7 @@
 import { sql } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { getCurrentUser } from "./auth"
+import { revalidatePath } from "next/cache"
 
 export async function getAllUsers(filters?: {
   role?: string
@@ -372,6 +373,30 @@ export async function isSuperAdminRole(role?: string): Promise<boolean> {
 // Settings page functions
 export async function updateUserBusinessGroup(userId: number, businessGroupId: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "User not authenticated" }
+    }
+
+    // Users can only update their own business group
+    // Super Admin and Admin can update any user's business group (handled separately in admin functions)
+    if (currentUser.id !== userId) {
+      const userRole = currentUser.role?.toLowerCase()
+      if (userRole !== "superadmin" && userRole !== "admin") {
+        return { success: false, error: "You can only update your own business group" }
+      }
+    }
+
+    // Verify business group exists
+    const bgCheck = await sql`
+      SELECT id FROM business_unit_groups 
+      WHERE id = ${businessGroupId} 
+        AND (is_deleted IS NULL OR is_deleted = FALSE)
+    `
+    if (bgCheck.length === 0) {
+      return { success: false, error: "Business group not found or has been deleted" }
+    }
+
     const result = await sql`
       UPDATE users
       SET business_unit_group_id = ${businessGroupId}, updated_at = CURRENT_TIMESTAMP
@@ -382,6 +407,10 @@ export async function updateUserBusinessGroup(userId: number, businessGroupId: n
     if (result.length === 0) {
       return { success: false, error: "User not found" }
     }
+
+    // Revalidate paths to update UI
+    revalidatePath("/settings")
+    revalidatePath("/dashboard")
 
     return { success: true, data: result[0] }
   } catch (error) {
