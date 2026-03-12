@@ -25,6 +25,8 @@ import {
   updateTicketClassificationMapping,
   deleteTicketClassificationMapping,
   getBusinessGroupsForSpoc,
+  getBusinessGroupsForPrimarySpoc,
+  isUserPrimarySpoc,
 } from "@/lib/actions/master-data"
 import { getUsers } from "@/lib/actions/tickets"
 import { getMasterDataPermissions } from "@/lib/actions/permissions"
@@ -42,13 +44,16 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   const [activeTab, setActiveTab] = useState("business-groups")
   const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
   const [selectedBusinessGroupFilter, setSelectedBusinessGroupFilter] = useState<string>("")
+  const [userBusinessGroupId, setUserBusinessGroupId] = useState<number | null>(null)
+  const [primarySpocBusinessGroups, setPrimarySpocBusinessGroups] = useState<number[]>([])
+  const [isPrimarySpoc, setIsPrimarySpoc] = useState(false)
   const isAdmin = userRole === "admin" || userRole === "superadmin"
   
   // Master data permissions
   const [permissions, setPermissions] = useState<{
-    categories: { create: boolean; edit: boolean; delete: boolean }
-    subcategories: { create: boolean; edit: boolean; delete: boolean }
-    businessGroups: { create: boolean; edit: boolean; delete: boolean; manageScope: string }
+    categories: { view: boolean; create: boolean; edit: boolean; delete: boolean }
+    subcategories: { view: boolean; create: boolean; edit: boolean; delete: boolean }
+    businessGroups: { view: boolean; create: boolean; edit: boolean; delete: boolean; manageScope: string; filterScope: string }
   } | null>(null)
 
   // Data states
@@ -108,9 +113,9 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     } else {
       // Default permissions if not available
       setPermissions({
-        categories: { create: isAdmin, edit: isAdmin, delete: isAdmin },
-        subcategories: { create: isAdmin, edit: isAdmin, delete: isAdmin },
-        businessGroups: { create: isAdmin, edit: isAdmin, delete: isAdmin, manageScope: isAdmin ? "all" : "none" }
+        categories: { view: isAdmin, create: isAdmin, edit: isAdmin, delete: isAdmin },
+        subcategories: { view: isAdmin, create: isAdmin, edit: isAdmin, delete: isAdmin },
+        businessGroups: { view: isAdmin, create: isAdmin, edit: isAdmin, delete: isAdmin, manageScope: isAdmin ? "all" : "none", filterScope: isAdmin ? "all" : "own" }
       })
     }
 
@@ -121,8 +126,31 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     loadData()
     if (userId && !isAdmin) {
       loadSpocBusinessGroups()
+      loadPrimarySpocBusinessGroups()
+    }
+    // Get user's business group ID from localStorage
+    try {
+      const userData = localStorage.getItem("user")
+      if (userData) {
+        const user = JSON.parse(userData)
+        if (user.business_unit_group_id) {
+          setUserBusinessGroupId(user.business_unit_group_id)
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse user data:", e)
     }
   }, [userId, isAdmin])
+
+  const loadPrimarySpocBusinessGroups = async () => {
+    if (!userId) return
+    const result = await getBusinessGroupsForPrimarySpoc(userId)
+    if (result.success) {
+      const bgIds = result.data.map((bg: any) => bg.id)
+      setPrimarySpocBusinessGroups(bgIds)
+      setIsPrimarySpoc(bgIds.length > 0)
+    }
+  }
 
   const loadSpocBusinessGroups = async () => {
     if (!userId) return
@@ -154,8 +182,19 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   const getFilteredCategories = () => {
     let filtered = categories
 
+    // If filter scope is "own", only show categories for user's business group
+    if (permissions?.businessGroups.filterScope === "own" && userBusinessGroupId) {
+      const categoryIds = new Set(
+        mappings
+          .filter((m) => m.target_business_group_id === userBusinessGroupId)
+          .map((m) => m.category_id)
+      )
+      filtered = filtered.filter((cat) => categoryIds.has(cat.id))
+      return filtered
+    }
+
     // If user is SPOC (not admin), filter to categories linked to their business groups
-    if (!isAdmin && spocBusinessGroups.length > 0) {
+    if (!isAdmin && spocBusinessGroups.length > 0 && permissions?.businessGroups.filterScope !== "all") {
       const categoryIds = new Set(
         mappings
           .filter((m) => spocBusinessGroups.includes(m.target_business_group_id))
@@ -164,8 +203,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
       filtered = filtered.filter((cat) => categoryIds.has(cat.id))
     }
 
-    // Apply business group filter if selected
-    if (selectedBusinessGroupFilter) {
+    // Apply business group filter if selected (only when filter scope is "all")
+    if (selectedBusinessGroupFilter && permissions?.businessGroups.filterScope === "all") {
       const filterGroupId = Number(selectedBusinessGroupFilter)
       const categoryIds = new Set(
         mappings
@@ -209,6 +248,20 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
       return true
     }
     return false
+  }
+
+  const handleUpdateSecondarySpoc = async (businessGroupId: number, secondarySpocName: string) => {
+    const { updateBusinessGroupSpoc } = await import("@/lib/actions/admin")
+    const result = await updateBusinessGroupSpoc(businessGroupId, secondarySpocName, "secondary")
+    if (result.success) {
+      await loadData()
+      setEditBG(null)
+      toast.success("Secondary SPOC updated successfully")
+      return true
+    } else {
+      toast.error(result.error || "Failed to update Secondary SPOC")
+      return false
+    }
   }
 
   const handleDeleteBG = async (id: number) => {
@@ -502,104 +555,159 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
 
         {/* Business Groups Tab */}
         <TabsContent value="business-groups" className="mt-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="font-poppins font-bold text-foreground text-lg">Business Groups</h2>
-              <p className="text-sm text-foreground-secondary mt-1">
-                Manage functional area business groups
-              </p>
+          {!permissions?.businessGroups.view ? (
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
+              <p className="text-foreground-secondary">You don't have permission to view business groups.</p>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setEditBG({ id: null, name: "", description: "", spoc_name: "" })}
-              className="bg-black hover:bg-gray-800"
-              disabled={!permissions?.businessGroups.create}
-              title={!permissions?.businessGroups.create ? "You don't have permission to create business groups" : ""}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Business Group
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            {businessGroups.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
-                <p className="text-foreground-secondary">No business groups yet. Click "Add Business Group" to create one.</p>
-              </div>
-            ) : (
-              businessGroups.map((bg) => (
-                <div
-                  key={bg.id}
-                  className="flex justify-between items-center p-4 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
-                >
-                  <div>
-                    <h3 className="font-semibold text-foreground">{bg.name}</h3>
-                    {bg.description && <p className="text-sm text-foreground-secondary">{bg.description}</p>}
-                    {bg.spoc_name && <p className="text-sm text-primary">SPOC: {bg.spoc_name}</p>}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setEditBG(bg)}
-                      disabled={!permissions?.businessGroups.edit}
-                      title={!permissions?.businessGroups.edit ? "You don't have permission to edit business groups" : "Edit Business Group"}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDeleteBG(bg.id)}
-                      disabled={!permissions?.businessGroups.delete}
-                      title={!permissions?.businessGroups.delete ? "You don't have permission to delete business groups" : "Delete Business Group"}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="font-poppins font-bold text-foreground text-lg">Business Groups</h2>
+                  <p className="text-sm text-foreground-secondary mt-1">
+                    Manage functional area business groups
+                  </p>
                 </div>
-              ))
-            )}
-          </div>
+                {!isPrimarySpoc && (
+                  <Button
+                    size="sm"
+                    onClick={() => setEditBG({ id: null, name: "", description: "", spoc_name: "" })}
+                    className="bg-black hover:bg-gray-800"
+                    disabled={!permissions?.businessGroups.create}
+                    title={!permissions?.businessGroups.create ? "You don't have permission to create business groups" : ""}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Business Group
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {(isPrimarySpoc ? businessGroups.filter((bg) => primarySpocBusinessGroups.includes(bg.id)) : businessGroups).length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                    <p className="text-foreground-secondary">
+                      {isPrimarySpoc 
+                        ? "You are not assigned as Primary SPOC for any business group." 
+                        : "No business groups yet. Click \"Add Business Group\" to create one."}
+                    </p>
+                  </div>
+                ) : (
+                  (isPrimarySpoc ? businessGroups.filter((bg) => primarySpocBusinessGroups.includes(bg.id)) : businessGroups).map((bg) => (
+                    <div
+                      key={bg.id}
+                      className="flex justify-between items-center p-4 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
+                    >
+                      <div>
+                        <h3 className="font-semibold text-foreground">{bg.name}</h3>
+                        {bg.description && <p className="text-sm text-foreground-secondary">{bg.description}</p>}
+                        {bg.spoc_name && <p className="text-sm text-primary">Primary SPOC: {bg.spoc_name}</p>}
+                        {bg.secondary_spoc_name && <p className="text-sm text-blue-600 dark:text-blue-400">Secondary SPOC: {bg.secondary_spoc_name}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        {isPrimarySpoc ? (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setEditBG({ ...bg, isSpocEdit: true })}
+                            title="Edit Secondary SPOC"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setEditBG(bg)}
+                              disabled={!permissions?.businessGroups.edit}
+                              title={!permissions?.businessGroups.edit ? "You don't have permission to edit business groups" : "Edit Business Group"}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleDeleteBG(bg.id)}
+                              disabled={!permissions?.businessGroups.delete}
+                              title={!permissions?.businessGroups.delete ? "You don't have permission to delete business groups" : "Delete Business Group"}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </TabsContent>
 
         {/* Categories Tab */}
         <TabsContent value="categories" className="mt-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="font-poppins font-bold text-foreground text-lg">Categories & Sub categories</h2>
-              <p className="text-sm text-foreground-secondary mt-1">
-                Manage categories, subcategories, and ticket classification mappings
-              </p>
+          {!permissions?.categories.view ? (
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
+              <p className="text-foreground-secondary">You don't have permission to view categories.</p>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setEditCategory({ id: null, name: "", description: "" })}
-              className="bg-black hover:bg-gray-800"
-              disabled={!permissions?.categories.create}
-              title={!permissions?.categories.create ? "You don't have permission to create categories" : ""}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Category
-            </Button>
-          </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="font-poppins font-bold text-foreground text-lg">Categories & Sub categories</h2>
+                  <p className="text-sm text-foreground-secondary mt-1">
+                    Manage categories, subcategories, and ticket classification mappings
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setEditCategory({ id: null, name: "", description: "" })}
+                  className="bg-black hover:bg-gray-800"
+                  disabled={!permissions?.categories.create}
+                  title={!permissions?.categories.create ? "You don't have permission to create categories" : ""}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Category
+                </Button>
+              </div>
 
           {/* Business Group Filter */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-foreground mb-2">Filter by Business Group</label>
-            <select
-              value={selectedBusinessGroupFilter}
-              onChange={(e) => setSelectedBusinessGroupFilter(e.target.value)}
-              className="w-full md:w-64 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">All Business Groups</option>
-              {targetBusinessGroups.map((tbg) => (
-                <option key={tbg.id} value={tbg.id}>
-                  {tbg.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {permissions?.businessGroups.filterScope === "all" && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Filter by Business Group</label>
+              <select
+                value={selectedBusinessGroupFilter}
+                onChange={(e) => setSelectedBusinessGroupFilter(e.target.value)}
+                className="w-full md:w-64 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">All Business Groups</option>
+                {targetBusinessGroups.map((tbg) => (
+                  <option key={tbg.id} value={tbg.id}>
+                    {tbg.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {permissions?.businessGroups.filterScope === "own" && userBusinessGroupId && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Filter by Business Group</label>
+              <select
+                value={userBusinessGroupId.toString()}
+                disabled
+                className="w-full md:w-64 px-4 py-2 border border-border rounded-lg bg-background text-foreground opacity-70 cursor-not-allowed"
+              >
+                {targetBusinessGroups
+                  .filter((tbg) => tbg.id === userBusinessGroupId)
+                  .map((tbg) => (
+                    <option key={tbg.id} value={tbg.id}>
+                      {tbg.name}
+                    </option>
+                  ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">You can only view your assigned business group</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             {getFilteredCategories().length === 0 ? (
@@ -802,6 +910,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               })
             )}
           </div>
+            </>
+          )}
         </TabsContent>
 
         {/* Project Names Tab */}
@@ -813,21 +923,41 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
       {/* Edit Dialogs */}
       {editBG && (
         <EditDialog
-          title={editBG.id ? "Edit Business Group" : "Add Business Group"}
-          fields={[
-            { name: "name", label: "Name", type: "text", required: true },
-            { name: "description", label: "Description", type: "textarea" },
+          title={editBG.isSpocEdit ? "Edit Secondary SPOC" : (editBG.id ? "Edit Business Group" : "Add Business Group")}
+          fields={editBG.isSpocEdit ? [
+            {
+              name: "secondary_spoc_name",
+              label: "Secondary SPOC Name",
+              type: "select",
+              options: [{ value: "", label: "None" }, ...users.map(user => ({ value: user.full_name, label: user.full_name }))]
+            },
+          ] : [
+            { name: "name", label: "Name", type: "text", required: true, disabled: editBG.isSpocEdit },
+            { name: "description", label: "Description", type: "textarea", disabled: editBG.isSpocEdit },
             {
               name: "spoc_name",
-              label: "SPOC Name",
+              label: "Primary SPOC Name",
               type: "select",
-              options: users.map(user => ({ value: user.full_name, label: user.full_name }))
+              options: users.map(user => ({ value: user.full_name, label: user.full_name })),
+              disabled: editBG.isSpocEdit
+            },
+            {
+              name: "secondary_spoc_name",
+              label: "Secondary SPOC Name",
+              type: "select",
+              options: [{ value: "", label: "None" }, ...users.map(user => ({ value: user.full_name, label: user.full_name }))]
             },
           ]}
-          initialData={editBG}
-          onSave={(data) =>
-            editBG.id ? handleUpdateBG(editBG.id, data.name, data.description, data.spoc_name) : handleCreateBG(data.name, data.description, data.spoc_name)
-          }
+          initialData={editBG.isSpocEdit ? { secondary_spoc_name: editBG.secondary_spoc_name || "" } : editBG}
+          onSave={(data) => {
+            if (editBG.isSpocEdit) {
+              return handleUpdateSecondarySpoc(editBG.id, data.secondary_spoc_name || "")
+            } else {
+              return editBG.id 
+                ? handleUpdateBG(editBG.id, data.name, data.description, data.spoc_name) 
+                : handleCreateBG(data.name, data.description, data.spoc_name)
+            }
+          }}
           onClose={() => setEditBG(null)}
         />
       )}

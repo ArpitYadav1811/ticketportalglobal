@@ -19,7 +19,18 @@ function revalidateAllMasterDataPaths() {
 export async function getBusinessUnitGroups() {
   try {
     const result = await sql`
-      SELECT * FROM business_unit_groups
+      SELECT 
+        id,
+        name,
+        description,
+        spoc_name,
+        primary_spoc_name,
+        secondary_spoc_name,
+        created_at,
+        updated_at,
+        is_deleted
+      FROM business_unit_groups
+      WHERE (is_deleted IS NULL OR is_deleted = FALSE)
       ORDER BY name ASC
     `
     return { success: true, data: result }
@@ -89,7 +100,7 @@ export async function getOrganizations() {
 }
 
 export async function getTargetBusinessGroupsByOrganization(organizationId: number) {
-  try {
+try {
     const result = await sql`
       SELECT DISTINCT bug.*
       FROM business_unit_groups bug
@@ -101,6 +112,60 @@ export async function getTargetBusinessGroupsByOrganization(organizationId: numb
   } catch (error) {
     console.error("Error fetching target business groups by functional area:", error)
     return { success: false, error: "Failed to fetch target business groups", data: [] }
+  }
+}
+
+/**
+ * Check if a user is the Primary SPOC for a business group
+ */
+export async function isUserPrimarySpoc(userId: number, businessGroupId: number): Promise<boolean> {
+  try {
+    const user = await sql`SELECT full_name FROM users WHERE id = ${userId}`
+    if (user.length === 0) return false
+    
+    const userName = user[0].full_name
+    if (!userName) return false
+    
+    const bg = await sql`
+      SELECT spoc_name, primary_spoc_name
+      FROM business_unit_groups
+      WHERE id = ${businessGroupId}
+    `
+    if (bg.length === 0) return false
+    
+    const primarySpocName = bg[0].primary_spoc_name || bg[0].spoc_name
+    if (!primarySpocName) return false
+    
+    // Compare names (case-insensitive, trimmed)
+    return userName.trim().toLowerCase() === primarySpocName.trim().toLowerCase()
+  } catch (error) {
+    console.error("Error checking if user is Primary SPOC:", error)
+    return false
+  }
+}
+
+/**
+ * Get business groups where user is Primary SPOC
+ */
+export async function getBusinessGroupsForPrimarySpoc(userId: number) {
+  try {
+    const user = await sql`SELECT full_name FROM users WHERE id = ${userId}`
+    if (user.length === 0 || !user[0].full_name) {
+      return { success: true, data: [] }
+    }
+    
+    const userName = user[0].full_name
+    const result = await sql`
+      SELECT *
+      FROM business_unit_groups
+      WHERE LOWER(TRIM(COALESCE(primary_spoc_name, spoc_name))) = LOWER(TRIM(${userName}))
+        AND (is_deleted IS NULL OR is_deleted = FALSE)
+      ORDER BY name ASC
+    `
+    return { success: true, data: result }
+  } catch (error) {
+    console.error("Error fetching business groups for Primary SPOC:", error)
+    return { success: false, error: "Failed to fetch business groups", data: [] }
   }
 }
 

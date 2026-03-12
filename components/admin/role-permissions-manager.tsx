@@ -399,7 +399,8 @@ export default function RolePermissionsManager() {
             <div className="space-y-3">
               {/* Categories */}
               <PermissionGroup title="Categories" icon={<Layers className="w-3.5 h-3.5" />}>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-4 gap-1.5">
+                  <CompactCheckbox label="View" checked={getBooleanValue("master_data.view_categories")} onChange={(v) => handlePermissionChange("master_data.view_categories", v)} />
                   <CompactCheckbox label="Create" checked={getBooleanValue("master_data.create_categories")} onChange={(v) => handlePermissionChange("master_data.create_categories", v)} />
                   <CompactCheckbox label="Edit" checked={getBooleanValue("master_data.edit_categories")} onChange={(v) => handlePermissionChange("master_data.edit_categories", v)} />
                   <CompactCheckbox label="Delete" checked={getBooleanValue("master_data.delete_categories")} onChange={(v) => handlePermissionChange("master_data.delete_categories", v)} />
@@ -408,7 +409,8 @@ export default function RolePermissionsManager() {
 
               {/* Subcategories */}
               <PermissionGroup title="Subcategories" icon={<Layers className="w-3.5 h-3.5" />}>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-4 gap-1.5">
+                  <CompactCheckbox label="View" checked={getBooleanValue("master_data.view_subcategories")} onChange={(v) => handlePermissionChange("master_data.view_subcategories", v)} />
                   <CompactCheckbox label="Create" checked={getBooleanValue("master_data.create_subcategories")} onChange={(v) => handlePermissionChange("master_data.create_subcategories", v)} />
                   <CompactCheckbox label="Edit" checked={getBooleanValue("master_data.edit_subcategories")} onChange={(v) => handlePermissionChange("master_data.edit_subcategories", v)} />
                   <CompactCheckbox label="Delete" checked={getBooleanValue("master_data.delete_subcategories")} onChange={(v) => handlePermissionChange("master_data.delete_subcategories", v)} />
@@ -416,19 +418,34 @@ export default function RolePermissionsManager() {
               </PermissionGroup>
 
               {/* Business Groups Management */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-2.5">
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Business Groups Management Scope</label>
-                <select
-                  value={getStringValue("master_data.manage_business_groups_scope", "none")}
-                  onChange={(e) => handlePermissionChange("master_data.manage_business_groups_scope", e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  {businessGroupScopeOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-2.5 space-y-2.5">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Business Groups Management Scope</label>
+                  <select
+                    value={getStringValue("master_data.manage_business_groups_scope", "none")}
+                    onChange={(e) => handlePermissionChange("master_data.manage_business_groups_scope", e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {businessGroupScopeOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Filter Business Groups Scope</label>
+                  <select
+                    value={getStringValue("master_data.filter_business_groups_scope", "own")}
+                    onChange={(e) => handlePermissionChange("master_data.filter_business_groups_scope", e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="own">Own Group Only</option>
+                    <option value="all">All Groups</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">Controls whether users can filter by all business groups or only their own</p>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-4 gap-1.5">
+                <CompactCheckbox label="View Business Groups" checked={getBooleanValue("master_data.view_business_groups")} onChange={(v) => handlePermissionChange("master_data.view_business_groups", v)} />
                 <CompactCheckbox label="Create Business Groups" checked={getBooleanValue("master_data.create_business_groups")} onChange={(v) => handlePermissionChange("master_data.create_business_groups", v)} />
                 <CompactCheckbox label="Edit Business Groups" checked={getBooleanValue("master_data.edit_business_groups")} onChange={(v) => handlePermissionChange("master_data.edit_business_groups", v)} />
                 <CompactCheckbox label="Delete Business Groups" checked={getBooleanValue("master_data.delete_business_groups")} onChange={(v) => handlePermissionChange("master_data.delete_business_groups", v)} />

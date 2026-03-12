@@ -274,16 +274,20 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.audit_logs": false,
       "business_groups.view_all": true,
       "business_groups.manage_all": true,
+      "master_data.view_categories": true,
       "master_data.create_categories": true,
       "master_data.edit_categories": true,
       "master_data.delete_categories": true,
+      "master_data.view_subcategories": true,
       "master_data.create_subcategories": true,
       "master_data.edit_subcategories": true,
       "master_data.delete_subcategories": true,
+      "master_data.view_business_groups": true,
       "master_data.manage_business_groups_scope": "all",
       "master_data.create_business_groups": true,
       "master_data.edit_business_groups": true,
-      "master_data.delete_business_groups": true
+      "master_data.delete_business_groups": true,
+      "master_data.filter_business_groups_scope": "all"
     }
   } else if (roleLower === "manager") {
     return {
@@ -350,16 +354,20 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.audit_logs": false,
       "business_groups.view_own": true,
       "business_groups.manage_own": false,
+      "master_data.view_categories": false,
       "master_data.create_categories": false,
       "master_data.edit_categories": false,
       "master_data.delete_categories": false,
+      "master_data.view_subcategories": false,
       "master_data.create_subcategories": false,
       "master_data.edit_subcategories": false,
       "master_data.delete_subcategories": false,
+      "master_data.view_business_groups": false,
       "master_data.manage_business_groups_scope": "none",
       "master_data.create_business_groups": false,
       "master_data.edit_business_groups": false,
-      "master_data.delete_business_groups": false
+      "master_data.delete_business_groups": false,
+      "master_data.filter_business_groups_scope": "own"
     }
   } else {
     // User role
@@ -426,16 +434,20 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.audit_logs": false,
       "business_groups.view_own": true,
       "business_groups.manage_own": false,
+      "master_data.view_categories": false,
       "master_data.create_categories": false,
       "master_data.edit_categories": false,
       "master_data.delete_categories": false,
+      "master_data.view_subcategories": false,
       "master_data.create_subcategories": false,
       "master_data.edit_subcategories": false,
       "master_data.delete_subcategories": false,
+      "master_data.view_business_groups": false,
       "master_data.manage_business_groups_scope": "none",
       "master_data.create_business_groups": false,
       "master_data.edit_business_groups": false,
-      "master_data.delete_business_groups": false
+      "master_data.delete_business_groups": false,
+      "master_data.filter_business_groups_scope": "own"
     }
   }
 }
@@ -657,6 +669,13 @@ export async function getAnalyticsAllowedGroupIds(userId: number): Promise<numbe
 // ==================== MASTER DATA PERMISSION CHECKS ====================
 
 /**
+ * Check if user can view categories
+ */
+export async function canViewCategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.view_categories")
+}
+
+/**
  * Check if user can create categories
  */
 export async function canCreateCategory(userId: number): Promise<boolean> {
@@ -675,6 +694,13 @@ export async function canEditCategory(userId: number): Promise<boolean> {
  */
 export async function canDeleteCategory(userId: number): Promise<boolean> {
   return await checkPermission(userId, "master_data.delete_categories")
+}
+
+/**
+ * Check if user can view subcategories
+ */
+export async function canViewSubcategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.view_subcategories")
 }
 
 /**
@@ -764,23 +790,30 @@ export async function canDeleteBusinessGroup(userId: number, groupId: number | n
 export async function getMasterDataPermissions(userId: number) {
   try {
     const [
+      canViewCat,
       canCreateCat,
       canEditCat,
       canDeleteCat,
+      canViewSubcat,
       canCreateSubcat,
       canEditSubcat,
       canDeleteSubcat,
+      canViewBG,
       canCreateBG,
       canEditBG,
       canDeleteBG,
-      manageScope
+      manageScope,
+      filterScope
     ] = await Promise.all([
+      canViewCategory(userId),
       canCreateCategory(userId),
       canEditCategory(userId),
       canDeleteCategory(userId),
+      canViewSubcategory(userId),
       canCreateSubcategory(userId),
       canEditSubcategory(userId),
       canDeleteSubcategory(userId),
+      checkPermission(userId, "master_data.view_business_groups"),
       canCreateBusinessGroup(userId),
       checkPermission(userId, "master_data.edit_business_groups"),
       checkPermission(userId, "master_data.delete_business_groups"),
@@ -793,6 +826,16 @@ export async function getMasterDataPermissions(userId: number) {
         if (!permissions.success || !permissions.data) return "none"
         const permsData = permissions.data as Record<string, any>
         return permsData["master_data.manage_business_groups_scope"] || "none"
+      })(),
+      (async () => {
+        const user = await sql`SELECT role FROM users WHERE id = ${userId}`
+        if (user.length === 0) return "own"
+        const role = user[0].role?.toLowerCase()
+        if (role === "superadmin") return "all"
+        const permissions = await getRolePermissions(role)
+        if (!permissions.success || !permissions.data) return "own"
+        const permsData = permissions.data as Record<string, any>
+        return permsData["master_data.filter_business_groups_scope"] || "own"
       })()
     ])
 
@@ -800,20 +843,24 @@ export async function getMasterDataPermissions(userId: number) {
       success: true,
       data: {
         categories: {
+          view: canViewCat,
           create: canCreateCat,
           edit: canEditCat,
           delete: canDeleteCat
         },
         subcategories: {
+          view: canViewSubcat,
           create: canCreateSubcat,
           edit: canEditSubcat,
           delete: canDeleteSubcat
         },
         businessGroups: {
+          view: canViewBG,
           create: canCreateBG,
           edit: canEditBG,
           delete: canDeleteBG,
-          manageScope: manageScope
+          manageScope: manageScope,
+          filterScope: filterScope
         }
       }
     }
