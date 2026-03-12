@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -16,6 +16,36 @@ interface StatusChangeModalProps {
   isSuperAdmin?: boolean
 }
 
+// Predefined reasons for each status
+const STATUS_REASONS: Record<string, string[]> = {
+  open: [
+    "Needs rework",
+    "Status correction",
+    "Other"
+  ],
+  closed: [
+    "Verified",
+    "Other"
+  ],
+  deleted: [
+    "Duplicate entry",
+    "Created by mistake",
+    "Other"
+  ],
+  resolved: [
+    "Problems fixed",
+    "Changes implemented",
+    "Request completed",
+    "Other"
+  ],
+  "on-hold": [
+    "Additional inputs awaited",
+    "Implementation dependencies",
+    "Customer delays",
+    "Other"
+  ]
+}
+
 export default function StatusChangeModal({
   isOpen,
   onClose,
@@ -29,20 +59,44 @@ export default function StatusChangeModal({
 }: StatusChangeModalProps) {
   const [reason, setReason] = useState("")
   const [remarks, setRemarks] = useState("")
+  const [isOtherSelected, setIsOtherSelected] = useState(false)
+
+  // Get available reasons for the new status
+  const availableReasons = STATUS_REASONS[newStatus] || []
+
+  // Reset form when modal opens/closes or status changes
+  useEffect(() => {
+    if (isOpen) {
+      setReason("")
+      setRemarks("")
+      setIsOtherSelected(false)
+    }
+  }, [isOpen, newStatus])
+
+  // Check if "Other" is selected
+  useEffect(() => {
+    setIsOtherSelected(reason === "Other")
+  }, [reason])
 
   const handleConfirm = () => {
     if (!reason.trim()) {
+      return
+    }
+    // If "Other" is selected, remarks is mandatory
+    if (reason === "Other" && !remarks.trim()) {
       return
     }
     onConfirm(reason.trim(), remarks.trim())
     // Reset form
     setReason("")
     setRemarks("")
+    setIsOtherSelected(false)
   }
 
   const handleClose = () => {
     setReason("")
     setRemarks("")
+    setIsOtherSelected(false)
     onClose()
   }
 
@@ -126,30 +180,51 @@ export default function StatusChangeModal({
             <label className="block text-xs font-medium text-foreground mb-1.5">
               Reason * <span className="text-xs text-muted-foreground">(Required)</span>
             </label>
-            <input
-              type="text"
+            <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter reason for status change..."
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: "right 0.5rem center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "1.25em 1.25em",
+              }}
               autoFocus
               disabled={loading}
-            />
+            >
+              <option value="">Select a reason...</option>
+              {availableReasons.map((reasonOption) => (
+                <option key={reasonOption} value={reasonOption}>
+                  {reasonOption}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Remarks */}
           <div>
             <label className="block text-xs font-medium text-foreground mb-1.5">
-              Remarks <span className="text-xs text-muted-foreground">(Optional)</span>
+              Remarks {isOtherSelected && <span className="text-red-500">*</span>}
+              <span className="text-xs text-muted-foreground ml-1">
+                {isOtherSelected ? "(Required)" : "(Optional)"}
+              </span>
             </label>
             <textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Add any additional remarks..."
+              placeholder={isOtherSelected ? "Please provide details for 'Other' reason..." : "Add any additional remarks..."}
               rows={3}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm resize-none"
+              className={`w-full px-3 py-2 border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm resize-none ${
+                isOtherSelected && !remarks.trim() 
+                  ? "border-red-300 dark:border-red-700 focus:ring-red-500" 
+                  : "border-border"
+              }`}
               disabled={loading}
             />
+            {isOtherSelected && !remarks.trim() && (
+              <p className="text-xs text-red-500 mt-1">Remarks are required when 'Other' is selected</p>
+            )}
           </div>
         </div>
 
@@ -164,7 +239,7 @@ export default function StatusChangeModal({
           </button>
           <Button
             onClick={handleConfirm}
-            disabled={!reason.trim() || loading}
+            disabled={!reason.trim() || (isOtherSelected && !remarks.trim()) || loading}
             className="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Changing..." : "Confirm Change"}
