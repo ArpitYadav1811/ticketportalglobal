@@ -24,6 +24,7 @@ import {
   Save,
   AlertTriangle,
   Key,
+  Database,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -56,6 +57,11 @@ import {
   getSystemAuditLogs,
   updateBusinessGroupSpoc,
   updateFunctionalAreaMapping,
+  bulkDeleteAllUsers,
+  bulkDeleteAllTickets,
+  bulkDeleteAllBusinessGroups,
+  bulkDeleteAllFunctionalAreas,
+  bulkDeleteAllMasterData,
 } from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { getUsers } from "@/lib/actions/tickets"
@@ -134,6 +140,10 @@ export default function AdminDashboardPage() {
                   <Link2 className="w-3.5 h-3.5" /> FA Mappings
                   <Lock className="w-3 h-3 text-amber-500" />
                 </TabsTrigger>
+                <TabsTrigger value="system-management" className="text-xs gap-1.5">
+                  <Database className="w-3.5 h-3.5" /> System Management
+                  <Lock className="w-3 h-3 text-amber-500" />
+                </TabsTrigger>
                 <TabsTrigger value="audit-logs" className="text-xs gap-1.5">
                   <ScrollText className="w-3.5 h-3.5" /> Audit Logs
                   <Lock className="w-3 h-3 text-amber-500" />
@@ -169,6 +179,9 @@ export default function AdminDashboardPage() {
               </TabsContent>
               <TabsContent value="fa-mappings" className="mt-4">
                 <FAMappingsTab currentUser={user} />
+              </TabsContent>
+              <TabsContent value="system-management" className="mt-4">
+                <SystemManagementTab />
               </TabsContent>
               <TabsContent value="audit-logs" className="mt-4">
                 <AuditLogsTab />
@@ -905,6 +918,271 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
  </div>
  </div>
  )}
+    </div>
+  )
+}
+
+// ==================== SYSTEM MANAGEMENT TAB (SUPERADMIN ONLY) ====================
+function SystemManagementTab() {
+  const [loading, setLoading] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [deleteAction, setDeleteAction] = useState<{
+    type: string
+    title: string
+    description: string
+    action: () => Promise<any>
+  } | null>(null)
+
+  const handleBulkDelete = async () => {
+    if (!deleteAction) return
+
+    setLoading(true)
+    try {
+      const result = await deleteAction.action()
+      if (result.success) {
+        toast.success(result.message || "Operation completed successfully")
+      } else {
+        toast.error(result.error || "Operation failed")
+      }
+    } catch (error) {
+      console.error("Bulk delete error:", error)
+      toast.error("An error occurred during the operation")
+    } finally {
+      setLoading(false)
+      setShowConfirmDialog(false)
+      setDeleteAction(null)
+    }
+  }
+
+  const confirmDelete = (type: string, title: string, description: string, action: () => Promise<any>) => {
+    setDeleteAction({ type, title, description, action })
+    setShowConfirmDialog(true)
+  }
+
+  return (
+    <div className="bg-card border rounded-lg shadow-sm p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Database className="w-5 h-5 text-red-500" />
+          System Management
+          <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-semibold rounded">
+            DANGER ZONE
+          </span>
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Bulk delete operations for system data. These actions are irreversible and should be used with extreme caution.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {/* Delete All Users */}
+        <div className="border border-red-200 dark:border-red-900/50 rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Users className="w-4 h-4 text-red-600" />
+                Delete All Users
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permanently delete all users except yourself. This will remove all user accounts and their associated data.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => confirmDelete(
+                "users",
+                "Delete All Users",
+                "This will permanently delete ALL users except yourself. This action cannot be undone.",
+                bulkDeleteAllUsers
+              )}
+              disabled={loading}
+              className="ml-4"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete All Users
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete All Tickets */}
+        <div className="border border-red-200 dark:border-red-900/50 rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <ScrollText className="w-4 h-4 text-red-600" />
+                Delete All Tickets
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permanently delete all tickets, comments, attachments, and audit logs. This will clear the entire ticket history.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => confirmDelete(
+                "tickets",
+                "Delete All Tickets",
+                "This will permanently delete ALL tickets and all related data (comments, attachments, audit logs). This action cannot be undone.",
+                bulkDeleteAllTickets
+              )}
+              disabled={loading}
+              className="ml-4"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete All Tickets
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete All Business Groups */}
+        <div className="border border-red-200 dark:border-red-900/50 rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-red-600" />
+                Delete All Business Groups
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permanently delete all business groups and related mappings. User and ticket references will be set to NULL.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => confirmDelete(
+                "business-groups",
+                "Delete All Business Groups",
+                "This will permanently delete ALL business groups, classification mappings, and functional area mappings. User and ticket references will be cleared. This action cannot be undone.",
+                bulkDeleteAllBusinessGroups
+              )}
+              disabled={loading}
+              className="ml-4"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete All Groups
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete All Functional Areas */}
+        <div className="border border-red-200 dark:border-red-900/50 rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <FolderTree className="w-4 h-4 text-red-600" />
+                Delete All Functional Areas
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permanently delete all functional areas (organizations) and their business group mappings.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => confirmDelete(
+                "functional-areas",
+                "Delete All Functional Areas",
+                "This will permanently delete ALL functional areas and their business group mappings. This action cannot be undone.",
+                bulkDeleteAllFunctionalAreas
+              )}
+              disabled={loading}
+              className="ml-4"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete All FAs
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete All Master Data (Categories & Subcategories) */}
+        <div className="border border-red-200 dark:border-red-900/50 rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Database className="w-4 h-4 text-red-600" />
+                Delete All Categories & Subcategories
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permanently delete all categories, subcategories, and ticket classification mappings.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => confirmDelete(
+                "master-data",
+                "Delete All Categories & Subcategories",
+                "This will permanently delete ALL categories, subcategories, and ticket classification mappings. This action cannot be undone.",
+                bulkDeleteAllMasterData
+              )}
+              disabled={loading}
+              className="ml-4"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete All Master Data
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Warning Banner */}
+      <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              Important Warning
+            </h4>
+            <p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+              All bulk delete operations are <strong>permanent and irreversible</strong>. Make sure you have a database backup before performing any of these operations. These actions will be logged in the audit trail.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && deleteAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">{deleteAction.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{deleteAction.description}</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+              <p className="text-xs text-red-800 dark:text-red-300 font-medium">
+                ⚠️ This action is permanent and cannot be undone. Please confirm that you want to proceed.
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmDialog(false)
+                  setDeleteAction(null)
+                }}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={loading}
+              >
+                {loading ? "Deleting..." : "Yes, Delete Permanently"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

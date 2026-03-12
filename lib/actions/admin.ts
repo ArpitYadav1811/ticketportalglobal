@@ -2,6 +2,7 @@
 
 import { sql } from "@/lib/db"
 import { getCurrentUser } from "./auth"
+import { revalidatePath } from "next/cache"
 
 // ==================== SYSTEM AUDIT LOG ====================
 
@@ -600,5 +601,205 @@ export async function getBusinessGroupSpocs(businessGroupId: number) {
   } catch (error) {
     console.error("Error fetching business group SPOCs:", error)
     return { success: false, error: "Failed to fetch SPOCs", data: null }
+  }
+}
+
+// ==================== BULK DELETE OPERATIONS (SUPER ADMIN ONLY) ====================
+
+export async function bulkDeleteAllUsers() {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    // Delete all users except the current super admin
+    const result = await sql`
+      DELETE FROM users 
+      WHERE id != ${currentUser.id}
+      RETURNING id, email, full_name
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_DELETE",
+      entityType: "users",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Deleted ${result.length} users (excluding self)`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/dashboard")
+
+    return { 
+      success: true, 
+      message: `Successfully deleted ${result.length} users`,
+      deletedCount: result.length 
+    }
+  } catch (error) {
+    console.error("Error bulk deleting users:", error)
+    return { success: false, error: "Failed to delete users" }
+  }
+}
+
+export async function bulkDeleteAllTickets() {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    // Delete all tickets (cascades to comments, attachments, audit logs)
+    const result = await sql`
+      DELETE FROM tickets
+      RETURNING id, ticket_number
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_DELETE",
+      entityType: "tickets",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Deleted ${result.length} tickets and all related data`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/dashboard")
+    revalidatePath("/tickets")
+
+    return { 
+      success: true, 
+      message: `Successfully deleted ${result.length} tickets`,
+      deletedCount: result.length 
+    }
+  } catch (error) {
+    console.error("Error bulk deleting tickets:", error)
+    return { success: false, error: "Failed to delete tickets" }
+  }
+}
+
+export async function bulkDeleteAllBusinessGroups() {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    // First, set all user business_unit_group_id to NULL
+    await sql`UPDATE users SET business_unit_group_id = NULL`
+
+    // Set all ticket business group references to NULL
+    await sql`UPDATE tickets SET business_unit_group_id = NULL, target_business_group_id = NULL, assignee_group_id = NULL`
+
+    // Delete related mappings
+    await sql`DELETE FROM ticket_classification_mapping`
+    await sql`DELETE FROM functional_area_business_group_mapping`
+
+    // Delete all business groups
+    const result = await sql`
+      DELETE FROM business_unit_groups
+      RETURNING id, name
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_DELETE",
+      entityType: "business_unit_groups",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Deleted ${result.length} business groups and all related mappings`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/dashboard")
+    revalidatePath("/master-data")
+
+    return { 
+      success: true, 
+      message: `Successfully deleted ${result.length} business groups`,
+      deletedCount: result.length 
+    }
+  } catch (error) {
+    console.error("Error bulk deleting business groups:", error)
+    return { success: false, error: "Failed to delete business groups" }
+  }
+}
+
+export async function bulkDeleteAllFunctionalAreas() {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    // Delete all functional area mappings first
+    await sql`DELETE FROM functional_area_business_group_mapping`
+
+    // Delete all functional areas
+    const result = await sql`
+      DELETE FROM organizations
+      RETURNING id, name
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_DELETE",
+      entityType: "functional_areas",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Deleted ${result.length} functional areas and all related mappings`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/dashboard")
+
+    return { 
+      success: true, 
+      message: `Successfully deleted ${result.length} functional areas`,
+      deletedCount: result.length 
+    }
+  } catch (error) {
+    console.error("Error bulk deleting functional areas:", error)
+    return { success: false, error: "Failed to delete functional areas" }
+  }
+}
+
+export async function bulkDeleteAllMasterData() {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    // Delete all mappings first
+    await sql`DELETE FROM ticket_classification_mapping`
+    
+    // Delete subcategories (cascades handled by FK)
+    const subcatResult = await sql`DELETE FROM subcategories RETURNING id`
+    
+    // Delete categories
+    const catResult = await sql`DELETE FROM categories RETURNING id`
+
+    await addSystemAuditLog({
+      actionType: "BULK_DELETE",
+      entityType: "master_data",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Deleted ${catResult.length} categories, ${subcatResult.length} subcategories, and all classification mappings`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/dashboard")
+    revalidatePath("/master-data")
+
+    return { 
+      success: true, 
+      message: `Successfully deleted ${catResult.length} categories and ${subcatResult.length} subcategories`,
+      deletedCount: {
+        categories: catResult.length,
+        subcategories: subcatResult.length
+      }
+    }
+  } catch (error) {
+    console.error("Error bulk deleting master data:", error)
+    return { success: false, error: "Failed to delete master data" }
   }
 }
