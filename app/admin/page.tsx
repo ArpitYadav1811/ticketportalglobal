@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Save,
   AlertTriangle,
+  Key,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -39,6 +40,9 @@ import UnifiedMasterDataV2 from "@/components/master-data/unified-master-data-v2
 
 // Teams imports
 import { getTeams, createTeam, updateTeam, deleteTeam } from "@/lib/actions/teams"
+
+// Role Permissions imports
+import RolePermissionsManager from "@/components/admin/role-permissions-manager"
 
 // Admin-only imports
 import {
@@ -122,6 +126,10 @@ export default function AdminDashboardPage() {
             </TabsTrigger>
             {isSuperAdmin && (
               <>
+                <TabsTrigger value="role-permissions" className="text-xs gap-1.5">
+                  <Key className="w-3.5 h-3.5" /> Role Permissions
+                  <Lock className="w-3 h-3 text-amber-500" />
+                </TabsTrigger>
                 <TabsTrigger value="fa-mappings" className="text-xs gap-1.5">
                   <Link2 className="w-3.5 h-3.5" /> FA Mappings
                   <Lock className="w-3 h-3 text-amber-500" />
@@ -154,6 +162,11 @@ export default function AdminDashboardPage() {
           {/* ====== SUPERADMIN TABS ====== */}
           {isSuperAdmin && (
             <>
+              <TabsContent value="role-permissions" className="mt-4">
+                <div className="bg-card border rounded-lg shadow-sm p-4">
+                  <RolePermissionsManager />
+                </div>
+              </TabsContent>
               <TabsContent value="fa-mappings" className="mt-4">
                 <FAMappingsTab currentUser={user} />
               </TabsContent>
