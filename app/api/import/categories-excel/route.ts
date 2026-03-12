@@ -40,20 +40,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Excel file is empty' }, { status: 400 });
     }
 
+    // Log first row to see actual column names
+    console.log('Excel columns detected:', Object.keys(data[0]));
+    console.log('First row data:', data[0]);
+
     // Parse data
     const categoriesMap = new Map();
     let skippedRows = 0;
 
     data.forEach((row: any, index: number) => {
-      const category = row['Category'] || row['category'] || row['CATEGORY'];
-      const subcategory = row['Sub Category'] || row['SubCategory'] || row['Subcategory'] || 
-                         row['sub_category'] || row['subcategory'] || row['SUB CATEGORY'];
-      const description = row['Input'] || row['Description'] || row['input'] || 
-                         row['description'] || row['INPUT'] || row['Desc'] || '';
-      const estimatedHrs = row['Estimated hrs'] || row['Estimated Hrs'] || row['EstimatedHrs'] || 
-                          row['estimated_hrs'] || row['ESTIMATED HRS'] || '';
+      // Get all keys from the row to find the right columns
+      const keys = Object.keys(row);
+      
+      // Find category column (case-insensitive, flexible matching)
+      const categoryKey = keys.find(k => 
+        k.toLowerCase().trim() === 'category' ||
+        k.toLowerCase().trim() === 'cat'
+      );
+      
+      // Find subcategory column (case-insensitive, flexible matching)
+      const subcategoryKey = keys.find(k => {
+        const lower = k.toLowerCase().trim();
+        return lower === 'sub category' || 
+               lower === 'subcategory' || 
+               lower === 'sub-category' ||
+               lower === 'subcat';
+      });
+      
+      // Find description column
+      const descriptionKey = keys.find(k => {
+        const lower = k.toLowerCase().trim();
+        return lower === 'input' || 
+               lower === 'description' || 
+               lower === 'desc';
+      });
+      
+      // Find estimated time column
+      const estimatedKey = keys.find(k => {
+        const lower = k.toLowerCase().trim();
+        return lower === 'estimated time' || 
+               lower === 'estimated hrs' || 
+               lower === 'estimated_time' ||
+               lower === 'estimated_hrs' ||
+               lower === 'estimatedtime' ||
+               lower === 'est time' ||
+               lower === 'est. time';
+      });
+
+      const category = categoryKey ? row[categoryKey] : null;
+      const subcategory = subcategoryKey ? row[subcategoryKey] : null;
+      const description = descriptionKey ? row[descriptionKey] : '';
+      const estimatedHrs = estimatedKey ? row[estimatedKey] : '';
 
       if (!category || !subcategory) {
+        console.log(`Skipping row ${index + 2}: category="${category}", subcategory="${subcategory}", availableKeys:`, keys);
         skippedRows++;
         return;
       }

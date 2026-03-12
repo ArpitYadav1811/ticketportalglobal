@@ -104,7 +104,11 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
 
     if (tbgResult.success) setTargetBusinessGroups(tbgResult.data || [])
     if (bgResult.success) setBusinessGroups(bgResult.data || [])
-    if (catResult.success) setCategories(catResult.data || [])
+    if (catResult.success) {
+      console.log('Categories loaded:', catResult.data?.length, 'categories')
+      console.log('Sample category:', catResult.data?.[0])
+      setCategories(catResult.data || [])
+    }
     if (subcatResult.success) setSubcategories(subcatResult.data || [])
     if (mappingResult.success) setMappings(mappingResult.data || [])
     if (usersResult.success) setUsers(usersResult.data || [])
