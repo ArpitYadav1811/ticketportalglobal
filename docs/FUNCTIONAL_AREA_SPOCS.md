@@ -105,15 +105,25 @@ Add this field to the FA creation/edit form:
 ```tsx
 <div>
   <label className="block text-sm font-medium mb-1">
-    SPOC
+    SPOC (Single Point of Contact)
   </label>
-  <input
-    type="text"
+  <select
     value={faForm.spocName}
     onChange={(e) => setFaForm({ ...faForm, spocName: e.target.value })}
-    placeholder="Enter SPOC name"
-    className="w-full px-3 py-2 border rounded-lg text-sm"
-  />
+    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+  >
+    <option value="">-- Select SPOC --</option>
+    {allUsers
+      .filter(user => user.full_name)
+      .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+      .map(user => (
+        <option key={user.id} value={user.full_name}>
+          {user.full_name} ({user.email})
+        </option>
+      ))
+    }
+  </select>
+  <p className="text-xs text-muted-foreground mt-1">Select the person responsible for this functional area</p>
 </div>
 ```
 
@@ -161,12 +171,13 @@ onClick={() => {
 3. Enter the SPOC name (the single point of contact)
 4. Click **Save**
 
-### SPOC Name Format
+### SPOC Selection
 
-- Use full names as they appear in the users table
-- Example: "John Doe", "Jane Smith"
-- Names are case-insensitive when matching
-- SPOCs don't need to be existing users (flexible for external contacts)
+- SPOCs are selected from a dropdown of existing users
+- Dropdown shows: `Full Name (email@example.com)`
+- Only users with full names appear in the dropdown
+- Sorted alphabetically for easy selection
+- Select "-- Select SPOC --" to clear/remove SPOC
 
 ## Benefits
 

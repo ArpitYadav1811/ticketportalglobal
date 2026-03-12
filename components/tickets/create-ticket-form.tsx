@@ -140,16 +140,14 @@ export default function CreateTicketForm() {
 
  const loadInitialData = async () => {
  console.log("[v0] Loading initial data for create ticket form")
- const [buResult, orgResult, catResult, usersResult] = await Promise.all([
+ const [buResult, orgResult, usersResult] = await Promise.all([
  getBusinessUnitGroups(),
  getOrganizations(),
- getCategories(),
  getUsers(),
  ])
 
  console.log("[v0] Business Units:", buResult)
  console.log("[v0] Organizations:", orgResult)
- console.log("[v0] Categories:", catResult)
  console.log("[v0] Users:", usersResult)
 
  if (buResult.success) setBusinessUnitGroups(buResult.data || [])
@@ -167,7 +165,6 @@ export default function CreateTicketForm() {
  console.warn("[v0] Failed to load organizations:", orgResult.error)
  setOrganizations([])
  }
- if (catResult.success) setCategories(catResult.data || [])
  if (usersResult.success) setAssignees(usersResult.data || [])
 
  // Load target business groups based on selected functional area
@@ -178,6 +175,13 @@ export default function CreateTicketForm() {
  setTargetBusinessGroups([])
  }
 
+ // Load categories for selected business group (if any)
+ if (formData.targetBusinessGroupId) {
+ const catResult = await getCategories(Number(formData.targetBusinessGroupId))
+ console.log("[v0] Categories for BG:", catResult)
+ if (catResult.success) setCategories(catResult.data || [])
+ }
+
  // If duplicating, load dependent data
  if (isDuplicate) {
  if (formData.categoryId) {
@@ -185,6 +189,16 @@ export default function CreateTicketForm() {
  }
  }
  }
+
+ // Load categories when business group changes
+ useEffect(() => {
+ if (formData.targetBusinessGroupId) {
+ loadCategoriesForBusinessGroup(Number(formData.targetBusinessGroupId))
+ } else {
+ setCategories([])
+ setFormData((prev) => ({ ...prev, categoryId: "", subcategoryId: "" }))
+ }
+ }, [formData.targetBusinessGroupId])
 
  useEffect(() => {
  if (formData.categoryId) {
@@ -207,6 +221,17 @@ export default function CreateTicketForm() {
  setFormData((prev) => ({ ...prev, subcategoryId: "N/A" }))
  }
  }, [subcategories, formData.categoryId])
+
+ const loadCategoriesForBusinessGroup = async (businessGroupId: number) => {
+ console.log("[v0] Loading categories for business group:", businessGroupId)
+ const result = await getCategories(businessGroupId)
+ console.log("[v0] Categories result:", result)
+ if (result.success) {
+ setCategories(result.data || [])
+ } else {
+ setCategories([])
+ }
+ }
 
  const loadSubcategories = async (categoryId: number) => {
  console.log("[v0] Loading subcategories for category:", categoryId)

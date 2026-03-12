@@ -314,12 +314,27 @@ export async function deleteBusinessUnitGroup(id: number) {
 }
 
 // Categories
-export async function getCategories() {
+export async function getCategories(businessGroupId?: number) {
   try {
-    const result = await sql`
-      SELECT * FROM categories 
-      ORDER BY name ASC
-    `
+    let result
+    if (businessGroupId) {
+      // Get categories for specific business group
+      result = await sql`
+        SELECT c.*, bug.name as business_group_name
+        FROM categories c
+        JOIN business_unit_groups bug ON c.business_unit_group_id = bug.id
+        WHERE c.business_unit_group_id = ${businessGroupId}
+        ORDER BY c.name ASC
+      `
+    } else {
+      // Get all categories with their business group info
+      result = await sql`
+        SELECT c.*, bug.name as business_group_name
+        FROM categories c
+        JOIN business_unit_groups bug ON c.business_unit_group_id = bug.id
+        ORDER BY bug.name ASC, c.name ASC
+      `
+    }
     return { success: true, data: result }
   } catch (error) {
     console.error("Error fetching categories:", error)
@@ -327,7 +342,7 @@ export async function getCategories() {
   }
 }
 
-export async function createCategory(name: string, description?: string) {
+export async function createCategory(name: string, description?: string, businessGroupId?: number) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser) {
@@ -341,10 +356,15 @@ export async function createCategory(name: string, description?: string) {
       return { success: false, error: "You don't have permission to create categories" }
     }
     
+    // Business group is required now
+    if (!businessGroupId) {
+      return { success: false, error: "Business Group is required for creating categories" }
+    }
+    
     const trimmedName = name.trim()
     const result = await sql`
-      INSERT INTO categories (name, description)
-      VALUES (${trimmedName}, ${description || null})
+      INSERT INTO categories (name, description, business_unit_group_id)
+      VALUES (${trimmedName}, ${description || null}, ${businessGroupId})
       RETURNING *
     `
     if (!result || result.length === 0) {
@@ -354,14 +374,14 @@ export async function createCategory(name: string, description?: string) {
     return { success: true, data: result[0] }
   } catch (error: any) {
     if (error.message?.includes("duplicate key") || error.detail?.includes("already exists")) {
-      return { success: false, error: `Category with this name already exists`, isDuplicate: true }
+      return { success: false, error: `Category with this name already exists in this business group`, isDuplicate: true }
     }
     console.error("Error creating category:", error)
     return { success: false, error: "Failed to create category" }
   }
 }
 
-export async function updateCategory(id: number, name: string, description?: string) {
+export async function updateCategory(id: number, name: string, description?: string, businessGroupId?: number) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser) {
@@ -376,12 +396,25 @@ export async function updateCategory(id: number, name: string, description?: str
     }
     
     const trimmedName = name.trim()
-    const result = await sql`
-      UPDATE categories 
-      SET name = ${trimmedName}, description = ${description || null}, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-      RETURNING *
-    `
+    
+    // If businessGroupId is provided, update it; otherwise keep existing
+    let result
+    if (businessGroupId !== undefined) {
+      result = await sql`
+        UPDATE categories 
+        SET name = ${trimmedName}, description = ${description || null}, business_unit_group_id = ${businessGroupId}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `
+    } else {
+      result = await sql`
+        UPDATE categories 
+        SET name = ${trimmedName}, description = ${description || null}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `
+    }
+    
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update category - no data returned" }
     }

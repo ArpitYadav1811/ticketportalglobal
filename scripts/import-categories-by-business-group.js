@@ -118,7 +118,8 @@ async function importCategoriesByBusinessGroup(excelFilePath) {
       });
 
       categoriesSet.add(category);
-      subcategoriesMap.set(`${category}|${subcategory}`, {
+      subcategoriesMap.set(`${bgId}-${category}|${subcategory}`, {
+        businessGroupId: bgId,
         category,
         subcategory,
         description
@@ -197,25 +198,38 @@ async function importCategoriesByBusinessGroup(excelFilePath) {
       await client.query('DELETE FROM categories');
       console.log('✓ Cleared existing data\n');
 
-      // Insert categories
-      console.log('📥 Inserting categories...');
-      const categoryIds = new Map();
+      // Step 3: Insert categories per business group
+      console.log('📥 Inserting categories (business group specific)...');
+      const categoryIds = new Map(); // key: "bgId-categoryName", value: categoryId
       
-      for (const categoryName of categoriesSet) {
-        const result = await client.query(
-          'INSERT INTO categories (name, description) VALUES ($1, $2) RETURNING id',
-          [categoryName, `${categoryName} related tickets`]
-        );
-        categoryIds.set(categoryName, result.rows[0].id);
-        console.log(`  ✓ ${categoryName} (ID: ${result.rows[0].id})`);
+      // Create categories for each business group
+      for (const [bgId, bgData] of dataByBusinessGroup) {
+        console.log(`\n  Business Group: ${bgData.name} (ID: ${bgId})`);
+        for (const categoryName of bgData.categories.keys()) {
+          const result = await client.query(
+            'INSERT INTO categories (name, description, business_unit_group_id) VALUES ($1, $2, $3) RETURNING id',
+            [categoryName, `${categoryName} related tickets`, bgId]
+          );
+          const key = `${bgId}-${categoryName}`;
+          categoryIds.set(key, result.rows[0].id);
+          console.log(`    ✓ ${categoryName} (ID: ${result.rows[0].id})`);
+        }
       }
+      console.log(`\n  ✓ Total categories created: ${categoryIds.size}`);
 
-      // Insert subcategories
+      // Step 4: Insert subcategories
       console.log('\n📥 Inserting subcategories...');
-      const subcategoryIds = new Map(); // key: "category|subcategory"
+      const subcategoryIds = new Map(); // key: "bgId-category|subcategory"
       
       for (const [key, subData] of subcategoriesMap) {
-        const categoryId = categoryIds.get(subData.category);
+        const categoryKey = `${subData.businessGroupId}-${subData.category}`;
+        const categoryId = categoryIds.get(categoryKey);
+        
+        if (!categoryId) {
+          console.log(`  ⚠️  Warning: Category "${subData.category}" not found for BG ID ${subData.businessGroupId} - skipping subcategory "${subData.subcategory}"`);
+          continue;
+        }
+        
         const result = await client.query(
           'INSERT INTO subcategories (category_id, name, description) VALUES ($1, $2, $3) RETURNING id',
           [categoryId, subData.subcategory, subData.description]
@@ -224,7 +238,7 @@ async function importCategoriesByBusinessGroup(excelFilePath) {
       }
       console.log(`  ✓ Inserted ${subcategoryIds.size} subcategories`);
 
-      // Insert ticket classification mappings
+      // Step 5: Insert ticket classification mappings
       console.log('\n📥 Creating ticket classification mappings...');
       let mappingCount = 0;
 
@@ -232,11 +246,22 @@ async function importCategoriesByBusinessGroup(excelFilePath) {
         console.log(`  Processing: ${bgData.name}...`);
         
         for (const [categoryName, subcategories] of bgData.categories) {
-          const categoryId = categoryIds.get(categoryName);
+          const categoryKey = `${bgId}-${categoryName}`;
+          const categoryId = categoryIds.get(categoryKey);
+          
+          if (!categoryId) {
+            console.log(`    ⚠️  Warning: Category "${categoryName}" not found for BG ID ${bgId}`);
+            continue;
+          }
           
           for (const sub of subcategories) {
-            const key = `${categoryName}|${sub.name}`;
-            const subcategoryId = subcategoryIds.get(key);
+            const subKey = `${bgId}-${categoryName}|${sub.name}`;
+            const subcategoryId = subcategoryIds.get(subKey);
+            
+            if (!subcategoryId) {
+              console.log(`    ⚠️  Warning: Subcategory "${sub.name}" not found for category "${categoryName}"`);
+              continue;
+            }
             
             await client.query(
               `INSERT INTO ticket_classification_mapping 

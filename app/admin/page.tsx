@@ -26,6 +26,7 @@ import {
   Key,
   Database,
   Download,
+  Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -995,6 +996,150 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
 }
 
 // ==================== SYSTEM MANAGEMENT TAB (SUPERADMIN ONLY) ====================
+function ImportCategoriesSection() {
+  const [file, setFile] = useState<File | null>(null)
+  const [businessGroupId, setBusinessGroupId] = useState<string>('')
+  const [businessGroups, setBusinessGroups] = useState<any[]>([])
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    loadBusinessGroups()
+  }, [])
+
+  const loadBusinessGroups = async () => {
+    try {
+      const { getBusinessUnitGroups } = await import('@/lib/actions/master-data')
+      const result = await getBusinessUnitGroups()
+      if (result.success && result.data) {
+        setBusinessGroups(result.data)
+      }
+    } catch (error) {
+      console.error('Error loading business groups:', error)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      setFile(selectedFile)
+    }
+  }
+
+  const handleImport = async () => {
+    if (!file || !businessGroupId) {
+      toast.error('Please select both a file and a business group')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('businessGroupId', businessGroupId)
+
+      const response = await fetch('/api/import/categories-excel', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        toast.success(`Import successful! Created ${result.summary.categoriesCreated} categories, ${result.summary.subcategoriesCreated} subcategories, ${result.summary.mappingsCreated} mappings`)
+        setFile(null)
+        setBusinessGroupId('')
+        // Reset file input
+        const fileInput = document.getElementById('excel-file-input') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
+      } else {
+        toast.error(result.error || 'Import failed')
+      }
+    } catch (error) {
+      console.error('Import error:', error)
+      toast.error('Failed to import categories')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Business Group Selection */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Select Business Group
+          </label>
+          <select
+            value={businessGroupId}
+            onChange={(e) => setBusinessGroupId(e.target.value)}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+            disabled={uploading}
+          >
+            <option value="">-- Select Business Group --</option>
+            {businessGroups.map((bg) => (
+              <option key={bg.id} value={bg.id}>
+                {bg.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* File Upload */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Select Excel File
+          </label>
+          <input
+            id="excel-file-input"
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileChange}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+            disabled={uploading}
+          />
+        </div>
+      </div>
+
+      {/* Import Button */}
+      <div className="flex items-center gap-4">
+        <Button
+          onClick={handleImport}
+          disabled={!file || !businessGroupId || uploading}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          {uploading ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Importing...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4 mr-2" />
+              Import Categories
+            </>
+          )}
+        </Button>
+        {file && (
+          <span className="text-sm text-muted-foreground">
+            Selected: {file.name}
+          </span>
+        )}
+      </div>
+
+      {/* Help Text */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+        <p className="text-xs text-blue-900 dark:text-blue-100">
+          <strong>Excel Format:</strong> Category | Sub Category | Input (Description) | Estimated hrs
+        </p>
+        <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
+          See <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">docs/IMPORT_TD_BM_CATEGORIES.md</code> for detailed instructions.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function SystemManagementTab() {
   const [loading, setLoading] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -1044,6 +1189,22 @@ function SystemManagementTab() {
         <p className="text-sm text-muted-foreground mt-1">
           Bulk delete operations for system data. These actions are irreversible and should be used with extreme caution.
         </p>
+      </div>
+
+      {/* Import Section */}
+      <div className="border border-blue-200 dark:border-blue-900/50 rounded-lg p-4 bg-blue-50/50 dark:bg-blue-900/10 mb-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Download className="w-4 h-4 text-blue-600" />
+              Import Categories from Excel
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Upload an Excel file to import categories and subcategories for a specific Business Group.
+            </p>
+          </div>
+        </div>
+        <ImportCategoriesSection />
       </div>
 
       <div className="space-y-4">

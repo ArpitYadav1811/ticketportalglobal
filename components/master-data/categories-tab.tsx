@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Upload, Download, Edit, Trash2 } from "lucide-react"
 import {
   getCategories,
+  getBusinessUnitGroups,
   createCategory,
   updateCategory,
   deleteCategory,
@@ -15,15 +16,22 @@ import EditDialog from "./edit-dialog"
 
 export default function CategoriesTab() {
   const [data, setData] = useState<any[]>([])
+  const [businessGroups, setBusinessGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [editItem, setEditItem] = useState<any>(null)
 
   const loadData = async () => {
     setLoading(true)
-    const result = await getCategories()
-    if (result.success) {
-      setData(result.data)
+    const [categoriesResult, bgResult] = await Promise.all([
+      getCategories(),
+      getBusinessUnitGroups()
+    ])
+    if (categoriesResult.success) {
+      setData(categoriesResult.data)
+    }
+    if (bgResult.success) {
+      setBusinessGroups(bgResult.data)
     }
     setLoading(false)
   }
@@ -32,8 +40,8 @@ export default function CategoriesTab() {
     loadData()
   }, [])
 
-  const handleCreate = async (name: string, description?: string) => {
-    const result = await createCategory(name, description)
+  const handleCreate = async (name: string, description?: string, businessGroupId?: number) => {
+    const result = await createCategory(name, description, businessGroupId)
     if (result.success) {
       await loadData()
       return true
@@ -41,8 +49,8 @@ export default function CategoriesTab() {
     return false
   }
 
-  const handleUpdate = async (id: number, name: string, description?: string) => {
-    const result = await updateCategory(id, name, description)
+  const handleUpdate = async (id: number, name: string, description?: string, businessGroupId?: number) => {
+    const result = await updateCategory(id, name, description, businessGroupId)
     if (result.success) {
       await loadData()
       setEditItem(null)
@@ -100,7 +108,7 @@ export default function CategoriesTab() {
           </Button>
           <Button
             size="sm"
-            onClick={() => setEditItem({ id: null, name: "", description: "" })}
+            onClick={() => setEditItem({ id: null, name: "", description: "", business_unit_group_id: "" })}
             className="bg-black hover:bg-gray-800"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -114,6 +122,7 @@ export default function CategoriesTab() {
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-semibold">Name</th>
+              <th className="text-left py-3 px-4 font-semibold">Business Group</th>
               <th className="text-left py-3 px-4 font-semibold">Description</th>
               <th className="text-right py-3 px-4 font-semibold">Actions</th>
             </tr>
@@ -122,6 +131,11 @@ export default function CategoriesTab() {
             {data.map((item) => (
               <tr key={item.id} className="border-b border-border hover:bg-surface">
                 <td className="py-3 px-4">{item.name}</td>
+                <td className="py-3 px-4">
+                  <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md font-medium">
+                    {item.business_group_name || "—"}
+                  </span>
+                </td>
                 <td className="py-3 px-4 text-foreground-secondary">{item.description || "-"}</td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex gap-2 justify-end">
@@ -153,13 +167,20 @@ export default function CategoriesTab() {
           title={editItem.id ? "Edit Category" : "Add Category"}
           fields={[
             { name: "name", label: "Name", type: "text", required: true },
+            { 
+              name: "business_unit_group_id", 
+              label: "Business Group", 
+              type: "select", 
+              required: true,
+              options: businessGroups.map(bg => ({ value: bg.id.toString(), label: bg.name }))
+            },
             { name: "description", label: "Description", type: "textarea" },
           ]}
           initialData={editItem}
           onSave={(data) =>
             editItem.id
-              ? handleUpdate(editItem.id, data.name, data.description)
-              : handleCreate(data.name, data.description)
+              ? handleUpdate(editItem.id, data.name, data.description, data.business_unit_group_id ? Number(data.business_unit_group_id) : undefined)
+              : handleCreate(data.name, data.description, Number(data.business_unit_group_id))
           }
           onClose={() => setEditItem(null)}
         />

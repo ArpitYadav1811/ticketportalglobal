@@ -53,7 +53,7 @@ You'll see a table with these columns:
 4. In the dialog:
    - Name: `IT Support` (already filled)
    - Description: `Technology support and infrastructure` (already filled)
-   - **SPOC**: Type `John Doe` ← **ADD THIS**
+   - **SPOC**: Select `John Doe (john.doe@example.com)` from dropdown ← **SELECT THIS**
 5. Click **Update**
 6. ✅ Done! The table now shows "John Doe" in the SPOC column
 
@@ -80,10 +80,12 @@ You'll see a table with these columns:
 
 ## 💡 Tips
 
-### SPOC Name Format
-- Use full names: "John Doe", "Jane Smith"
-- Names are stored as text (not linked to user accounts)
-- This allows flexibility for external contacts or non-system users
+### SPOC Selection from Dropdown
+- SPOCs are selected from existing users in the system
+- Dropdown format: `Full Name (email@example.com)`
+- Only users with full names are shown
+- Sorted alphabetically for easy finding
+- Select "-- Select SPOC --" to clear the SPOC
 
 ### When to Assign SPOCs
 - **New FA**: Assign SPOC when creating the functional area

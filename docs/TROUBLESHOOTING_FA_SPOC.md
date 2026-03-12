@@ -32,7 +32,7 @@ npm run dev
 3. You should now see **3 fields**:
    - Name *
    - Description
-   - **SPOC (Single Point of Contact)** ← This should now appear!
+   - **SPOC (Single Point of Contact)** - Dropdown with user list ← This should now appear!
 
 ## Alternative: Force Browser Cache Clear
 
@@ -60,14 +60,14 @@ After clearing cache, verify these are working:
 - Go to FA Mappings tab
 - Table should have: Name | Description | **SPOC** | Mappings | Actions
 
-✅ **Edit Dialog Has SPOC Field**
+✅ **Edit Dialog Has SPOC Dropdown**
 - Click Edit on any FA
-- Dialog should show 3 fields (Name, Description, SPOC)
+- Dialog should show 3 fields (Name, Description, SPOC dropdown with users)
 
-✅ **SPOC Can Be Saved**
-- Enter a SPOC name
+✅ **SPOC Can Be Selected and Saved**
+- Select a user from the SPOC dropdown
 - Click Update
-- SPOC should appear in the table
+- Selected user's name should appear in the table SPOC column
 
 ## Still Not Working?
 
