@@ -200,7 +200,17 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.settings": true,
       "features.audit_logs": true,
       "business_groups.view_all": true,
-      "business_groups.manage_all": true
+      "business_groups.manage_all": true,
+      "master_data.create_categories": true,
+      "master_data.edit_categories": true,
+      "master_data.delete_categories": true,
+      "master_data.create_subcategories": true,
+      "master_data.edit_subcategories": true,
+      "master_data.delete_subcategories": true,
+      "master_data.manage_business_groups_scope": "all",
+      "master_data.create_business_groups": true,
+      "master_data.edit_business_groups": true,
+      "master_data.delete_business_groups": true
     }
   } else if (roleLower === "admin") {
     return {
@@ -263,7 +273,17 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.settings": true,
       "features.audit_logs": false,
       "business_groups.view_all": true,
-      "business_groups.manage_all": true
+      "business_groups.manage_all": true,
+      "master_data.create_categories": true,
+      "master_data.edit_categories": true,
+      "master_data.delete_categories": true,
+      "master_data.create_subcategories": true,
+      "master_data.edit_subcategories": true,
+      "master_data.delete_subcategories": true,
+      "master_data.manage_business_groups_scope": "all",
+      "master_data.create_business_groups": true,
+      "master_data.edit_business_groups": true,
+      "master_data.delete_business_groups": true
     }
   } else if (roleLower === "manager") {
     return {
@@ -329,7 +349,17 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.settings": false,
       "features.audit_logs": false,
       "business_groups.view_own": true,
-      "business_groups.manage_own": false
+      "business_groups.manage_own": false,
+      "master_data.create_categories": false,
+      "master_data.edit_categories": false,
+      "master_data.delete_categories": false,
+      "master_data.create_subcategories": false,
+      "master_data.edit_subcategories": false,
+      "master_data.delete_subcategories": false,
+      "master_data.manage_business_groups_scope": "none",
+      "master_data.create_business_groups": false,
+      "master_data.edit_business_groups": false,
+      "master_data.delete_business_groups": false
     }
   } else {
     // User role
@@ -395,7 +425,17 @@ export async function getDefaultPermissions(role: string): Promise<Record<string
       "features.settings": false,
       "features.audit_logs": false,
       "business_groups.view_own": true,
-      "business_groups.manage_own": false
+      "business_groups.manage_own": false,
+      "master_data.create_categories": false,
+      "master_data.edit_categories": false,
+      "master_data.delete_categories": false,
+      "master_data.create_subcategories": false,
+      "master_data.edit_subcategories": false,
+      "master_data.delete_subcategories": false,
+      "master_data.manage_business_groups_scope": "none",
+      "master_data.create_business_groups": false,
+      "master_data.edit_business_groups": false,
+      "master_data.delete_business_groups": false
     }
   }
 }
@@ -611,5 +651,174 @@ export async function getAnalyticsAllowedGroupIds(userId: number): Promise<numbe
   } catch (error) {
     console.error("Error getting analytics allowed group IDs:", error)
     return []
+  }
+}
+
+// ==================== MASTER DATA PERMISSION CHECKS ====================
+
+/**
+ * Check if user can create categories
+ */
+export async function canCreateCategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.create_categories")
+}
+
+/**
+ * Check if user can edit categories
+ */
+export async function canEditCategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.edit_categories")
+}
+
+/**
+ * Check if user can delete categories
+ */
+export async function canDeleteCategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.delete_categories")
+}
+
+/**
+ * Check if user can create subcategories
+ */
+export async function canCreateSubcategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.create_subcategories")
+}
+
+/**
+ * Check if user can edit subcategories
+ */
+export async function canEditSubcategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.edit_subcategories")
+}
+
+/**
+ * Check if user can delete subcategories
+ */
+export async function canDeleteSubcategory(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.delete_subcategories")
+}
+
+/**
+ * Check if user can manage a specific business group
+ * Returns true if user can manage all groups, or if scope is "own" and it's their group
+ */
+export async function canManageBusinessGroup(userId: number, groupId: number | null): Promise<boolean> {
+  const user = await sql`
+    SELECT role, business_unit_group_id FROM users WHERE id = ${userId}
+  `
+  if (user.length === 0) return false
+
+  const role = user[0].role?.toLowerCase()
+  if (role === "superadmin") return true
+
+  const permissions = await getRolePermissions(role)
+  if (!permissions.success || !permissions.data) return false
+
+  const permsData = permissions.data as Record<string, any>
+  const scope = permsData["master_data.manage_business_groups_scope"]
+
+  // Can manage all groups
+  if (scope === "all") return true
+
+  // Can only manage own group
+  if (scope === "own") {
+    const userGroupId = user[0].business_unit_group_id
+    return userGroupId === groupId
+  }
+
+  return false
+}
+
+/**
+ * Check if user can create business groups
+ */
+export async function canCreateBusinessGroup(userId: number): Promise<boolean> {
+  return await checkPermission(userId, "master_data.create_business_groups")
+}
+
+/**
+ * Check if user can edit business groups
+ */
+export async function canEditBusinessGroup(userId: number, groupId: number | null): Promise<boolean> {
+  const canEdit = await checkPermission(userId, "master_data.edit_business_groups")
+  if (!canEdit) return false
+
+  // Check scope
+  return await canManageBusinessGroup(userId, groupId)
+}
+
+/**
+ * Check if user can delete business groups
+ */
+export async function canDeleteBusinessGroup(userId: number, groupId: number | null): Promise<boolean> {
+  const canDelete = await checkPermission(userId, "master_data.delete_business_groups")
+  if (!canDelete) return false
+
+  // Check scope
+  return await canManageBusinessGroup(userId, groupId)
+}
+
+/**
+ * Get all master data permissions for the current user
+ */
+export async function getMasterDataPermissions(userId: number) {
+  try {
+    const [
+      canCreateCat,
+      canEditCat,
+      canDeleteCat,
+      canCreateSubcat,
+      canEditSubcat,
+      canDeleteSubcat,
+      canCreateBG,
+      canEditBG,
+      canDeleteBG,
+      manageScope
+    ] = await Promise.all([
+      canCreateCategory(userId),
+      canEditCategory(userId),
+      canDeleteCategory(userId),
+      canCreateSubcategory(userId),
+      canEditSubcategory(userId),
+      canDeleteSubcategory(userId),
+      canCreateBusinessGroup(userId),
+      checkPermission(userId, "master_data.edit_business_groups"),
+      checkPermission(userId, "master_data.delete_business_groups"),
+      (async () => {
+        const user = await sql`SELECT role FROM users WHERE id = ${userId}`
+        if (user.length === 0) return "none"
+        const role = user[0].role?.toLowerCase()
+        if (role === "superadmin") return "all"
+        const permissions = await getRolePermissions(role)
+        if (!permissions.success || !permissions.data) return "none"
+        const permsData = permissions.data as Record<string, any>
+        return permsData["master_data.manage_business_groups_scope"] || "none"
+      })()
+    ])
+
+    return {
+      success: true,
+      data: {
+        categories: {
+          create: canCreateCat,
+          edit: canEditCat,
+          delete: canDeleteCat
+        },
+        subcategories: {
+          create: canCreateSubcat,
+          edit: canEditSubcat,
+          delete: canDeleteSubcat
+        },
+        businessGroups: {
+          create: canCreateBG,
+          edit: canEditBG,
+          delete: canDeleteBG,
+          manageScope: manageScope
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error getting master data permissions:", error)
+    return { success: false, error: "Failed to get permissions", data: null }
   }
 }

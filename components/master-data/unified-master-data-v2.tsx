@@ -27,6 +27,7 @@ import {
   getBusinessGroupsForSpoc,
 } from "@/lib/actions/master-data"
 import { getUsers } from "@/lib/actions/tickets"
+import { getMasterDataPermissions } from "@/lib/actions/permissions"
 import EditDialog from "./edit-dialog"
 import ProjectNamesTab from "./project-names-tab"
 import ConfirmationDialog, { ChangeDetail } from "@/components/ui/confirmation-dialog"
@@ -42,6 +43,13 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
   const [selectedBusinessGroupFilter, setSelectedBusinessGroupFilter] = useState<string>("")
   const isAdmin = userRole === "admin" || userRole === "superadmin"
+  
+  // Master data permissions
+  const [permissions, setPermissions] = useState<{
+    categories: { create: boolean; edit: boolean; delete: boolean }
+    subcategories: { create: boolean; edit: boolean; delete: boolean }
+    businessGroups: { create: boolean; edit: boolean; delete: boolean; manageScope: string }
+  } | null>(null)
 
   // Data states
   const [targetBusinessGroups, setTargetBusinessGroups] = useState<any[]>([])
@@ -79,13 +87,14 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
 
   const loadData = async () => {
     setLoading(true)
-    const [tbgResult, bgResult, catResult, subcatResult, mappingResult, usersResult] = await Promise.all([
+    const [tbgResult, bgResult, catResult, subcatResult, mappingResult, usersResult, permsResult] = await Promise.all([
       getTargetBusinessGroups(),
       getBusinessUnitGroups(),
       getCategories(),
       getSubcategories(),
       getTicketClassificationMappings(),
       getUsers(),
+      userId ? getMasterDataPermissions(userId) : Promise.resolve({ success: false, data: null })
     ])
 
     if (tbgResult.success) setTargetBusinessGroups(tbgResult.data || [])
@@ -94,6 +103,16 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
     if (subcatResult.success) setSubcategories(subcatResult.data || [])
     if (mappingResult.success) setMappings(mappingResult.data || [])
     if (usersResult.success) setUsers(usersResult.data || [])
+    if (permsResult.success && permsResult.data) {
+      setPermissions(permsResult.data)
+    } else {
+      // Default permissions if not available
+      setPermissions({
+        categories: { create: isAdmin, edit: isAdmin, delete: isAdmin },
+        subcategories: { create: isAdmin, edit: isAdmin, delete: isAdmin },
+        businessGroups: { create: isAdmin, edit: isAdmin, delete: isAdmin, manageScope: isAdmin ? "all" : "none" }
+      })
+    }
 
     setLoading(false)
   }
@@ -494,8 +513,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               size="sm"
               onClick={() => setEditBG({ id: null, name: "", description: "", spoc_name: "" })}
               className="bg-black hover:bg-gray-800"
-              disabled={!isAdmin}
-              title={!isAdmin ? "Only admins can create business groups" : ""}
+              disabled={!permissions?.businessGroups.create}
+              title={!permissions?.businessGroups.create ? "You don't have permission to create business groups" : ""}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Business Group
@@ -523,8 +542,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                       variant="ghost" 
                       size="sm" 
                       onClick={() => setEditBG(bg)}
-                      disabled={!isAdmin}
-                      title={!isAdmin ? "Only admins can edit business groups" : ""}
+                      disabled={!permissions?.businessGroups.edit}
+                      title={!permissions?.businessGroups.edit ? "You don't have permission to edit business groups" : "Edit Business Group"}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -532,8 +551,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                       variant="ghost" 
                       size="sm" 
                       onClick={() => handleDeleteBG(bg.id)}
-                      disabled={!isAdmin}
-                      title={!isAdmin ? "Only admins can delete business groups" : ""}
+                      disabled={!permissions?.businessGroups.delete}
+                      title={!permissions?.businessGroups.delete ? "You don't have permission to delete business groups" : "Delete Business Group"}
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
@@ -557,8 +576,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
               size="sm"
               onClick={() => setEditCategory({ id: null, name: "", description: "" })}
               className="bg-black hover:bg-gray-800"
-              disabled={!isAdmin}
-              title={!isAdmin ? "Only admins can create categories" : ""}
+              disabled={!permissions?.categories.create}
+              title={!permissions?.categories.create ? "You don't have permission to create categories" : ""}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Category
@@ -618,8 +637,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                           variant="ghost" 
                           size="sm" 
                           onClick={() => setEditCategory(category)} 
-                          title={!isAdmin ? "Only admins can edit categories" : "Edit Category"}
-                          disabled={!isAdmin}
+                          title={!permissions?.categories.edit ? "You don't have permission to edit categories" : "Edit Category"}
+                          disabled={!permissions?.categories.edit}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -627,8 +646,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                           variant="ghost" 
                           size="sm" 
                           onClick={() => handleDeleteCategory(category.id)} 
-                          title={!isAdmin ? "Only admins can delete categories" : "Delete Category"}
-                          disabled={!isAdmin}
+                          title={!permissions?.categories.delete ? "You don't have permission to delete categories" : "Delete Category"}
+                          disabled={!permissions?.categories.delete}
                         >
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
@@ -733,18 +752,18 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      title={!isAdmin ? "Only admins can edit subcategories" : "Edit Subcategory"}
+                                      title={!permissions?.subcategories.edit ? "You don't have permission to edit subcategories" : "Edit Subcategory"}
                                       onClick={() => setEditSubcategory({ ...subcat, category_name: category.name })}
-                                      disabled={!isAdmin}
+                                      disabled={!permissions?.subcategories.edit}
                                     >
                                       <Edit className="w-3 h-3" />
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      title={!isAdmin ? "Only admins can delete subcategories" : "Delete Subcategory"}
+                                      title={!permissions?.subcategories.delete ? "You don't have permission to delete subcategories" : "Delete Subcategory"}
                                       onClick={() => handleDeleteSubcategory(subcat.id)}
-                                      disabled={!isAdmin}
+                                      disabled={!permissions?.subcategories.delete}
                                     >
                                       <Trash2 className="w-3 h-3 text-red-500" />
                                     </Button>
@@ -769,8 +788,8 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
                                 description: "",
                               })
                             }
-                            disabled={!isAdmin}
-                            title={!isAdmin ? "Only admins can create subcategories" : ""}
+                            disabled={!permissions?.subcategories.create}
+                            title={!permissions?.subcategories.create ? "You don't have permission to create subcategories" : "Add Subcategory"}
                           >
                             <Plus className="w-3 h-3 mr-1" />
                             Add Subcategory

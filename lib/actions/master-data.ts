@@ -111,9 +111,11 @@ export async function createBusinessUnitGroup(name: string, description?: string
       return { success: false, error: "User not authenticated" }
     }
     
-    // Only admins can create business groups
-    if (currentUser.role?.toLowerCase() !== "admin") {
-      return { success: false, error: "Only admins can create business groups" }
+    // Check permission
+    const { canCreateBusinessGroup } = await import("./permissions")
+    const canCreate = await canCreateBusinessGroup(currentUser.id)
+    if (!canCreate) {
+      return { success: false, error: "You don't have permission to create business groups" }
     }
     
     const trimmedName = name.trim()
@@ -143,9 +145,11 @@ export async function updateBusinessUnitGroup(id: number, name: string, descript
       return { success: false, error: "User not authenticated" }
     }
     
-    // Only admins can update business groups
-    if (currentUser.role?.toLowerCase() !== "admin") {
-      return { success: false, error: "Only admins can update business groups" }
+    // Check permission
+    const { canEditBusinessGroup } = await import("./permissions")
+    const canEdit = await canEditBusinessGroup(currentUser.id, id)
+    if (!canEdit) {
+      return { success: false, error: "You don't have permission to edit this business group" }
     }
     
     const trimmedName = name.trim()
@@ -179,9 +183,11 @@ export async function deleteBusinessUnitGroup(id: number) {
     const userRole = currentUser.role?.toLowerCase()
     const isSuperAdmin = userRole === "superadmin"
     
-    // Only admins can delete business groups
-    if (userRole !== "admin" && !isSuperAdmin) {
-      return { success: false, error: "Only admins can delete business groups" }
+    // Check permission
+    const { canDeleteBusinessGroup } = await import("./permissions")
+    const canDelete = await canDeleteBusinessGroup(currentUser.id, id)
+    if (!canDelete) {
+      return { success: false, error: "You don't have permission to delete this business group" }
     }
     
     // Super Admin: Log permanent deletion and delete all related records first
@@ -266,9 +272,11 @@ export async function createCategory(name: string, description?: string) {
       return { success: false, error: "User not authenticated" }
     }
     
-    // Only admins can create categories
-    if (currentUser.role?.toLowerCase() !== "admin") {
-      return { success: false, error: "Only admins can create categories" }
+    // Check permission
+    const { canCreateCategory } = await import("./permissions")
+    const canCreate = await canCreateCategory(currentUser.id)
+    if (!canCreate) {
+      return { success: false, error: "You don't have permission to create categories" }
     }
     
     const trimmedName = name.trim()
@@ -298,9 +306,11 @@ export async function updateCategory(id: number, name: string, description?: str
       return { success: false, error: "User not authenticated" }
     }
     
-    // Only admins can update categories
-    if (currentUser.role?.toLowerCase() !== "admin") {
-      return { success: false, error: "Only admins can update categories" }
+    // Check permission
+    const { canEditCategory } = await import("./permissions")
+    const canEdit = await canEditCategory(currentUser.id)
+    if (!canEdit) {
+      return { success: false, error: "You don't have permission to edit categories" }
     }
     
     const trimmedName = name.trim()
@@ -334,9 +344,11 @@ export async function deleteCategory(id: number) {
     const userRole = currentUser.role?.toLowerCase()
     const isSuperAdmin = userRole === "superadmin"
     
-    // Only admins can delete categories
-    if (userRole !== "admin" && !isSuperAdmin) {
-      return { success: false, error: "Only admins can delete categories" }
+    // Check permission
+    const { canDeleteCategory } = await import("./permissions")
+    const canDelete = await canDeleteCategory(currentUser.id)
+    if (!canDelete) {
+      return { success: false, error: "You don't have permission to delete categories" }
     }
     
     // Super Admin: Log permanent deletion
@@ -427,9 +439,11 @@ export async function createSubcategory(categoryId: number, name: string, descri
       return { success: false, error: "User not authenticated" }
     }
     
-    // Only admins can create subcategories
-    if (currentUser.role?.toLowerCase() !== "admin") {
-      return { success: false, error: "Only admins can create subcategories" }
+    // Check permission
+    const { canCreateSubcategory } = await import("./permissions")
+    const canCreate = await canCreateSubcategory(currentUser.id)
+    if (!canCreate) {
+      return { success: false, error: "You don't have permission to create subcategories" }
     }
     
     const trimmedName = name.trim()
@@ -459,9 +473,11 @@ export async function updateSubcategory(id: number, name: string, description?: 
       return { success: false, error: "User not authenticated" }
     }
     
-    // Only admins can update subcategories
-    if (currentUser.role?.toLowerCase() !== "admin") {
-      return { success: false, error: "Only admins can update subcategories" }
+    // Check permission
+    const { canEditSubcategory } = await import("./permissions")
+    const canEdit = await canEditSubcategory(currentUser.id)
+    if (!canEdit) {
+      return { success: false, error: "You don't have permission to edit subcategories" }
     }
     
     const result = await sql`
@@ -491,9 +507,11 @@ export async function deleteSubcategory(id: number) {
     const userRole = currentUser.role?.toLowerCase()
     const isSuperAdmin = userRole === "superadmin"
     
-    // Only admins can delete subcategories
-    if (userRole !== "admin" && !isSuperAdmin) {
-      return { success: false, error: "Only admins can delete subcategories" }
+    // Check permission
+    const { canDeleteSubcategory } = await import("./permissions")
+    const canDelete = await canDeleteSubcategory(currentUser.id)
+    if (!canDelete) {
+      return { success: false, error: "You don't have permission to delete subcategories" }
     }
     
     // Check if there are any tickets referencing this subcategory

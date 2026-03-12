@@ -127,7 +127,17 @@ async function initializeRolePermissions() {
         "features.settings": true,
         "features.audit_logs": true,
         "business_groups.view_all": true,
-        "business_groups.manage_all": true
+        "business_groups.manage_all": true,
+        "master_data.create_categories": true,
+        "master_data.edit_categories": true,
+        "master_data.delete_categories": true,
+        "master_data.create_subcategories": true,
+        "master_data.edit_subcategories": true,
+        "master_data.delete_subcategories": true,
+        "master_data.manage_business_groups_scope": "all",
+        "master_data.create_business_groups": true,
+        "master_data.edit_business_groups": true,
+        "master_data.delete_business_groups": true
       },
       admin: {
         "tickets.view_scope": "all_groups",
@@ -189,7 +199,17 @@ async function initializeRolePermissions() {
         "features.settings": true,
         "features.audit_logs": false,
         "business_groups.view_all": true,
-        "business_groups.manage_all": true
+        "business_groups.manage_all": true,
+        "master_data.create_categories": true,
+        "master_data.edit_categories": true,
+        "master_data.delete_categories": true,
+        "master_data.create_subcategories": true,
+        "master_data.edit_subcategories": true,
+        "master_data.delete_subcategories": true,
+        "master_data.manage_business_groups_scope": "all",
+        "master_data.create_business_groups": true,
+        "master_data.edit_business_groups": true,
+        "master_data.delete_business_groups": true
       },
       manager: {
         "tickets.view_scope": "own_group",
@@ -254,7 +274,17 @@ async function initializeRolePermissions() {
         "features.settings": false,
         "features.audit_logs": false,
         "business_groups.view_own": true,
-        "business_groups.manage_own": false
+        "business_groups.manage_own": false,
+        "master_data.create_categories": false,
+        "master_data.edit_categories": false,
+        "master_data.delete_categories": false,
+        "master_data.create_subcategories": false,
+        "master_data.edit_subcategories": false,
+        "master_data.delete_subcategories": false,
+        "master_data.manage_business_groups_scope": "none",
+        "master_data.create_business_groups": false,
+        "master_data.edit_business_groups": false,
+        "master_data.delete_business_groups": false
       },
       user: {
         "tickets.view_scope": "own",
@@ -318,7 +348,17 @@ async function initializeRolePermissions() {
         "features.settings": false,
         "features.audit_logs": false,
         "business_groups.view_own": true,
-        "business_groups.manage_own": false
+        "business_groups.manage_own": false,
+        "master_data.create_categories": false,
+        "master_data.edit_categories": false,
+        "master_data.delete_categories": false,
+        "master_data.create_subcategories": false,
+        "master_data.edit_subcategories": false,
+        "master_data.delete_subcategories": false,
+        "master_data.manage_business_groups_scope": "none",
+        "master_data.create_business_groups": false,
+        "master_data.edit_business_groups": false,
+        "master_data.delete_business_groups": false
       }
     }
 

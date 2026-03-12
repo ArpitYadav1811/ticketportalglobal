@@ -22,7 +22,9 @@ import {
   CircleDot,
   MessageSquare,
   Paperclip,
-  FileText
+  FileText,
+  FolderTree,
+  Layers
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getRolePermissions, updateRolePermissions, getDefaultPermissions } from "@/lib/actions/permissions"
@@ -38,7 +40,8 @@ export default function RolePermissionsManager() {
     tickets: true,
     analytics: false,
     features: false,
-    businessGroups: false
+    businessGroups: false,
+    masterData: false
   })
 
   useEffect(() => {
@@ -142,6 +145,12 @@ export default function RolePermissionsManager() {
     { value: "combined", label: "Combined" },
     { value: "selected_groups", label: "Selected Groups" },
     { value: "all_groups", label: "All Groups" }
+  ]
+
+  const businessGroupScopeOptions = [
+    { value: "none", label: "None" },
+    { value: "own", label: "Own Group Only" },
+    { value: "all", label: "All Groups" }
   ]
 
   const statusOptions = ["open", "on-hold", "resolved", "closed", "deleted"]
@@ -377,6 +386,53 @@ export default function RolePermissionsManager() {
               <CompactCheckbox label="View All" checked={getBooleanValue("business_groups.view_all")} onChange={(v) => handlePermissionChange("business_groups.view_all", v)} />
               <CompactCheckbox label="Manage Own" checked={getBooleanValue("business_groups.manage_own")} onChange={(v) => handlePermissionChange("business_groups.manage_own", v)} />
               <CompactCheckbox label="Manage All" checked={getBooleanValue("business_groups.manage_all")} onChange={(v) => handlePermissionChange("business_groups.manage_all", v)} />
+            </div>
+          </PermissionSection>
+
+          {/* Master Data Permissions */}
+          <PermissionSection
+            title="Master Data Permissions"
+            icon={<FolderTree className="w-4 h-4" />}
+            isExpanded={expandedSections.masterData}
+            onToggle={() => toggleSection("masterData")}
+          >
+            <div className="space-y-3">
+              {/* Categories */}
+              <PermissionGroup title="Categories" icon={<Layers className="w-3.5 h-3.5" />}>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <CompactCheckbox label="Create" checked={getBooleanValue("master_data.create_categories")} onChange={(v) => handlePermissionChange("master_data.create_categories", v)} />
+                  <CompactCheckbox label="Edit" checked={getBooleanValue("master_data.edit_categories")} onChange={(v) => handlePermissionChange("master_data.edit_categories", v)} />
+                  <CompactCheckbox label="Delete" checked={getBooleanValue("master_data.delete_categories")} onChange={(v) => handlePermissionChange("master_data.delete_categories", v)} />
+                </div>
+              </PermissionGroup>
+
+              {/* Subcategories */}
+              <PermissionGroup title="Subcategories" icon={<Layers className="w-3.5 h-3.5" />}>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <CompactCheckbox label="Create" checked={getBooleanValue("master_data.create_subcategories")} onChange={(v) => handlePermissionChange("master_data.create_subcategories", v)} />
+                  <CompactCheckbox label="Edit" checked={getBooleanValue("master_data.edit_subcategories")} onChange={(v) => handlePermissionChange("master_data.edit_subcategories", v)} />
+                  <CompactCheckbox label="Delete" checked={getBooleanValue("master_data.delete_subcategories")} onChange={(v) => handlePermissionChange("master_data.delete_subcategories", v)} />
+                </div>
+              </PermissionGroup>
+
+              {/* Business Groups Management */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-2.5">
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Business Groups Management Scope</label>
+                <select
+                  value={getStringValue("master_data.manage_business_groups_scope", "none")}
+                  onChange={(e) => handlePermissionChange("master_data.manage_business_groups_scope", e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {businessGroupScopeOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <CompactCheckbox label="Create Business Groups" checked={getBooleanValue("master_data.create_business_groups")} onChange={(v) => handlePermissionChange("master_data.create_business_groups", v)} />
+                <CompactCheckbox label="Edit Business Groups" checked={getBooleanValue("master_data.edit_business_groups")} onChange={(v) => handlePermissionChange("master_data.edit_business_groups", v)} />
+                <CompactCheckbox label="Delete Business Groups" checked={getBooleanValue("master_data.delete_business_groups")} onChange={(v) => handlePermissionChange("master_data.delete_business_groups", v)} />
+              </div>
             </div>
           </PermissionSection>
         </div>
