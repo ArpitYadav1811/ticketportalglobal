@@ -1045,7 +1045,12 @@ function ImportCategoriesSection() {
       const result = await response.json()
 
       if (response.ok && result.success) {
-        toast.success(`Import successful! Created ${result.summary.categoriesCreated} categories, ${result.summary.subcategoriesCreated} subcategories, ${result.summary.mappingsCreated} mappings`)
+        const s = result.summary
+        if (s.categoriesCreated === 0 && s.subcategoriesCreated === 0 && s.mappingsCreated === 0) {
+          toast.info(`Import completed! All ${s.categoriesProcessed} categories and ${s.subcategoriesProcessed} subcategories already exist. No new items created.`)
+        } else {
+          toast.success(`Import successful! Created ${s.categoriesCreated} new categories, ${s.subcategoriesCreated} new subcategories, ${s.mappingsCreated} new mappings. (${s.categoriesProcessed} categories, ${s.subcategoriesProcessed} subcategories processed)`)
+        }
         setFile(null)
         setBusinessGroupId('')
         // Reset file input

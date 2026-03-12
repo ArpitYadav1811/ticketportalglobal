@@ -93,6 +93,8 @@ export async function POST(request: NextRequest) {
     let totalSubcategories = 0;
     let totalMappings = 0;
 
+    console.log(`Processing ${categoriesMap.size} categories for Business Group ID: ${businessGroupId}`);
+
     for (const [catName, catData] of categoriesMap.entries()) {
       // Check if category exists
       const existingCat = await sql`
@@ -104,6 +106,7 @@ export async function POST(request: NextRequest) {
       let categoryId;
       if (existingCat.length > 0) {
         categoryId = existingCat[0].id;
+        console.log(`Category "${catName}" already exists (ID: ${categoryId})`);
       } else {
         const catResult = await sql`
           INSERT INTO categories (name, business_unit_group_id) 
@@ -111,6 +114,7 @@ export async function POST(request: NextRequest) {
           RETURNING id
         `;
         categoryId = catResult[0].id;
+        console.log(`Created category "${catName}" (ID: ${categoryId})`);
         totalCategories++;
       }
 
@@ -125,6 +129,7 @@ export async function POST(request: NextRequest) {
         let subcategoryId;
         if (existingSubcat.length > 0) {
           subcategoryId = existingSubcat[0].id;
+          console.log(`  Subcategory "${subcat.name}" already exists (ID: ${subcategoryId})`);
           if (subcat.description) {
             await sql`
               UPDATE subcategories 
@@ -139,6 +144,7 @@ export async function POST(request: NextRequest) {
             RETURNING id
           `;
           subcategoryId = subcatResult[0].id;
+          console.log(`  Created subcategory "${subcat.name}" (ID: ${subcategoryId})`);
           totalSubcategories++;
         }
 
@@ -156,9 +162,23 @@ export async function POST(request: NextRequest) {
             (target_business_group_id, business_unit_group_id, category_id, subcategory_id, estimated_duration) 
             VALUES (${parseInt(businessGroupId)}, ${parseInt(businessGroupId)}, ${categoryId}, ${subcategoryId}, ${subcat.estimatedDuration})
           `;
+          console.log(`  Created mapping for "${subcat.name}" (Est: ${subcat.estimatedDuration} hrs)`);
           totalMappings++;
+        } else {
+          console.log(`  Mapping for "${subcat.name}" already exists`);
         }
       }
+    }
+
+    console.log(`\nImport Summary: ${totalCategories} categories, ${totalSubcategories} subcategories, ${totalMappings} mappings created`);
+
+    // Count total items processed (including existing ones)
+    let totalCategoriesProcessed = 0;
+    let totalSubcategoriesProcessed = 0;
+    
+    for (const catData of categoriesMap.values()) {
+      totalCategoriesProcessed++;
+      totalSubcategoriesProcessed += catData.subcategories.length;
     }
 
     return NextResponse.json({
@@ -168,7 +188,9 @@ export async function POST(request: NextRequest) {
         skippedRows,
         categoriesCreated: totalCategories,
         subcategoriesCreated: totalSubcategories,
-        mappingsCreated: totalMappings
+        mappingsCreated: totalMappings,
+        categoriesProcessed: totalCategoriesProcessed,
+        subcategoriesProcessed: totalSubcategoriesProcessed
       }
     });
 
