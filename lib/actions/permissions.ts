@@ -587,7 +587,7 @@ export async function getAnalyticsAllowedGroupIds(userId: number): Promise<numbe
 
     // Super Admin can view all
     if (role === "superadmin") {
-      const allGroups = await sql`SELECT id FROM business_unit_groups WHERE (is_deleted IS NULL OR is_deleted = FALSE)`
+      const allGroups = await sql`SELECT id FROM business_unit_groups`
       return allGroups.map((g: any) => g.id)
     }
 
@@ -654,7 +654,7 @@ export async function getAnalyticsAllowedGroupIds(userId: number): Promise<numbe
 
     // All groups
     if (permsData["analytics.view_all_groups"]) {
-      const allGroups = await sql`SELECT id FROM business_unit_groups WHERE (is_deleted IS NULL OR is_deleted = FALSE)`
+      const allGroups = await sql`SELECT id FROM business_unit_groups`
       return allGroups.map((g: any) => g.id)
     }
 

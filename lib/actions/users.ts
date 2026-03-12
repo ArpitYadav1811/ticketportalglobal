@@ -390,11 +390,10 @@ export async function updateUserBusinessGroup(userId: number, businessGroupId: n
     // Verify business group exists
     const bgCheck = await sql`
       SELECT id FROM business_unit_groups 
-      WHERE id = ${businessGroupId} 
-        AND (is_deleted IS NULL OR is_deleted = FALSE)
+      WHERE id = ${businessGroupId}
     `
     if (bgCheck.length === 0) {
-      return { success: false, error: "Business group not found or has been deleted" }
+      return { success: false, error: "Business group not found" }
     }
 
     const result = await sql`

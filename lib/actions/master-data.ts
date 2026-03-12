@@ -27,10 +27,8 @@ export async function getBusinessUnitGroups() {
         primary_spoc_name,
         secondary_spoc_name,
         created_at,
-        updated_at,
-        is_deleted
+        updated_at
       FROM business_unit_groups
-      WHERE (is_deleted IS NULL OR is_deleted = FALSE)
       ORDER BY name ASC
     `
     return { success: true, data: result }
@@ -159,7 +157,6 @@ export async function getBusinessGroupsForPrimarySpoc(userId: number) {
       SELECT *
       FROM business_unit_groups
       WHERE LOWER(TRIM(COALESCE(primary_spoc_name, spoc_name))) = LOWER(TRIM(${userName}))
-        AND (is_deleted IS NULL OR is_deleted = FALSE)
       ORDER BY name ASC
     `
     return { success: true, data: result }

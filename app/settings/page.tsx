@@ -33,6 +33,7 @@ export default function SettingsPage() {
  const [allUsers, setAllUsers] = useState<any[]>([])
  const [teamMembers, setTeamMembers] = useState<any[]>([])
  const [loading, setLoading] = useState(true)
+ const [loadingBusinessGroups, setLoadingBusinessGroups] = useState(true)
  const [saving, setSaving] = useState(false)
  const [currentUser, setCurrentUser] = useState<any>(null)
 
@@ -57,13 +58,26 @@ export default function SettingsPage() {
  // Load business groups once on mount
  useEffect(() => {
  const loadBusinessGroups = async () => {
+ setLoadingBusinessGroups(true)
  try {
  const buResult = await getBusinessUnitGroups()
  if (buResult.success) {
- setBusinessGroups(buResult.data || [])
+ const groups = buResult.data || []
+ setBusinessGroups(groups)
+ if (groups.length === 0) {
+ toast.warning("No business groups available")
+ }
+ } else {
+ console.error("Failed to load business groups:", buResult.error)
+ toast.error(buResult.error || "Failed to load business groups")
+ setBusinessGroups([])
  }
  } catch (error) {
  console.error("Failed to load business groups:", error)
+ toast.error("Failed to load business groups")
+ setBusinessGroups([])
+ } finally {
+ setLoadingBusinessGroups(false)
  }
  }
  loadBusinessGroups()
@@ -399,18 +413,34 @@ export default function SettingsPage() {
  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
  Select Business Group
  </label>
+ {loadingBusinessGroups ? (
+ <div className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm">
+ Loading business groups...
+ </div>
+ ) : (
  <select
  value={selectedBusinessGroup}
  onChange={(e) => setSelectedBusinessGroup(e.target.value)}
  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-sm"
+ disabled={loadingBusinessGroups || saving}
  >
  <option value="">Select a business group</option>
- {businessGroups.map((group) => (
+ {businessGroups.length === 0 ? (
+ <option value="" disabled>No business groups available</option>
+ ) : (
+ businessGroups.map((group) => (
  <option key={group.id} value={group.id}>
  {group.name}
  </option>
- ))}
+ ))
+ )}
  </select>
+ )}
+ {businessGroups.length === 0 && !loadingBusinessGroups && (
+ <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
+ No business groups found. Please contact your administrator.
+ </p>
+ )}
  </div>
 
  {selectedBusinessGroup && (
