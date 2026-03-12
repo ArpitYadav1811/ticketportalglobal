@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only Super Admin can import
-    if (user.role !== 'Super Admin') {
+    if (user.role?.toLowerCase() !== 'superadmin') {
       return NextResponse.json({ error: 'Only Super Admin can import data' }, { status: 403 });
     }
 
