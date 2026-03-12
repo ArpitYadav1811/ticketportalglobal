@@ -1,28 +1,6 @@
-import { neon } from "@neondatabase/serverless"
 import { type NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import { getDatabaseUrl } from "@/lib/utils/db-config"
-
-// Lazy initialization: only get database URL when actually needed (at runtime, not build time)
-let sqlInstance: ReturnType<typeof neon> | null = null
-
-function getSql() {
-  if (!sqlInstance) {
-    const databaseUrl = getDatabaseUrl()
-    sqlInstance = neon(databaseUrl)
-  }
-  return sqlInstance
-}
-
-// Export a getter that initializes on first use
-// Using Proxy to maintain the same API while deferring initialization
-const sql = new Proxy({} as any, {
-  get(_target, prop) {
-    const instance = getSql()
-    const value = (instance as any)[prop]
-    return typeof value === 'function' ? value.bind(instance) : value
-  }
-}) as ReturnType<typeof neon>
+import { sql } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
   try {
