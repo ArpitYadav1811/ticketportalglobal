@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Key,
   Database,
+  Download,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -474,6 +475,46 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
 
   useEffect(() => { loadData() }, [])
 
+  const handleDownloadFunctionalAreas = () => {
+    try {
+      // Prepare data for export
+      const exportData = functionalAreas.map(fa => ({
+        id: fa.id,
+        name: fa.name,
+        description: fa.description || "",
+        created_at: fa.created_at,
+        updated_at: fa.updated_at,
+        mappings: mappings
+          .filter(m => m.functional_area_id === fa.id)
+          .map(m => ({
+            business_group_id: m.target_business_group_id,
+            business_group_name: m.target_business_group_name,
+            primary_spoc: m.primary_spoc_name || m.spoc_name || null,
+            secondary_spoc: m.secondary_spoc_name || null,
+          }))
+      }))
+
+      // Create JSON blob
+      const jsonString = JSON.stringify(exportData, null, 2)
+      const blob = new Blob([jsonString], { type: "application/json" })
+      
+      // Create download link
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `functional-areas-export-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      toast.success("Functional areas exported successfully")
+    } catch (error) {
+      console.error("Error exporting functional areas:", error)
+      toast.error("Failed to export functional areas")
+    }
+  }
+
   const handleSpocChange = async (bgId: number, bgName: string, newSpocName: string, spocType: "primary" | "secondary") => {
     const spocLabel = spocType === "primary" ? "Primary SPOC" : "Secondary SPOC"
     const currentMapping = mappings.find(m => m.target_business_group_id === bgId)
@@ -698,6 +739,14 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold">Functional Areas</h3>
           <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleDownloadFunctionalAreas}
+              disabled={loading || functionalAreas.length === 0}
+            >
+              <Download className="w-3.5 h-3.5 mr-1" /> Export JSON
+            </Button>
             <Button size="sm" variant="outline" onClick={loadData}><RefreshCw className="w-3.5 h-3.5" /></Button>
             <Button size="sm" className="bg-black hover:bg-gray-800" onClick={() => { setEditFA(null); setFaForm({ name: "", description: "" }); setShowAddFA(true) }}>
               <Plus className="w-4 h-4 mr-1" /> Add FA
