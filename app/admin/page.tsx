@@ -926,14 +926,23 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
  </div>
  <div>
                 <label className="block text-sm font-medium mb-1">SPOC (Single Point of Contact)</label>
-                <input 
-                  type="text" 
-                  value={faForm.spocName} 
-                  onChange={(e) => setFaForm({ ...faForm, spocName: e.target.value })} 
-                  placeholder="Enter SPOC name"
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" 
-                />
-                <p className="text-xs text-muted-foreground mt-1">The person responsible for this functional area</p>
+                <select
+                  value={faForm.spocName}
+                  onChange={(e) => setFaForm({ ...faForm, spocName: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">-- Select SPOC --</option>
+                  {allUsers
+                    .filter(user => user.full_name) // Only show users with full names
+                    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+                    .map(user => (
+                      <option key={user.id} value={user.full_name}>
+                        {user.full_name} ({user.email})
+                      </option>
+                    ))
+                  }
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">Select the person responsible for this functional area</p>
  </div>
               <div className="flex gap-2 justify-end pt-2 border-t">
                 <Button variant="outline" type="button" onClick={() => { setShowAddFA(false); setEditFA(null) }}>Cancel</Button>

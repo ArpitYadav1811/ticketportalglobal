@@ -29,8 +29,8 @@ You'll see a table with these columns:
 2. A dialog will open with three fields:
    - **Name** (required)
    - **Description** (optional)
-   - **SPOC** (optional) ← Enter the SPOC name here!
-3. Type the SPOC name (e.g., "John Doe", "Jane Smith")
+   - **SPOC** (dropdown) ← Select the SPOC from the dropdown!
+3. Select a user from the **SPOC dropdown** (shows all users with their emails)
 4. Click **Update**
 5. ✅ The SPOC will now appear in the table!
 
@@ -39,7 +39,7 @@ You'll see a table with these columns:
 2. Fill in:
    - **Name** (required) - e.g., "IT Support"
    - **Description** (optional) - e.g., "Technology support services"
-   - **SPOC** (optional) - e.g., "John Doe"
+   - **SPOC** (dropdown) - Select from available users
 3. Click **Create**
 4. ✅ Your new FA with SPOC is created!
 
