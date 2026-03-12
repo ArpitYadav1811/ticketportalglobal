@@ -182,36 +182,38 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
   const getFilteredCategories = () => {
     let filtered = categories
 
+    // Debug logging
+    if (selectedBusinessGroupFilter) {
+      console.log('Filtering categories:', {
+        totalCategories: categories.length,
+        selectedFilter: selectedBusinessGroupFilter,
+        filterScope: permissions?.businessGroups.filterScope,
+        sampleCategory: categories[0]
+      })
+    }
+
     // If filter scope is "own", only show categories for user's business group
     if (permissions?.businessGroups.filterScope === "own" && userBusinessGroupId) {
-      const categoryIds = new Set(
-        mappings
-          .filter((m) => m.target_business_group_id === userBusinessGroupId)
-          .map((m) => m.category_id)
-      )
-      filtered = filtered.filter((cat) => categoryIds.has(cat.id))
+      filtered = filtered.filter((cat) => cat.business_unit_group_id === userBusinessGroupId)
       return filtered
     }
 
     // If user is SPOC (not admin), filter to categories linked to their business groups
     if (!isAdmin && spocBusinessGroups.length > 0 && permissions?.businessGroups.filterScope !== "all") {
-      const categoryIds = new Set(
-        mappings
-          .filter((m) => spocBusinessGroups.includes(m.target_business_group_id))
-          .map((m) => m.category_id)
+      filtered = filtered.filter((cat) => 
+        cat.business_unit_group_id && spocBusinessGroups.includes(cat.business_unit_group_id)
       )
-      filtered = filtered.filter((cat) => categoryIds.has(cat.id))
     }
 
     // Apply business group filter if selected (only when filter scope is "all")
     if (selectedBusinessGroupFilter && permissions?.businessGroups.filterScope === "all") {
       const filterGroupId = Number(selectedBusinessGroupFilter)
-      const categoryIds = new Set(
-        mappings
-          .filter((m) => m.target_business_group_id === filterGroupId)
-          .map((m) => m.category_id)
-      )
-      filtered = filtered.filter((cat) => categoryIds.has(cat.id))
+      filtered = filtered.filter((cat) => cat.business_unit_group_id === filterGroupId)
+      console.log('After filtering:', {
+        filterGroupId,
+        filteredCount: filtered.length,
+        filteredCategories: filtered.map(c => ({ name: c.name, bgId: c.business_unit_group_id }))
+      })
     }
 
     return filtered
