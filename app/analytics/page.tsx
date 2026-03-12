@@ -24,6 +24,20 @@ export default function AnalyticsPage() {
     setIsLoading(false)
   }, [router])
 
+  // Initialize selected group for non-Super Admin users
+  // This must be before the early return to maintain hook order
+  useEffect(() => {
+    if (!user || isLoading) return
+    
+    const userRole = user?.role?.toLowerCase()
+    const userGroupId = user?.business_unit_group_id
+    const isSuperAdmin = userRole === "superadmin"
+    
+    if (!isSuperAdmin && userGroupId) {
+      setSelectedGroupId(userGroupId)
+    }
+  }, [user, isLoading])
+
   // Show loading or nothing while checking auth
   if (isLoading || !user) {
     return null
@@ -32,13 +46,6 @@ export default function AnalyticsPage() {
   const userRole = user?.role?.toLowerCase()
   const userGroupId = user?.business_unit_group_id
   const isSuperAdmin = userRole === "superadmin"
-
-  // Initialize selected group for non-Super Admin users
-  useEffect(() => {
-    if (!isSuperAdmin && userGroupId) {
-      setSelectedGroupId(userGroupId)
-    }
-  }, [isSuperAdmin, userGroupId])
 
   return (
     <DashboardLayout>
