@@ -31,55 +31,107 @@ export async function getSystemAuditLogs(filters?: {
   actionType?: string
   limit?: number
   offset?: number
+  userId?: number
+  dateFrom?: string
+  dateTo?: string
+  search?: string
 }) {
   try {
     const limit = filters?.limit || 100
     const offset = filters?.offset || 0
 
-    let logs
-    if (filters?.entityType && filters?.actionType) {
-      logs = await sql`
-        SELECT sal.*, u.email as performer_email
-        FROM system_audit_log sal
-        LEFT JOIN users u ON sal.performed_by = u.id
-        WHERE sal.entity_type = ${filters.entityType}
-          AND sal.action_type = ${filters.actionType}
-        ORDER BY sal.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `
-    } else if (filters?.entityType) {
-      logs = await sql`
-        SELECT sal.*, u.email as performer_email
-        FROM system_audit_log sal
-        LEFT JOIN users u ON sal.performed_by = u.id
-        WHERE sal.entity_type = ${filters.entityType}
-        ORDER BY sal.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `
-    } else if (filters?.actionType) {
-      logs = await sql`
-        SELECT sal.*, u.email as performer_email
-        FROM system_audit_log sal
-        LEFT JOIN users u ON sal.performed_by = u.id
-        WHERE sal.action_type = ${filters.actionType}
-        ORDER BY sal.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `
-    } else {
-      logs = await sql`
-        SELECT sal.*, u.email as performer_email
-        FROM system_audit_log sal
-        LEFT JOIN users u ON sal.performed_by = u.id
-        ORDER BY sal.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `
+    // Build WHERE conditions array
+    const conditions: string[] = []
+    const params: any[] = []
+
+    if (filters?.entityType) {
+      conditions.push(`sal.entity_type = $${params.length + 1}`)
+      params.push(filters.entityType)
     }
 
-    // Get total count
-    const countResult = await sql`SELECT COUNT(*) as total FROM system_audit_log`
-    const total = countResult[0]?.total || 0
+    if (filters?.actionType) {
+      conditions.push(`sal.action_type = $${params.length + 1}`)
+      params.push(filters.actionType)
+    }
 
-    return { success: true, data: logs, total }
+    if (filters?.userId) {
+      conditions.push(`sal.performed_by = $${params.length + 1}`)
+      params.push(filters.userId)
+    }
+
+    if (filters?.dateFrom) {
+      conditions.push(`sal.created_at >= $${params.length + 1}::timestamp`)
+      params.push(filters.dateFrom)
+    }
+
+    if (filters?.dateTo) {
+      conditions.push(`sal.created_at <= $${params.length + 1}::timestamp`)
+      params.push(filters.dateTo)
+    }
+
+    if (filters?.search) {
+      const searchPattern = `%${filters.search}%`
+      conditions.push(`(sal.notes ILIKE $${params.length + 1} OR sal.old_value ILIKE $${params.length + 1} OR sal.new_value ILIKE $${params.length + 1} OR sal.performed_by_name ILIKE $${params.length + 1})`)
+      params.push(searchPattern)
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""
+
+    // Build the query with proper parameterization
+    // Since we can't use sql`` with dynamic WHERE clauses easily, we'll fetch all and filter in JS
+    // OR use a simpler approach: fetch all logs and apply filters in JavaScript
+    let logs = await sql`
+      SELECT sal.*, u.email as performer_email
+      FROM system_audit_log sal
+      LEFT JOIN users u ON sal.performed_by = u.id
+      ORDER BY sal.created_at DESC
+    `
+
+    // Apply filters in JavaScript (similar to getTickets approach)
+    let filteredLogs = [...logs]
+
+    if (filters?.entityType) {
+      filteredLogs = filteredLogs.filter((log) => log.entity_type === filters.entityType)
+    }
+
+    if (filters?.actionType) {
+      filteredLogs = filteredLogs.filter((log) => log.action_type === filters.actionType)
+    }
+
+    if (filters?.userId) {
+      filteredLogs = filteredLogs.filter((log) => log.performed_by === filters.userId)
+    }
+
+    if (filters?.dateFrom) {
+      const fromDate = new Date(filters.dateFrom)
+      filteredLogs = filteredLogs.filter((log) => new Date(log.created_at) >= fromDate)
+    }
+
+    if (filters?.dateTo) {
+      const toDate = new Date(filters.dateTo)
+      // Add one day to include the entire day
+      toDate.setHours(23, 59, 59, 999)
+      filteredLogs = filteredLogs.filter((log) => new Date(log.created_at) <= toDate)
+    }
+
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase()
+      filteredLogs = filteredLogs.filter(
+        (log) =>
+          log.notes?.toLowerCase().includes(searchLower) ||
+          log.old_value?.toLowerCase().includes(searchLower) ||
+          log.new_value?.toLowerCase().includes(searchLower) ||
+          log.performed_by_name?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Get total before pagination
+    const total = filteredLogs.length
+
+    // Apply pagination
+    const paginatedLogs = filteredLogs.slice(offset, offset + limit)
+
+    return { success: true, data: paginatedLogs, total }
   } catch (error: any) {
     // Auto-create table if it doesn't exist
     if (error.message?.includes("relation") && error.message?.includes("does not exist")) {
@@ -821,5 +873,288 @@ export async function bulkDeleteAllMasterData() {
   } catch (error) {
     console.error("Error bulk deleting master data:", error)
     return { success: false, error: "Failed to delete master data" }
+  }
+}
+
+// ==================== BULK USER OPERATIONS ====================
+
+export async function bulkUpdateUserRoles(userIds: number[], newRole: string) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    if (!userIds || userIds.length === 0) {
+      return { success: false, error: "No users selected" }
+    }
+
+    // Prevent changing own role
+    const filteredUserIds = userIds.filter((id) => id !== currentUser.id)
+
+    if (filteredUserIds.length === 0) {
+      return { success: false, error: "Cannot change your own role" }
+    }
+
+    const result = await sql`
+      UPDATE users 
+      SET role = ${newRole}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ANY(${filteredUserIds})
+      RETURNING id, email, full_name, role
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_ROLE_CHANGE",
+      entityType: "users",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Bulk updated ${result.length} users to role: ${newRole}`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/users")
+
+    return {
+      success: true,
+      message: `Successfully updated ${result.length} users to role: ${newRole}`,
+      updatedCount: result.length,
+    }
+  } catch (error) {
+    console.error("Error bulk updating user roles:", error)
+    return { success: false, error: "Failed to update user roles" }
+  }
+}
+
+export async function bulkUpdateUserBusinessGroups(userIds: number[], businessGroupId: number | null) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    if (!userIds || userIds.length === 0) {
+      return { success: false, error: "No users selected" }
+    }
+
+    const result = await sql`
+      UPDATE users 
+      SET business_unit_group_id = ${businessGroupId}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ANY(${userIds})
+      RETURNING id, email, full_name
+    `
+
+    const bgName = businessGroupId
+      ? (await sql`SELECT name FROM business_unit_groups WHERE id = ${businessGroupId}`)[0]?.name || "Unknown"
+      : "None"
+
+    await addSystemAuditLog({
+      actionType: "BULK_BG_UPDATE",
+      entityType: "users",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Bulk updated ${result.length} users to business group: ${bgName}`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/users")
+
+    return {
+      success: true,
+      message: `Successfully updated ${result.length} users to business group: ${bgName}`,
+      updatedCount: result.length,
+    }
+  } catch (error) {
+    console.error("Error bulk updating user business groups:", error)
+    return { success: false, error: "Failed to update user business groups" }
+  }
+}
+
+export async function bulkActivateUsers(userIds: number[]) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    if (!userIds || userIds.length === 0) {
+      return { success: false, error: "No users selected" }
+    }
+
+    const result = await sql`
+      UPDATE users 
+      SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ANY(${userIds})
+      RETURNING id, email, full_name
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_ACTIVATE",
+      entityType: "users",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Bulk activated ${result.length} users`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/users")
+
+    return {
+      success: true,
+      message: `Successfully activated ${result.length} users`,
+      updatedCount: result.length,
+    }
+  } catch (error) {
+    console.error("Error bulk activating users:", error)
+    return { success: false, error: "Failed to activate users" }
+  }
+}
+
+export async function bulkDeactivateUsers(userIds: number[]) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    if (!userIds || userIds.length === 0) {
+      return { success: false, error: "No users selected" }
+    }
+
+    // Prevent deactivating self
+    const filteredUserIds = userIds.filter((id) => id !== currentUser.id)
+
+    if (filteredUserIds.length === 0) {
+      return { success: false, error: "Cannot deactivate yourself" }
+    }
+
+    const result = await sql`
+      UPDATE users 
+      SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ANY(${filteredUserIds})
+      RETURNING id, email, full_name
+    `
+
+    await addSystemAuditLog({
+      actionType: "BULK_DEACTIVATE",
+      entityType: "users",
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email || "Unknown",
+      notes: `Bulk deactivated ${result.length} users`,
+    })
+
+    revalidatePath("/admin")
+    revalidatePath("/users")
+
+    return {
+      success: true,
+      message: `Successfully deactivated ${result.length} users`,
+      updatedCount: result.length,
+    }
+  } catch (error) {
+    console.error("Error bulk deactivating users:", error)
+    return { success: false, error: "Failed to deactivate users" }
+  }
+}
+
+// ==================== SYSTEM HEALTH STATS ====================
+
+export async function getTicketCreationHistory(days: number = 30) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    // For "today", get only today's date
+    if (days === 1) {
+      const result = await sql`
+        SELECT 
+          TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
+          COUNT(*) as count
+        FROM tickets
+        WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+          AND DATE(created_at) = CURRENT_DATE
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) DESC
+      `
+      return { success: true, data: result }
+    }
+
+    // For other periods, use the interval
+    const result = await sql`
+      SELECT 
+        TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
+        COUNT(*) as count
+      FROM tickets
+      WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+        AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${days}
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) DESC
+      LIMIT ${days > 90 ? 1000 : days + 10}
+    `
+
+    return { success: true, data: result }
+  } catch (error: any) {
+    console.error("Error fetching ticket creation history:", error)
+    return { success: false, error: error.message || "Failed to fetch ticket creation history", data: [] }
+  }
+}
+
+export async function getSystemHealthStats() {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Unauthorized: Super Admin access required" }
+    }
+
+    const [
+      usersResult,
+      activeUsersResult,
+      ticketsResult,
+      openTicketsResult,
+      businessGroupsResult,
+      functionalAreasResult,
+      categoriesResult,
+      teamsResult,
+    ] = await Promise.all([
+      sql`SELECT COUNT(*) as count FROM users`,
+      sql`SELECT COUNT(*) as count FROM users WHERE is_active = TRUE OR is_active IS NULL`,
+      sql`SELECT COUNT(*) as count FROM tickets WHERE is_deleted IS NULL OR is_deleted = FALSE`,
+      sql`SELECT COUNT(*) as count FROM tickets WHERE status = 'open' AND (is_deleted IS NULL OR is_deleted = FALSE)`,
+      sql`SELECT COUNT(*) as count FROM business_unit_groups`,
+      sql`SELECT COUNT(*) as count FROM functional_areas`,
+      sql`SELECT COUNT(*) as count FROM categories`,
+      sql`SELECT COUNT(*) as count FROM teams`,
+    ])
+
+    return {
+      success: true,
+      data: {
+        totalUsers: Number(usersResult[0]?.count || 0),
+        activeUsers: Number(activeUsersResult[0]?.count || 0),
+        totalTickets: Number(ticketsResult[0]?.count || 0),
+        openTickets: Number(openTicketsResult[0]?.count || 0),
+        businessGroups: Number(businessGroupsResult[0]?.count || 0),
+        functionalAreas: Number(functionalAreasResult[0]?.count || 0),
+        categories: Number(categoriesResult[0]?.count || 0),
+        teams: Number(teamsResult[0]?.count || 0),
+      },
+    }
+  } catch (error) {
+    console.error("Error fetching system health stats:", error)
+    return {
+      success: false,
+      error: "Failed to fetch system health stats",
+      data: {
+        totalUsers: 0,
+        activeUsers: 0,
+        totalTickets: 0,
+        openTickets: 0,
+        businessGroups: 0,
+        functionalAreas: 0,
+        categories: 0,
+        teams: 0,
+      },
+    }
   }
 }

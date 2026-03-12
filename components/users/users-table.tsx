@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
-import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X } from "lucide-react"
+import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X, Users, Building2 } from "lucide-react"
 import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles } from "@/lib/actions/users"
 import { updateUserRole, updateUserBusinessGroup } from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
@@ -185,53 +185,67 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
 
   if (loading) {
     return (
-      <div className="bg-white border border-border rounded-xl overflow-hidden">
-        <div className="p-8 text-center text-foreground-secondary">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          Loading users...
-        </div>
+      <div className="p-12 text-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-lg"></div>
+        <p className="text-sm font-medium text-muted-foreground">Loading users...</p>
       </div>
     )
   }
 
   if (users.length === 0) {
     return (
-      <div className="bg-white border border-border rounded-xl overflow-hidden">
-        <div className="p-8 text-center text-foreground-secondary">No users found. Try adjusting your filters.</div>
+      <div className="p-12 text-center">
+        <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Users className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-semibold text-foreground mb-1">No users found</p>
+        <p className="text-xs text-muted-foreground">Try adjusting your filters</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+    <>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-surface border-b border-border">
+          <thead className="bg-gradient-to-r from-muted/50 via-muted/30 to-muted/50 border-b-2 border-border/50 sticky top-0 z-10 backdrop-blur-sm">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">User</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Email</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Role</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Business Group</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Teams</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Tickets</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Created</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Actions</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">User</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Email</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Role</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Business Group</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Teams</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Tickets</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Created</th>
+              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
-            {users.map((user) => (
-              <tr
-                key={user.id}
-                className={`hover:bg-surface transition-colors ${user.is_active === false ? "opacity-50 bg-slate-50" : ""}`}
-              >
+          <tbody className="divide-y divide-border/50">
+          {users.map((user, idx) => (
+            <tr
+              key={user.id}
+              className={`group/row hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 transition-all duration-300 ${
+                user.is_active === false ? "opacity-60 bg-slate-50/50 dark:bg-slate-900/20" : ""
+              }`}
+              style={{ animationDelay: `${idx * 50}ms` }}
+            >
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name} className="w-7 h-7 rounded-full" />
+                      <div className="relative group/avatar">
+                        <img 
+                          src={user.avatar_url} 
+                          alt={user.full_name} 
+                          className="w-9 h-9 rounded-full ring-2 ring-border group-hover/row:ring-primary/50 transition-all duration-300 shadow-sm group-hover/row:shadow-md group-hover/row:scale-110" 
+                        />
+                        {user.is_active === false && (
+                          <div className="absolute inset-0 rounded-full bg-red-500/20 border-2 border-red-500/50"></div>
+                        )}
+                      </div>
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="text-primary font-semibold text-xs">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 ring-2 ring-border group-hover/row:ring-primary/50 transition-all duration-300 shadow-sm group-hover/row:shadow-md group-hover/row:scale-110">
+                        <span className="text-primary font-bold text-xs">
                           {user.full_name
                             .split(" ")
                             .map((n) => n[0])
@@ -242,15 +256,20 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       </div>
                     )}
                     <div>
-                      <div className="font-medium text-sm text-foreground">{user.full_name}</div>
+                      <div className="font-semibold text-sm text-foreground group-hover/row:text-primary transition-colors">
+                        {user.full_name}
+                      </div>
                       {user.is_active === false && (
-                        <span className="text-xs text-red-600 font-medium">Inactive</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs text-red-600 font-semibold bg-red-50 dark:bg-red-900/20">
+                          <XCircle className="w-3 h-3" />
+                          Inactive
+                        </span>
                       )}
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs text-foreground-secondary">{user.email}</span>
+                  <span className="text-xs font-medium text-muted-foreground group-hover/row:text-foreground transition-colors">{user.email}</span>
                 </td>
                 <td className="px-4 py-3">
                   {isSuperAdmin && user.id !== currentUserId ? (
@@ -282,9 +301,12 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       )}
                     </div>
                   ) : (
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${getRoleBadgeColor(user.role)}`}>
+                      <Key className="w-3 h-3" />
                       {formatRoleName(user.role)}
-                      {user.id === currentUserId && <span className="ml-1 opacity-60">(You)</span>}
+                      {user.id === currentUserId && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold">You</span>
+                      )}
                     </span>
                   )}
                 </td>
@@ -327,24 +349,29 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       )}
                     </div>
                   ) : user.business_group_name ? (
-                    <span className="inline-flex px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-xs font-semibold shadow-sm border border-blue-200 dark:border-blue-800">
+                      <Building2 className="w-3 h-3" />
                       {user.business_group_name}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-xs text-muted-foreground font-medium">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   {user.team_names ? (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {user.team_names.split(", ").map((team, i) => (
-                        <span key={i} className="inline-flex px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-medium">
+                        <span 
+                          key={i} 
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 text-purple-700 dark:text-purple-300 text-xs font-semibold shadow-sm border border-purple-200 dark:border-purple-800"
+                        >
+                          <Users className="w-3 h-3" />
                           {team}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-xs text-muted-foreground font-medium">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -378,64 +405,64 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                           </div>
                           <div className="space-y-1.5 text-xs">
                             {user.ticket_count_open > 0 && (
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                                 <div className="flex items-center gap-2">
-                                  <Circle className="w-3 h-3 text-blue-500 fill-blue-500" />
-                                  <span className="text-foreground">Open</span>
+                                  <Circle className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
+                                  <span className="text-foreground font-semibold">Open</span>
                                 </div>
-                                <span className="font-medium text-foreground">{user.ticket_count_open}</span>
+                                <span className="font-bold text-blue-600 dark:text-blue-400">{user.ticket_count_open}</span>
                               </div>
                             )}
                             {user.ticket_count_on_hold > 0 && (
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50/50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                                 <div className="flex items-center gap-2">
-                                  <AlertTriangle className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                  <span className="text-foreground">On Hold</span>
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
+                                  <span className="text-foreground font-semibold">On Hold</span>
                                 </div>
-                                <span className="font-medium text-foreground">{user.ticket_count_on_hold}</span>
+                                <span className="font-bold text-amber-600 dark:text-amber-400">{user.ticket_count_on_hold}</span>
                               </div>
                             )}
                             {user.ticket_count_resolved > 0 && (
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-green-50/50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle className="w-3 h-3 text-green-500 fill-green-500" />
-                                  <span className="text-foreground">Resolved</span>
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-600 fill-green-600" />
+                                  <span className="text-foreground font-semibold">Resolved</span>
                                 </div>
-                                <span className="font-medium text-foreground">{user.ticket_count_resolved}</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">{user.ticket_count_resolved}</span>
                               </div>
                             )}
                             {user.ticket_count_closed > 0 && (
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800">
                                 <div className="flex items-center gap-2">
-                                  <XCircle className="w-3 h-3 text-slate-500 fill-slate-500" />
-                                  <span className="text-foreground">Closed</span>
+                                  <XCircle className="w-3.5 h-3.5 text-slate-600 fill-slate-600" />
+                                  <span className="text-foreground font-semibold">Closed</span>
                                 </div>
-                                <span className="font-medium text-foreground">{user.ticket_count_closed}</span>
+                                <span className="font-bold text-slate-600 dark:text-slate-400">{user.ticket_count_closed}</span>
                               </div>
                             )}
                             {user.ticket_count_returned > 0 && (
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-purple-50/50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
                                 <div className="flex items-center gap-2">
-                                  <Circle className="w-3 h-3 text-purple-500 fill-purple-500" />
-                                  <span className="text-foreground">Returned</span>
+                                  <Circle className="w-3.5 h-3.5 text-purple-600 fill-purple-600" />
+                                  <span className="text-foreground font-semibold">Returned</span>
                                 </div>
-                                <span className="font-medium text-foreground">{user.ticket_count_returned}</span>
+                                <span className="font-bold text-purple-600 dark:text-purple-400">{user.ticket_count_returned}</span>
                               </div>
                             )}
                             {user.ticket_count_deleted > 0 && (
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-red-50/50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                                 <div className="flex items-center gap-2">
-                                  <X className="w-3 h-3 text-red-500" />
-                                  <span className="text-foreground">Deleted</span>
+                                  <X className="w-3.5 h-3.5 text-red-600" />
+                                  <span className="text-foreground font-semibold">Deleted</span>
                                 </div>
-                                <span className="font-medium text-foreground">{user.ticket_count_deleted}</span>
+                                <span className="font-bold text-red-600 dark:text-red-400">{user.ticket_count_deleted}</span>
                               </div>
                             )}
                           </div>
-                          <div className="pt-2 mt-2 border-t border-border">
+                          <div className="pt-3 mt-3 border-t-2 border-border/50 bg-gradient-to-r from-primary/5 to-transparent rounded-lg p-2">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="font-semibold text-foreground">Total</span>
-                              <span className="font-bold text-foreground">{user.ticket_count}</span>
+                              <span className="font-bold text-foreground">Total</span>
+                              <span className="font-extrabold text-primary text-lg">{user.ticket_count}</span>
                             </div>
                           </div>
                         </div>
@@ -447,65 +474,92 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                 </td>
                 <td className="px-4 py-3">
                   {user.is_active === false ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-red-700 dark:text-red-400 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border border-red-200 dark:border-red-800 shadow-sm">
                       <XCircle className="w-3.5 h-3.5" />
                       Inactive
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-green-700 dark:text-green-400 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800 shadow-sm">
                       <CheckCircle className="w-3.5 h-3.5" />
                       Active
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-foreground-secondary">
-                  {format(new Date(user.created_at), "MMM dd, yyyy")}
+                <td className="px-4 py-3">
+                  <span className="text-xs font-medium text-muted-foreground group-hover/row:text-foreground transition-colors">
+                    {format(new Date(user.created_at), "MMM dd, yyyy")}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="p-1.5 hover:bg-surface rounded transition-colors"
-                      title="Edit User"
-                      onClick={() => onEditUser(user)}
-                      disabled={processingId === user.id}
-                    >
-                      <Edit className="w-4 h-4 text-foreground-secondary" />
-                    </button>
-                    <button
-                      className="p-1.5 hover:bg-blue-50 rounded transition-colors"
-                      title="Reset Password"
-                      onClick={() => handleResetPassword(user)}
-                      disabled={processingId === user.id}
-                    >
-                      <Key className="w-4 h-4 text-blue-600" />
-                    </button>
+                  <div className="flex items-center gap-1.5">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                          title="Edit User"
+                          onClick={() => onEditUser(user)}
+                          disabled={processingId === user.id}
+                        >
+                          <Edit className="w-4 h-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit User</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="p-2 hover:bg-blue-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                          title="Reset Password"
+                          onClick={() => handleResetPassword(user)}
+                          disabled={processingId === user.id}
+                        >
+                          <Key className="w-4 h-4 text-blue-600 group-hover/btn:scale-110 transition-transform" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Reset Password</TooltipContent>
+                    </Tooltip>
                     {user.is_active === false ? (
-                      <button
-                        className="p-1.5 hover:bg-green-50 rounded transition-colors"
-                        title="Activate User"
-                        onClick={() => handleActivate(user)}
-                        disabled={processingId === user.id}
-                      >
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      </button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            className="p-2 hover:bg-green-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                            title="Activate User"
+                            onClick={() => handleActivate(user)}
+                            disabled={processingId === user.id}
+                          >
+                            <CheckCircle className="w-4 h-4 text-green-600 group-hover/btn:scale-110 transition-transform" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Activate User</TooltipContent>
+                      </Tooltip>
                     ) : (
-                      <button
-                        className="p-1.5 hover:bg-yellow-50 rounded transition-colors"
-                        title="Deactivate User"
-                        onClick={() => handleDeactivate(user)}
-                        disabled={processingId === user.id}
-                      >
-                        <XCircle className="w-4 h-4 text-yellow-600" />
-                      </button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            className="p-2 hover:bg-yellow-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                            title="Deactivate User"
+                            onClick={() => handleDeactivate(user)}
+                            disabled={processingId === user.id}
+                          >
+                            <XCircle className="w-4 h-4 text-yellow-600 group-hover/btn:scale-110 transition-transform" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Deactivate User</TooltipContent>
+                      </Tooltip>
                     )}
-                    <button
-                      className="p-1.5 hover:bg-red-50 rounded transition-colors"
-                      title="Delete User"
-                      onClick={() => handleDelete(user)}
-                      disabled={processingId === user.id}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="p-2 hover:bg-red-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                          title="Delete User"
+                          onClick={() => handleDelete(user)}
+                          disabled={processingId === user.id}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600 group-hover/btn:scale-110 transition-transform" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete User</TooltipContent>
+                    </Tooltip>
                   </div>
                 </td>
               </tr>
@@ -514,11 +568,11 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
         </table>
       </div>
 
-      <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-        <p className="text-sm text-foreground-secondary">
+      <div className="px-6 py-4 border-t-2 border-border/50 flex items-center justify-between bg-muted/20">
+        <p className="text-sm font-semibold text-foreground">
           Showing {users.length} user{users.length !== 1 ? "s" : ""}
         </p>
       </div>
-    </div>
+    </>
   )
 }
