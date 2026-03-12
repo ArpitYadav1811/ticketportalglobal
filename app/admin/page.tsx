@@ -603,8 +603,8 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
     e.preventDefault()
     setSaving(true)
     const result = editFA
-      ? await updateFunctionalArea(editFA.id, faForm.name, faForm.description)
-      : await createFunctionalArea(faForm.name, faForm.description)
+      ? await updateFunctionalArea(editFA.id, faForm.name, faForm.description, faForm.spocName)
+      : await createFunctionalArea(faForm.name, faForm.description, faForm.spocName)
     if (result.success) { 
       await loadData(); 
       setShowAddFA(false); 
@@ -923,6 +923,17 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
                 <label className="block text-sm font-medium mb-1">Description</label>
                 <input type="text" value={faForm.description} onChange={(e) => setFaForm({ ...faForm, description: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+ </div>
+ <div>
+                <label className="block text-sm font-medium mb-1">SPOC (Single Point of Contact)</label>
+                <input 
+                  type="text" 
+                  value={faForm.spocName} 
+                  onChange={(e) => setFaForm({ ...faForm, spocName: e.target.value })} 
+                  placeholder="Enter SPOC name"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" 
+                />
+                <p className="text-xs text-muted-foreground mt-1">The person responsible for this functional area</p>
  </div>
               <div className="flex gap-2 justify-end pt-2 border-t">
                 <Button variant="outline" type="button" onClick={() => { setShowAddFA(false); setEditFA(null) }}>Cancel</Button>
