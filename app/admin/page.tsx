@@ -424,7 +424,7 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
   const [showAddFA, setShowAddFA] = useState(false)
   const [showAddMapping, setShowAddMapping] = useState(false)
   const [editFA, setEditFA] = useState<any>(null)
-  const [faForm, setFaForm] = useState({ name: "", description: "" })
+  const [faForm, setFaForm] = useState({ name: "", description: "", spocName: "" })
   const [mappingForm, setMappingForm] = useState({ functionalAreaId: "", targetBusinessGroupId: "" })
   const [saving, setSaving] = useState(false)
   const [spocSaving, setSpocSaving] = useState<{ bgId: number; type: "primary" | "secondary" } | null>(null)
@@ -482,6 +482,7 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
         id: fa.id,
         name: fa.name,
         description: fa.description || "",
+        spoc_name: fa.spoc_name || null,
         created_at: fa.created_at,
         updated_at: fa.updated_at,
         mappings: mappings
@@ -748,7 +749,7 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
               <Download className="w-3.5 h-3.5 mr-1" /> Export JSON
             </Button>
             <Button size="sm" variant="outline" onClick={loadData}><RefreshCw className="w-3.5 h-3.5" /></Button>
-            <Button size="sm" className="bg-black hover:bg-gray-800" onClick={() => { setEditFA(null); setFaForm({ name: "", description: "" }); setShowAddFA(true) }}>
+            <Button size="sm" className="bg-black hover:bg-gray-800" onClick={() => { setEditFA(null); setFaForm({ name: "", description: "", spocName: "" }); setShowAddFA(true) }}>
               <Plus className="w-4 h-4 mr-1" /> Add FA
             </Button>
  </div>
@@ -763,6 +764,7 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
                 <tr className="border-b text-left">
                   <th className="pb-2 text-xs font-medium text-muted-foreground">Name</th>
                   <th className="pb-2 text-xs font-medium text-muted-foreground">Description</th>
+                  <th className="pb-2 text-xs font-medium text-muted-foreground">SPOC</th>
                   <th className="pb-2 text-xs font-medium text-muted-foreground">Mappings</th>
                   <th className="pb-2 text-xs font-medium text-muted-foreground w-24">Actions</th>
                 </tr>
@@ -772,12 +774,13 @@ function FAMappingsTab({ currentUser }: { currentUser: any }) {
                   <tr key={fa.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="py-2 font-medium">{fa.name}</td>
                     <td className="py-2 text-muted-foreground">{fa.description || "—"}</td>
+                    <td className="py-2 text-sm">{fa.spoc_name || <span className="text-muted-foreground">—</span>}</td>
                     <td className="py-2">
                       <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">{fa.mapping_count}</span>
                     </td>
                     <td className="py-2">
                       <div className="flex gap-1">
-                        <button className="p-1 hover:bg-muted rounded" onClick={() => { setEditFA(fa); setFaForm({ name: fa.name, description: fa.description || "" }); setShowAddFA(true) }}>
+                        <button className="p-1 hover:bg-muted rounded" onClick={() => { setEditFA(fa); setFaForm({ name: fa.name, description: fa.description || "", spocName: fa.spoc_name || "" }); setShowAddFA(true) }}>
                           <Edit className="w-3.5 h-3.5" />
  </button>
                         <button className="p-1 hover:bg-destructive/10 hover:text-destructive rounded" onClick={() => handleDeleteFA(fa.id, fa.name)}>

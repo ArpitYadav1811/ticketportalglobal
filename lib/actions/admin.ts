@@ -110,7 +110,13 @@ export async function getSystemAuditLogs(filters?: {
 export async function getFunctionalAreas() {
   try {
     const result = await sql`
-      SELECT fa.*, 
+      SELECT 
+        fa.id,
+        fa.name,
+        fa.description,
+        fa.spoc_name,
+        fa.created_at,
+        fa.updated_at,
         (SELECT COUNT(*) FROM functional_area_business_group_mapping fabgm WHERE fabgm.functional_area_id = fa.id) as mapping_count
       FROM functional_areas fa
       ORDER BY fa.name ASC
@@ -146,7 +152,11 @@ export async function getFunctionalAreaMappings() {
   }
 }
 
-export async function createFunctionalArea(name: string, description?: string) {
+export async function createFunctionalArea(
+  name: string, 
+  description?: string,
+  spocName?: string
+) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
@@ -154,8 +164,8 @@ export async function createFunctionalArea(name: string, description?: string) {
     }
 
     const result = await sql`
-      INSERT INTO functional_areas (name, description)
-      VALUES (${name}, ${description || null})
+      INSERT INTO functional_areas (name, description, spoc_name)
+      VALUES (${name}, ${description || null}, ${spocName || null})
       RETURNING *
     `
 
@@ -176,7 +186,12 @@ export async function createFunctionalArea(name: string, description?: string) {
   }
 }
 
-export async function updateFunctionalArea(id: number, name: string, description?: string) {
+export async function updateFunctionalArea(
+  id: number, 
+  name: string, 
+  description?: string,
+  spocName?: string
+) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
@@ -186,8 +201,13 @@ export async function updateFunctionalArea(id: number, name: string, description
     const old = await sql`SELECT name FROM functional_areas WHERE id = ${id}`
     
     const result = await sql`
-      UPDATE functional_areas SET name = ${name}, description = ${description || null}
-      WHERE id = ${id} RETURNING *
+      UPDATE functional_areas 
+      SET 
+        name = ${name}, 
+        description = ${description || null},
+        spoc_name = ${spocName || null}
+      WHERE id = ${id} 
+      RETURNING *
     `
 
     await addSystemAuditLog({
