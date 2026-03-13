@@ -203,12 +203,7 @@ export default function CreateTicketForm() {
 
  useEffect(() => {
  if (formData.categoryId) {
- if (formData.categoryId === "others") {
- // Handle "Others" category - set "Others" subcategory directly
- setSubcategories([{ id: "others", name: "Others", description: "Other subcategory", category_id: 0 }])
- } else {
  loadSubcategories(Number(formData.categoryId))
- }
  } else {
  setSubcategories([])
  // Don't reset spocId here - it's set by group selection
@@ -240,11 +235,8 @@ export default function CreateTicketForm() {
  console.log("[v0] Subcategories result:", result)
  if (result.success) {
  const loadedSubcategories = result.data || []
- // Always add "Others" subcategory option
- setSubcategories([
- ...loadedSubcategories,
- { id: "others", name: "Others", description: "Other subcategory", category_id: categoryId }
- ])
+ // Use subcategories from database (including "Other" if it exists)
+ setSubcategories(loadedSubcategories)
  }
  }
 
@@ -396,8 +388,16 @@ const handleTargetBusinessGroupChange = async (value: string) => {
     return
   }
 
-  // Handle "others" subcategory - use subcategory data directly without mapping lookup
-  if (value === "others") {
+  // Check if this is "Other" category + "Other" subcategory - use subcategory data directly
+  const selectedCategory = categories.find((c) => c.id.toString() === formData.categoryId)
+  const isOtherCategory = selectedCategory && (
+    selectedCategory.name.toLowerCase() === "other" || 
+    selectedCategory.name.toLowerCase() === "others"
+  )
+  const isOtherSubcategory = selectedSubcat.name.toLowerCase() === "other" || 
+                             selectedSubcat.name.toLowerCase() === "others"
+  
+  if (isOtherCategory && isOtherSubcategory) {
     const durationMinutes = selectedSubcat.estimated_duration_minutes || 0
     let durationText = ""
     if (durationMinutes > 0) {
@@ -692,36 +692,19 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  if (formData.ticketType === "requirement") {
  ticketTitle = formData.title
  } else {
- const selectedCategory = categories.find((c) => c.id.toString() === formData.categoryId || (formData.categoryId === "others" && (c.name === "Others" || c.name === "Other")))
- const selectedSubcategory = subcategories.find((s) => s.id.toString() === formData.subcategoryId || (formData.subcategoryId === "others" && (s.name === "Others" || s.name === "Other")))
+ const selectedCategory = categories.find((c) => c.id.toString() === formData.categoryId)
+ const selectedSubcategory = subcategories.find((s) => s.id.toString() === formData.subcategoryId)
  ticketTitle = selectedSubcategory
  ? `${selectedCategory?.name || "Other"} - ${selectedSubcategory?.name || "Other"}`
  : selectedCategory?.name || "Other"
  }
 
- // Handle "others" category/subcategory - find actual IDs
+ // Get category and subcategory IDs (all come from database now)
  let finalCategoryId: number | null = null
  let finalSubcategoryId: number | null = null
 
- if (formData.categoryId === "others") {
-   // Find the "Others" category for the target business group
-   const othersCategory = categories.find((c) => c.name === "Others" || c.name === "Other")
-   if (othersCategory) {
-     finalCategoryId = othersCategory.id
-     // If subcategory is also "others", find the "Others" subcategory
-     if (formData.subcategoryId === "others") {
-       const othersSubcategory = subcategories.find((s) => (s.name === "Others" || s.name === "Other") && s.category_id === othersCategory.id)
-       if (othersSubcategory && typeof othersSubcategory.id === "number") {
-         finalSubcategoryId = othersSubcategory.id
-       }
-     } else if (formData.subcategoryId && formData.subcategoryId !== "N/A") {
-       finalSubcategoryId = Number(formData.subcategoryId) || null
-     }
-   }
- } else {
-   finalCategoryId = formData.categoryId ? Number(formData.categoryId) : null
-   finalSubcategoryId = formData.subcategoryId && formData.subcategoryId !== "N/A" && formData.subcategoryId !== "others" ? Number(formData.subcategoryId) : null
- }
+ finalCategoryId = formData.categoryId ? Number(formData.categoryId) : null
+ finalSubcategoryId = formData.subcategoryId && formData.subcategoryId !== "N/A" ? Number(formData.subcategoryId) : null
 
  const result = await createTicket({
  ticketType: formData.ticketType,
@@ -1046,13 +1029,10 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  Category *
  </label>
  <Combobox
- options={[
- ...categories.map((cat) => ({
+ options={categories.map((cat) => ({
  value: cat.id.toString(),
  label: cat.name,
- })),
- { value: "others", label: "Others" }
- ]}
+ }))}
  value={formData.categoryId}
  onChange={handleCategoryChange}
  placeholder={formData.targetBusinessGroupId ? "Select a category..." : "Select a business group first"}
@@ -1071,7 +1051,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  options={
  subcategories.length > 0
  ? subcategories.map((sub) => ({
- value: sub.id === "others" ? "others" : sub.id.toString(),
+ value: sub.id.toString(),
  label: sub.name,
  }))
  : [{ value: "N/A", label: "N/A" }]
