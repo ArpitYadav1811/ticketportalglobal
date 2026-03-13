@@ -18,6 +18,8 @@ import {
 } from "recharts"
 import { getAnalyticsData } from "@/lib/actions/stats"
 import { getBusinessGroupsForSpoc, isUserSpoc } from "@/lib/actions/master-data"
+import { getAllTeamMembersForLead } from "@/lib/actions/my-team"
+import { getUserTeams } from "@/lib/actions/teams"
 
 /* ── Palette ─────────────────────────────────────────────────── */
 const CHART_COLORS = {
@@ -116,12 +118,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
   const [loading, setLoading] = useState(true)
   const [daysFilter, setDaysFilter] = useState(30)
   const [businessGroupIds, setBusinessGroupIds] = useState<number[] | undefined>(undefined)
+  const [teamMemberIds, setTeamMemberIds] = useState<number[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
 
   const isAdmin = userRole === "admin" || userRole === "superadmin"
   const isSuperAdmin = userRole === "superadmin"
 
-  // Load business groups for non-admin users (both SPOC and regular users)
+  // Load business groups and team members for non-admin users
   useEffect(() => {
     const loadBusinessGroups = async () => {
       // For Super Admin, use selectedGroupId from dropdown
@@ -151,21 +154,86 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       const userIsSpoc = roleIsManager || spocCheck
 
       if (userIsSpoc) {
-        // SPOC: Get all groups they manage
+        // SPOC: Get all groups they manage + fetch team members
         const result = await getBusinessGroupsForSpoc(userId)
         if (result.success && result.data && result.data.length > 0) {
           setBusinessGroupIds(result.data.map((bg: any) => bg.id))
         } else {
           setBusinessGroupIds([])
         }
+        
+        // Fetch team members for SPOC as well
+        const teamMembers: number[] = []
+        
+        // Get personal team members (my_team_members)
+        try {
+          const myTeamMembers = await getAllTeamMembersForLead(userId)
+          teamMembers.push(...myTeamMembers.map((tm: any) => tm.userId))
+        } catch (error) {
+          console.error("Error fetching personal team members:", error)
+        }
+        
+        // Get team members from formal teams
+        try {
+          const teamsResult = await getUserTeams(userId)
+          if (teamsResult.success && teamsResult.data) {
+            // For each team, get all members
+            for (const team of teamsResult.data) {
+              const { getTeamMembers } = await import("@/lib/actions/teams")
+              const membersResult = await getTeamMembers(team.id)
+              if (membersResult.success && membersResult.data) {
+                const memberIds = membersResult.data.map((m: any) => m.user_id).filter((id: number) => id !== userId)
+                teamMembers.push(...memberIds)
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching team members from teams:", error)
+        }
+        
+        // Remove duplicates
+        setTeamMemberIds([...new Set(teamMembers)])
+        setFiltersReady(true)
       } else if (userGroupId) {
-        // Regular User: Use their assigned business group
+        // Regular User: Use their assigned business group + fetch team members
         setBusinessGroupIds([userGroupId])
+        
+        // Fetch team members from both my_team_members and teams
+        const teamMembers: number[] = []
+        
+        // Get personal team members (my_team_members)
+        try {
+          const myTeamMembers = await getAllTeamMembersForLead(userId)
+          teamMembers.push(...myTeamMembers.map((tm: any) => tm.userId))
+        } catch (error) {
+          console.error("Error fetching personal team members:", error)
+        }
+        
+        // Get team members from formal teams
+        try {
+          const teamsResult = await getUserTeams(userId)
+          if (teamsResult.success && teamsResult.data) {
+            // For each team, get all members
+            for (const team of teamsResult.data) {
+              const { getTeamMembers } = await import("@/lib/actions/teams")
+              const membersResult = await getTeamMembers(team.id)
+              if (membersResult.success && membersResult.data) {
+                const memberIds = membersResult.data.map((m: any) => m.user_id).filter((id: number) => id !== userId)
+                teamMembers.push(...memberIds)
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching team members from teams:", error)
+        }
+        
+        // Remove duplicates
+        setTeamMemberIds([...new Set(teamMembers)])
+        setFiltersReady(true)
       } else {
         setBusinessGroupIds([])
+        setFiltersReady(true)
       }
-
-      setFiltersReady(true)
     }
     loadBusinessGroups()
   }, [userId, userRole, userGroupId, isAdmin, isSuperAdmin, selectedGroupId])
@@ -173,16 +241,21 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
   const loadData = useCallback(async () => {
     setLoading(true)
     // For Super Admin with selected group, filter by that group
-    // For non-admin users, always filter by business group
+    // For regular users and SPOC (not admin), pass both userId and businessGroupIds + teamMemberIds
+    // This enables combined filter: group tickets + user involvement + team member involvement
     const options = (isSuperAdmin && selectedGroupId !== "all" && selectedGroupId !== null)
       ? { businessGroupIds: [selectedGroupId as number] }
       : (!isAdmin && businessGroupIds && businessGroupIds.length > 0)
-        ? { businessGroupIds }
+        ? { 
+            businessGroupIds, 
+            userId: userId, // Pass userId to enable combined filter
+            teamMemberIds: teamMemberIds.length > 0 ? teamMemberIds : undefined
+          }
         : undefined
     const result = await getAnalyticsData(daysFilter, options)
     if (result.success) setData(result.data)
     setLoading(false)
-  }, [daysFilter, isAdmin, isSuperAdmin, businessGroupIds, selectedGroupId])
+  }, [daysFilter, isAdmin, isSuperAdmin, businessGroupIds, selectedGroupId, userId, teamMemberIds])
 
   useEffect(() => {
     if (!filtersReady) return

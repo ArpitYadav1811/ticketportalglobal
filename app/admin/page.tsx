@@ -11,6 +11,7 @@ import BulkUserOperations from "@/components/admin/bulk-user-operations"
 import FAMappingsVisual from "@/components/admin/fa-mappings-visual"
 import EnhancedAuditLogs from "@/components/admin/enhanced-audit-logs"
 import GlobalSearch from "@/components/admin/global-search"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Shield,
   Users,
@@ -345,20 +346,22 @@ export default function AdminDashboardPage() {
       </div>
               </div>
 
-              {/* Global Search with enhanced styling */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-lg p-3 shadow-md hover:shadow-lg hover:border-primary/30 transition-all duration-500">
-                  <div className="flex items-center gap-2">
-                    <GlobalSearch onResultClick={handleSearchResult} />
-                    <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-muted/60 to-muted/40 backdrop-blur-sm rounded-md border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
-                      <kbd className="text-xs font-mono font-semibold text-muted-foreground">Ctrl</kbd>
-                      <span className="text-xs text-muted-foreground">+</span>
-                      <kbd className="text-xs font-mono font-semibold text-muted-foreground">K</kbd>
+              {/* Global Search with enhanced styling - Hidden in User Management */}
+              {activeSection !== "users" && (
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-lg p-3 shadow-md hover:shadow-lg hover:border-primary/30 transition-all duration-500">
+                    <div className="flex items-center gap-2">
+                      <GlobalSearch onResultClick={handleSearchResult} />
+                      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-muted/60 to-muted/40 backdrop-blur-sm rounded-md border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+                        <kbd className="text-xs font-mono font-semibold text-muted-foreground">Ctrl</kbd>
+                        <span className="text-xs text-muted-foreground">+</span>
+                        <kbd className="text-xs font-mono font-semibold text-muted-foreground">K</kbd>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Content */}
               <AdminErrorBoundary>{renderContent()}</AdminErrorBoundary>
@@ -444,21 +447,31 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
               />
             </div>
             <div className="relative min-w-[180px] group/filter">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-primary/5 pointer-events-none">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-md bg-primary/5 pointer-events-none">
                 <Filter className="w-4 h-4 text-muted-foreground" />
               </div>
-              <select
+              <Select
                 value={filters.role}
-                onChange={(e) => setFilters((p) => ({ ...p, role: e.target.value }))}
-                className="w-full pl-11 pr-4 py-2.5 border-2 border-border/50 rounded-lg bg-background/90 backdrop-blur-sm text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 font-medium"
+                onValueChange={(value) => setFilters((p) => ({ ...p, role: value }))}
               >
-                <option value="all">All Roles</option>
-                {roles.map((r: any) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full pl-11 pr-4 py-2.5 border-2 border-border/50 rounded-lg bg-background/90 backdrop-blur-sm text-sm shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 font-medium focus:ring-2 focus:ring-primary/50 focus:border-primary/50">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
+                  <SelectItem value="all" className="text-sm font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1">
+                    All Roles
+                  </SelectItem>
+                  {roles.map((r: any) => (
+                    <SelectItem 
+                      key={r.value} 
+                      value={r.value}
+                      className="text-sm font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
+                    >
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border-2 border-border/50 rounded-lg hover:bg-muted/50 hover:border-primary/30 text-sm whitespace-nowrap font-medium shadow-sm hover:shadow-md transition-all duration-300 bg-background/90 backdrop-blur-sm">
               <input

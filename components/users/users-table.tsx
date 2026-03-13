@@ -7,6 +7,7 @@ import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRol
 import { updateUserRole, updateUserBusinessGroup } from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface User {
   id: number
@@ -277,27 +278,25 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       {roleChangingId === user.id ? (
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <select
+                        <Select
                           value={user.role}
-                          onChange={(e) => handleInlineRoleChange(user.id, e.target.value, user.full_name)}
-                          className={`w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer appearance-none shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary/60 ${getRoleBadgeColor(user.role)}`}
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                            backgroundPosition: "right 0.5rem center",
-                            backgroundRepeat: "no-repeat",
-                            backgroundSize: "1rem",
-                          }}
+                          onValueChange={(value) => handleInlineRoleChange(user.id, value, user.full_name)}
                         >
-                          {roles.map((r) => (
-                            <option 
-                              key={r.value} 
-                              value={r.value}
-                              className="py-2 px-3 bg-white dark:bg-slate-800 text-foreground hover:bg-primary/10"
-                            >
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className={`w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:ring-2 focus:ring-primary/60 focus:border-primary/60 ${getRoleBadgeColor(user.role)}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
+                            {roles.map((r) => (
+                              <SelectItem 
+                                key={r.value} 
+                                value={r.value}
+                                className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
+                              >
+                                {r.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                   ) : (
@@ -316,36 +315,37 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       {bgChangingId === user.id ? (
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <select
-                          value={user.business_unit_group_id ?? ""}
-                          onChange={(e) =>
+                        <Select
+                          value={user.business_unit_group_id?.toString() ?? ""}
+                          onValueChange={(value) =>
                             handleInlineBusinessGroupChange(
                               user.id,
-                              e.target.value ? Number(e.target.value) : null,
+                              value ? Number(value) : null,
                               user.full_name,
                             )
                           }
-                          className="w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer appearance-none shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary/60"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                            backgroundPosition: "right 0.5rem center",
-                            backgroundRepeat: "no-repeat",
-                            backgroundSize: "1rem",
-                          }}
                         >
-                          <option value="" className="py-2 px-3 bg-white dark:bg-slate-800 text-foreground">
-                            No Group
-                          </option>
-                          {businessGroups.map((bg) => (
-                            <option 
-                              key={bg.id} 
-                              value={bg.id}
-                              className="py-2 px-3 bg-white dark:bg-slate-800 text-foreground hover:bg-primary/10"
+                          <SelectTrigger className="w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:ring-2 focus:ring-primary/60 focus:border-primary/60">
+                            <SelectValue placeholder="No Group" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
+                            <SelectItem 
+                              value=""
+                              className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
                             >
-                              {bg.name}
-                            </option>
-                          ))}
-                        </select>
+                              No Group
+                            </SelectItem>
+                            {businessGroups.map((bg) => (
+                              <SelectItem 
+                                key={bg.id} 
+                                value={bg.id.toString()}
+                                className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
+                              >
+                                {bg.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                   ) : user.business_group_name ? (
