@@ -10,7 +10,6 @@ import OverviewDashboard from "@/components/admin/overview-dashboard"
 import BulkUserOperations from "@/components/admin/bulk-user-operations"
 import FAMappingsVisual from "@/components/admin/fa-mappings-visual"
 import EnhancedAuditLogs from "@/components/admin/enhanced-audit-logs"
-import GlobalSearch from "@/components/admin/global-search"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Shield,
@@ -82,22 +81,9 @@ export default function AdminDashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeSection, setActiveSection] = useState("overview")
-  const [searchFocused, setSearchFocused] = useState(false)
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
-    {
-      key: "k",
-      ctrl: true,
-      action: () => {
-        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement
-        if (searchInput) {
-          searchInput.focus()
-          setSearchFocused(true)
-        }
-      },
-      description: "Focus search (Ctrl+K)",
-    },
     {
       key: "1",
       ctrl: true,
@@ -115,19 +101,6 @@ export default function AdminDashboardPage() {
       ctrl: true,
       action: () => setActiveSection("audit-logs"),
       description: "Go to Audit Logs (Ctrl+3)",
-    },
-    {
-      key: "Escape",
-      action: () => {
-        if (searchFocused) {
-          const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement
-          if (searchInput) {
-            searchInput.blur()
-            setSearchFocused(false)
-          }
-        }
-      },
-      description: "Close search (Esc)",
     },
   ])
 
@@ -154,24 +127,6 @@ export default function AdminDashboardPage() {
   const isSuperAdmin = user.role?.toLowerCase() === "superadmin"
   const userRole = user.role?.toLowerCase()
 
-  const handleSearchResult = (result: any) => {
-    // Navigate based on result type
-    switch (result.type) {
-      case "user":
-        setActiveSection("users")
-        // Could scroll to user in table
-        break
-      case "business_group":
-        setActiveSection("business-groups")
-        break
-      case "functional_area":
-        setActiveSection("functional-areas")
-        break
-      case "category":
-        setActiveSection("categories")
-        break
-    }
-  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -346,22 +301,6 @@ export default function AdminDashboardPage() {
       </div>
               </div>
 
-              {/* Global Search with enhanced styling - Hidden in User Management */}
-              {activeSection !== "users" && (
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-lg p-3 shadow-md hover:shadow-lg hover:border-primary/30 transition-all duration-500">
-                    <div className="flex items-center gap-2">
-                      <GlobalSearch onResultClick={handleSearchResult} />
-                      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-muted/60 to-muted/40 backdrop-blur-sm rounded-md border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
-                        <kbd className="text-xs font-mono font-semibold text-muted-foreground">Ctrl</kbd>
-                        <span className="text-xs text-muted-foreground">+</span>
-                        <kbd className="text-xs font-mono font-semibold text-muted-foreground">K</kbd>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Content */}
               <AdminErrorBoundary>{renderContent()}</AdminErrorBoundary>

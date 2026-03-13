@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X, Users, Building2 } from "lucide-react"
-import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles } from "@/lib/actions/users"
+import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles, updateUserPasswordAsAdmin } from "@/lib/actions/users"
 import { updateUserRole, updateUserBusinessGroup } from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 interface User {
   id: number
@@ -45,6 +47,12 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
   const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
   const [businessGroups, setBusinessGroups] = useState<{ id: number; name: string }[]>([])
   const [bgChangingId, setBgChangingId] = useState<number | null>(null)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -109,23 +117,57 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setProcessingId(null)
   }
 
-  const handleResetPassword = async (user: User) => {
-    if (!confirm(`Reset password for ${user.full_name}? A temporary password will be generated.`)) {
+  const handleResetPassword = (user: User, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    setSelectedUser(user)
+    setNewPassword("")
+    setConfirmPassword("")
+    setPasswordError("")
+    setPasswordDialogOpen(true)
+  }
+
+  const handleUpdatePassword = async () => {
+    // Reset error
+    setPasswordError("")
+
+    // Validate passwords
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters long")
       return
     }
-    setProcessingId(user.id)
-    const result = await resetUserPassword(user.id)
-    if (result.success && result.data) {
-      const tempPassword = result.data.temporary_password
-      // Copy to clipboard
-      navigator.clipboard.writeText(tempPassword)
-      alert(
-        `Password reset successfully!\n\nTemporary password: ${tempPassword}\n\n(Copied to clipboard)\n\nPlease share this with the user securely.`
-      )
-    } else {
-      alert(result.error || "Failed to reset password")
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match")
+      return
     }
-    setProcessingId(null)
+
+    if (!selectedUser) return
+
+    setIsUpdatingPassword(true)
+    const result = await updateUserPasswordAsAdmin(selectedUser.id, newPassword)
+    
+    if (result.success) {
+      setPasswordDialogOpen(false)
+      setNewPassword("")
+      setConfirmPassword("")
+      setSelectedUser(null)
+      alert(`Password updated successfully for ${selectedUser.full_name}`)
+    } else {
+      setPasswordError(result.error || "Failed to update password")
+    }
+    
+    setIsUpdatingPassword(false)
+  }
+
+  const handleCancelPasswordDialog = () => {
+    setPasswordDialogOpen(false)
+    setNewPassword("")
+    setConfirmPassword("")
+    setPasswordError("")
+    setSelectedUser(null)
   }
 
   const handleInlineRoleChange = async (userId: number, newRole: string, userName: string) => {
@@ -316,11 +358,11 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <Select
-                          value={user.business_unit_group_id?.toString() ?? ""}
+                          value={user.business_unit_group_id?.toString() ?? "none"}
                           onValueChange={(value) =>
                             handleInlineBusinessGroupChange(
                               user.id,
-                              value ? Number(value) : null,
+                              value && value !== "none" ? Number(value) : null,
                               user.full_name,
                             )
                           }
@@ -330,7 +372,7 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                           </SelectTrigger>
                           <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
                             <SelectItem 
-                              value=""
+                              value="none"
                               className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
                             >
                               No Group
@@ -508,9 +550,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
+                          type="button"
                           className="p-2 hover:bg-blue-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
                           title="Reset Password"
-                          onClick={() => handleResetPassword(user)}
+                          onClick={(e) => handleResetPassword(user, e)}
                           disabled={processingId === user.id}
                         >
                           <Key className="w-4 h-4 text-blue-600 group-hover/btn:scale-110 transition-transform" />
@@ -573,6 +616,78 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
           Showing {users.length} user{users.length !== 1 ? "s" : ""}
         </p>
       </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedUser?.full_name || "this user"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="newPassword" className="text-sm font-medium text-foreground">
+                New Password
+              </label>
+              <input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value)
+                  setPasswordError("")
+                }}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
+                placeholder="Enter new password"
+                disabled={isUpdatingPassword}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                Confirm New Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  setPasswordError("")
+                }}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
+                placeholder="Confirm new password"
+                disabled={isUpdatingPassword}
+              />
+            </div>
+
+            {passwordError && (
+              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800">
+                {passwordError}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelPasswordDialog}
+              disabled={isUpdatingPassword}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdatePassword}
+              disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+            >
+              {isUpdatingPassword ? "Updating..." : "Update"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -264,6 +264,35 @@ export async function resetUserPassword(id: number) {
   }
 }
 
+export async function updateUserPasswordAsAdmin(userId: number, newPassword: string) {
+  try {
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: "Password must be at least 6 characters long" }
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+
+    // Update password
+    const result = await sql`
+      UPDATE users
+      SET password_hash = ${passwordHash}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${userId}
+      RETURNING id, email, full_name
+    `
+
+    if (result.length === 0) {
+      return { success: false, error: "User not found" }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating password:", error)
+    return { success: false, error: "Failed to update password" }
+  }
+}
+
 export async function deleteUser(id: number) {
   try {
     const currentUser = await getCurrentUser()
