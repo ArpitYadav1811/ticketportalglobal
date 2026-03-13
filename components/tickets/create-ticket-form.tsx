@@ -385,22 +385,41 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  return
  }
 
- // Find the selected subcategory
- const selectedSubcat = subcategories.find((s) => s.id.toString() === value)
- if (!selectedSubcat) {
- setFormData((prev) => ({
- ...prev,
- subcategoryId: value,
- }))
- return
- }
+  // Find the selected subcategory
+  const selectedSubcat = subcategories.find((s) => s.id.toString() === value)
+  if (!selectedSubcat) {
+    setFormData((prev) => ({
+      ...prev,
+      subcategoryId: value,
+    }))
+    return
+  }
 
- // Try to get classification mapping for the selected target business group, category, and subcategory
- const mappingResult = await getClassificationMappingByTargetBusinessGroup(
- Number(formData.targetBusinessGroupId),
- Number(formData.categoryId),
- Number(value)
- )
+  // Handle "others" subcategory - use subcategory data directly without mapping lookup
+  if (value === "others") {
+    const durationMinutes = selectedSubcat.estimated_duration_minutes || 0
+    let durationText = ""
+    if (durationMinutes > 0) {
+      const hours = Math.ceil(durationMinutes / 60)
+      durationText = hours.toString()
+    }
+    const descriptionText = selectedSubcat.input_template || selectedSubcat.description || ""
+    
+    setFormData((prev) => ({
+      ...prev,
+      subcategoryId: value,
+      description: descriptionText,
+      estimatedDuration: durationText,
+    }))
+    return
+  }
+
+  // Try to get classification mapping for the selected target business group, category, and subcategory
+  const mappingResult = await getClassificationMappingByTargetBusinessGroup(
+    Number(formData.targetBusinessGroupId),
+    Number(formData.categoryId),
+    Number(value)
+  )
 
  let durationText = ""
  let descriptionText = ""
@@ -418,70 +437,73 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  durationText = hours.toString()
  }
 
- descriptionText = mapping.description || selectedSubcat.input_template || ""
- // Only update SPOC from mapping if it's provided, otherwise keep existing
- if (mapping.spoc_user_id) {
- spocId = mapping.spoc_user_id.toString()
- console.log("[v0] SPOC from mapping:", spocId)
- } else if (!spocId) {
- console.warn("[v0] No SPOC in mapping and no existing SPOC")
- }
- } else {
- // No mapping found - check if "Others" category/subcategory exists and use it
- const othersCategory = categories.find((c) => c.name === "Others")
- const othersSubcategory = othersCategory
- ? subcategories.find((s) => s.category_id === othersCategory.id && s.name === "Others")
- : null
+    descriptionText = mapping.description || selectedSubcat.input_template || selectedSubcat.description || ""
+    // Only update SPOC from mapping if it's provided, otherwise keep existing
+    if (mapping.spoc_user_id) {
+      spocId = mapping.spoc_user_id.toString()
+      console.log("[v0] SPOC from mapping:", spocId)
+    } else if (!spocId) {
+      console.warn("[v0] No SPOC in mapping and no existing SPOC")
+    }
+  } else {
+    // No mapping found - check if "Others" category/subcategory exists and use it
+    const othersCategory = categories.find((c) => c.name === "Others")
+    const othersSubcategory = othersCategory
+      ? subcategories.find((s) => s.category_id === othersCategory.id && s.name === "Others")
+      : null
 
- if (othersCategory && othersSubcategory) {
- // Try to get "Others" mapping for this target business group
- const othersMappingResult = await getClassificationMappingByTargetBusinessGroup(
- Number(formData.targetBusinessGroupId),
- othersCategory.id,
- othersSubcategory.id
- )
+    if (othersCategory && othersSubcategory) {
+      // Try to get "Others" mapping for this target business group
+      const othersMappingResult = await getClassificationMappingByTargetBusinessGroup(
+        Number(formData.targetBusinessGroupId),
+        othersCategory.id,
+        othersSubcategory.id
+      )
 
- if (othersMappingResult.success && othersMappingResult.data) {
- const othersMapping = othersMappingResult.data
- const durationMinutes = othersMapping.estimated_duration || 0
- 
- // Convert minutes to hours (rounded up) for the numeric input field
- if (durationMinutes > 0) {
- const hours = Math.ceil(durationMinutes / 60)
- durationText = hours.toString()
- }
+      if (othersMappingResult.success && othersMappingResult.data) {
+        const othersMapping = othersMappingResult.data
+        const durationMinutes = othersMapping.estimated_duration || 0
+        
+        // Convert minutes to hours (rounded up) for the numeric input field
+        if (durationMinutes > 0) {
+          const hours = Math.ceil(durationMinutes / 60)
+          durationText = hours.toString()
+        }
 
- descriptionText = othersMapping.description || ""
- // Only update SPOC from "Others" mapping if it's provided, otherwise keep existing
- if (othersMapping.spoc_user_id) {
- spocId = othersMapping.spoc_user_id.toString()
- console.log("[v0] SPOC from 'Others' mapping:", spocId)
- } else if (!spocId) {
- console.warn("[v0] No SPOC in 'Others' mapping and no existing SPOC")
- }
- }
+        descriptionText = othersMapping.description || othersSubcategory.input_template || othersSubcategory.description || ""
+        // Only update SPOC from "Others" mapping if it's provided, otherwise keep existing
+        if (othersMapping.spoc_user_id) {
+          spocId = othersMapping.spoc_user_id.toString()
+          console.log("[v0] SPOC from 'Others' mapping:", spocId)
+        } else if (!spocId) {
+          console.warn("[v0] No SPOC in 'Others' mapping and no existing SPOC")
+        }
+      } else {
+        // No "Others" mapping found, use subcategory data
+        descriptionText = othersSubcategory.input_template || othersSubcategory.description || ""
+      }
 
- // Update form to use "Others" category/subcategory
- setFormData((prev) => ({
- ...prev,
- categoryId: othersCategory.id.toString(),
- subcategoryId: othersSubcategory.id.toString(),
- description: descriptionText,
- estimatedDuration: durationText,
- spocId: spocId,
- }))
- return
- } else {
- // Fallback to subcategory data if available
- const durationMinutes = selectedSubcat.estimated_duration_minutes || 0
- // Convert minutes to hours (rounded up) for the numeric input field
- if (durationMinutes > 0) {
- const hours = Math.ceil(durationMinutes / 60)
- durationText = hours.toString()
- }
- descriptionText = selectedSubcat.input_template || ""
- }
- }
+      // Update form to use "Others" category/subcategory
+      setFormData((prev) => ({
+        ...prev,
+        categoryId: othersCategory.id.toString(),
+        subcategoryId: othersSubcategory.id.toString(),
+        description: descriptionText,
+        estimatedDuration: durationText,
+        spocId: spocId,
+      }))
+      return
+    } else {
+      // Fallback to subcategory data if available
+      const durationMinutes = selectedSubcat.estimated_duration_minutes || 0
+      // Convert minutes to hours (rounded up) for the numeric input field
+      if (durationMinutes > 0) {
+        const hours = Math.ceil(durationMinutes / 60)
+        durationText = hours.toString()
+      }
+      descriptionText = selectedSubcat.input_template || selectedSubcat.description || ""
+    }
+  }
 
  setFormData((prev) => ({
  ...prev,
