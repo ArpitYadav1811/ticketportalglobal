@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Trash2, Edit } from "lucide-react"
 import { getTeamMembers, removeTeamMember } from "@/lib/actions/teams"
+import { toast } from "sonner"
 
 interface TeamMember {
   id: number
@@ -47,9 +48,10 @@ export default function TeamsList({ onEdit, refresh }: TeamsListProps) {
     if (confirm(`Are you sure you want to remove ${name} from the team?`)) {
       const result = await removeTeamMember(id)
       if (result.success) {
+        toast.success("Team member removed successfully")
         await loadMembers()
       } else {
-        alert("Failed to remove team member")
+        toast.error("Failed to remove team member")
       }
     }
   }

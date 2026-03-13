@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { getUsers } from "@/lib/actions/tickets"
 import { getTeams, addTeamMember, updateTeamMember } from "@/lib/actions/teams"
 import { Combobox } from "@/components/ui/combobox"
+import { toast } from "sonner"
 
 interface AddTeamMemberModalProps {
  isOpen: boolean
@@ -79,13 +80,14 @@ export default function AddTeamMemberModal({ isOpen, onClose, onSuccess, editMem
  }
 
  if (result.success) {
+ toast.success(editMember ? "Team member updated successfully" : "Team member added successfully")
  onSuccess()
  onClose()
  } else {
- alert(result.error || "Failed to save team member")
+ toast.error(result.error || "Failed to save team member")
  }
  } catch (error) {
- alert("An error occurred")
+ toast.error("An error occurred")
  } finally {
  setSaving(false)
  }

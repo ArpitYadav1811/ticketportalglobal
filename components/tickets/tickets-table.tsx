@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
 import { Eye, Edit, Download, Paperclip, FileDown, UserPlus, FileText, History, Search, Filter, RefreshCw, Loader2, AlertCircle } from "lucide-react"
+import { toast } from "sonner"
 import {
  getTickets,
  getTicketById,
@@ -317,9 +318,10 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  const handleAssigneeChange = async (ticketId: number, newAssigneeId: number | null) => {
  const result = await updateTicketAssignee(ticketId, newAssigneeId || 0)
  if (result.success) {
+ toast.success("Assignee updated successfully")
  loadTicketsMemo()
  } else {
- alert("Failed to update assignee")
+ toast.error("Failed to update assignee")
  }
  }
 
@@ -343,9 +345,10 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  if (selectedTicketForProject) {
  const result = await updateTicketProject(selectedTicketForProject.id, projectId)
  if (result.success) {
+ toast.success("Project updated successfully")
  loadTicketsMemo()
  } else {
- alert("Failed to update project")
+ toast.error("Failed to update project")
  }
  }
  }
@@ -454,7 +457,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
       const { softDeleteTicket } = await import("@/lib/actions/tickets")
       result = await softDeleteTicket(selectedTicketForStatusChange.id)
       if (result.success && result.message) {
-        alert(result.message)
+        toast.success(result.message)
       }
     } else {
       result = await updateTicketStatus(
@@ -471,10 +474,11 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
       setIsStatusChangeModalOpen(false)
       setSelectedTicketForStatusChange(null)
       setSelectedNewStatus("")
+      toast.success("Ticket status updated successfully")
       // Reload tickets to get updated status
       loadTicketsMemo()
     } else {
-      alert("Failed to update status: " + (result.error || "Unknown error"))
+      toast.error("Failed to update status: " + (result.error || "Unknown error"))
     }
   }
 

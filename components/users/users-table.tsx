@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X, Users, Building2 } from "lucide-react"
+import { toast } from "sonner"
 import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles, updateUserPasswordAsAdmin } from "@/lib/actions/users"
 import { updateUserRole, updateUserBusinessGroup } from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
@@ -81,9 +82,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setProcessingId(user.id)
     const result = await deactivateUser(user.id)
     if (result.success) {
+      toast.success(`${user.full_name} deactivated successfully`)
       onRefresh()
     } else {
-      alert(result.error || "Failed to deactivate user")
+      toast.error(result.error || "Failed to deactivate user")
     }
     setProcessingId(null)
   }
@@ -92,9 +94,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setProcessingId(user.id)
     const result = await activateUser(user.id)
     if (result.success) {
+      toast.success(`${user.full_name} activated successfully`)
       onRefresh()
     } else {
-      alert(result.error || "Failed to activate user")
+      toast.error(result.error || "Failed to activate user")
     }
     setProcessingId(null)
   }
@@ -110,9 +113,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setProcessingId(user.id)
     const result = await deleteUser(user.id)
     if (result.success) {
+      toast.success(`${user.full_name} deleted successfully`)
       onRefresh()
     } else {
-      alert(result.error || "Failed to delete user")
+      toast.error(result.error || "Failed to delete user")
     }
     setProcessingId(null)
   }
@@ -153,8 +157,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
       setPasswordDialogOpen(false)
       setNewPassword("")
       setConfirmPassword("")
+      const userName = selectedUser.full_name
       setSelectedUser(null)
-      alert(`Password updated successfully for ${selectedUser.full_name}`)
+      toast.success(`Password updated successfully for ${userName}`)
+      onRefresh()
     } else {
       setPasswordError(result.error || "Failed to update password")
     }
@@ -172,7 +178,7 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
 
   const handleInlineRoleChange = async (userId: number, newRole: string, userName: string) => {
     if (userId === currentUserId) {
-      alert("Cannot change your own role")
+      toast.error("Cannot change your own role")
       return
     }
     if (!confirm(`Change ${userName}'s role to "${formatRoleName(newRole)}"?`)) return
@@ -180,9 +186,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setRoleChangingId(userId)
     const result = await updateUserRole(userId, newRole)
     if (result.success) {
+      toast.success(`${userName}'s role updated to ${formatRoleName(newRole)}`)
       onRefresh()
     } else {
-      alert(result.error || "Failed to update role")
+      toast.error(result.error || "Failed to update role")
     }
     setRoleChangingId(null)
   }
@@ -197,9 +204,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setBgChangingId(userId)
     const result = await updateUserBusinessGroup(userId, newBusinessGroupId)
     if (result.success) {
+      toast.success(`${userName}'s business group updated successfully`)
       onRefresh()
     } else {
-      alert(result.error || "Failed to update business group")
+      toast.error(result.error || "Failed to update business group")
     }
     setBgChangingId(null)
   }

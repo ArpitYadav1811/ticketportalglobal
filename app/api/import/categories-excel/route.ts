@@ -172,16 +172,7 @@ export async function POST(request: NextRequest) {
       // Parse estimated hours and convert to minutes (database stores minutes)
       let estimatedDurationMinutes = 60; // Default: 1 hour = 60 minutes
       
-      // Special case: If Category is "Other" and Sub Category is "Other", set to 8 hours
-      const categoryTrimmed = category?.toString().trim().toLowerCase();
-      const subcategoryTrimmed = subcategory?.toString().trim().toLowerCase();
-      if ((categoryTrimmed === 'other' || categoryTrimmed === 'others') && 
-          (subcategoryTrimmed === 'other' || subcategoryTrimmed === 'others')) {
-        estimatedDurationMinutes = 8 * 60; // 8 hours = 480 minutes
-        if (index === 0) {
-          console.log(`  Special case: Category "Other" + Sub Category "Other" -> Setting estimated time to 8 hours (480 minutes)`);
-        }
-      } else if (estimatedHrs) {
+      if (estimatedHrs) {
         const parsed = parseFloat(estimatedHrs.toString().trim());
         if (!isNaN(parsed) && parsed > 0) {
           // Convert hours to minutes
@@ -259,22 +250,23 @@ export async function POST(request: NextRequest) {
         if (existingSubcat.length > 0) {
           subcategoryId = existingSubcat[0].id;
           console.log(`  Subcategory "${subcat.name}" already exists (ID: ${subcategoryId})`);
-          // Update both description and input_template
+          // Update description, input_template, and estimated_duration_minutes
           await sql`
             UPDATE subcategories 
             SET description = ${subcat.description || null},
                 input_template = ${subcat.inputTemplate || subcat.description || null},
+                estimated_duration_minutes = ${subcat.estimatedDurationMinutes || null},
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ${subcategoryId}
           `;
         } else {
           const subcatResult = await sql`
-            INSERT INTO subcategories (name, category_id, description, input_template) 
-            VALUES (${subcat.name}, ${categoryId}, ${subcat.description || null}, ${subcat.inputTemplate || subcat.description || null}) 
+            INSERT INTO subcategories (name, category_id, description, input_template, estimated_duration_minutes) 
+            VALUES (${subcat.name}, ${categoryId}, ${subcat.description || null}, ${subcat.inputTemplate || subcat.description || null}, ${subcat.estimatedDurationMinutes || null}) 
             RETURNING id
           `;
           subcategoryId = subcatResult[0].id;
-          console.log(`  Created subcategory "${subcat.name}" (ID: ${subcategoryId})`);
+          console.log(`  Created subcategory "${subcat.name}" (ID: ${subcategoryId}, Est: ${subcat.estimatedDurationMinutes} mins)`);
           totalSubcategories++;
         }
 

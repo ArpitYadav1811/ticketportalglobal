@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect, useRef, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CheckCircle, X, Paperclip, Link2, Loader2, Check, AlertCircle } from "lucide-react"
+import { toast } from "sonner"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 import { createTicket, getUsers, addTicketReferences } from "@/lib/actions/tickets"
@@ -402,6 +403,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
     if (durationMinutes > 0) {
       const hours = Math.ceil(durationMinutes / 60)
       durationText = hours.toString()
+    } else {
+      // Default to 1 hour if no duration found
+      durationText = "1"
     }
     const descriptionText = selectedSubcat.input_template || selectedSubcat.description || ""
     
@@ -481,6 +485,14 @@ const handleTargetBusinessGroupChange = async (value: string) => {
       } else {
         // No "Others" mapping found, use subcategory data
         descriptionText = othersSubcategory.input_template || othersSubcategory.description || ""
+        // Get estimated duration from subcategory
+        const durationMinutes = othersSubcategory.estimated_duration_minutes || 0
+        if (durationMinutes > 0) {
+          const hours = Math.ceil(durationMinutes / 60)
+          durationText = hours.toString()
+        } else {
+          durationText = "1" // Default to 1 hour
+        }
       }
 
       // Update form to use "Others" category/subcategory
@@ -500,6 +512,8 @@ const handleTargetBusinessGroupChange = async (value: string) => {
       if (durationMinutes > 0) {
         const hours = Math.ceil(durationMinutes / 60)
         durationText = hours.toString()
+      } else {
+        durationText = "1" // Default to 1 hour
       }
       descriptionText = selectedSubcat.input_template || selectedSubcat.description || ""
     }
@@ -528,7 +542,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  })
 
  if (invalidFiles.length > 0) {
- alert(`Files exceed 5MB limit: ${invalidFiles.join(", ")}`)
+ toast.error(`Files exceed 5MB limit: ${invalidFiles.join(", ")}`)
  }
 
  if (validFiles.length > 0) {
@@ -728,7 +742,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  console.log("[v0] Create ticket result:", result)
 
  if (!result.success) {
- alert(result.error || "Failed to create ticket")
+ toast.error(result.error || "Failed to create ticket")
  setIsLoading(false)
  return
  }
@@ -758,7 +772,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
 
  // Show warning if any uploads failed
  if (failedUploads.length > 0) {
- alert(`Ticket created but ${failedUploads.length} attachment(s) failed to upload: ${failedUploads.join(", ")}.\n\nNote: File uploads don't work on Vercel's free tier. Please use the Edit page to add attachments after deployment to a server with file storage.`)
+ toast.warning(`Ticket created but ${failedUploads.length} attachment(s) failed to upload: ${failedUploads.join(", ")}. Note: File uploads don't work on Vercel's free tier. Please use the Edit page to add attachments after deployment to a server with file storage.`)
  }
  }
 
@@ -780,11 +794,11 @@ const handleTargetBusinessGroupChange = async (value: string) => {
     refsToSave.map((t) => t.id)
    )
    if (!refResult.success) {
-    alert(`Reference tickets failed to save: ${refResult.error}`)
+    toast.error(`Reference tickets failed to save: ${refResult.error}`)
    }
   } catch (err) {
-   alert(`Reference tickets exception: ${err instanceof Error ? err.message : String(err)}`)
- }
+   toast.error(`Reference tickets exception: ${err instanceof Error ? err.message : String(err)}`)
+  }
  }
 
  // Show success dialog with ticket ID
@@ -797,7 +811,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  }
  } catch (err) {
  console.error("[v0] Error creating ticket:", err)
- alert(err instanceof Error ? err.message : "Failed to create ticket")
+ toast.error(err instanceof Error ? err.message : "Failed to create ticket")
  } finally {
  setIsLoading(false)
  }
