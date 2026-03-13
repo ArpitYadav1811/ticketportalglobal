@@ -4,7 +4,7 @@ import { sql } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
   try {
-    const { full_name, email, role } = await request.json()
+    const { full_name, email, role, password } = await request.json()
 
     if (!full_name || !email || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -29,8 +29,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
     }
 
-    const tempPassword = Math.random().toString(36).slice(-12) + "Temp1!"
-    const passwordHash = await bcrypt.hash(tempPassword, 10)
+    // Use provided password or generate temporary password
+    let finalPassword: string
+    let tempPassword: string | undefined
+    
+    if (password && password.trim()) {
+      // Validate custom password
+      if (password.length < 6) {
+        return NextResponse.json({ error: "Password must be at least 6 characters long" }, { status: 400 })
+      }
+      finalPassword = password
+    } else {
+      // Generate temporary password
+      tempPassword = Math.random().toString(36).slice(-12) + "Temp1!"
+      finalPassword = tempPassword
+    }
+
+    const passwordHash = await bcrypt.hash(finalPassword, 10)
 
     const result = await sql`
       INSERT INTO users (full_name, email, role, password_hash) VALUES (${full_name}, ${sanitizedEmail}, ${role}, ${passwordHash})
@@ -43,8 +58,10 @@ export async function POST(request: NextRequest) {
       {
         user: userResult,
         message: "User created successfully",
-        tempPassword: tempPassword,
-        note: "Share this temporary password with the user. They should change it on first login.",
+        tempPassword: tempPassword, // Only returned if temporary password was generated
+        note: tempPassword 
+          ? "Share this temporary password with the user. They should change it on first login."
+          : "User created with custom password.",
       },
       { status: 201 },
     )

@@ -20,16 +20,18 @@ export async function getBusinessUnitGroups() {
   try {
     const result = await sql`
       SELECT 
-        id,
-        name,
-        description,
-        spoc_name,
-        primary_spoc_name,
-        secondary_spoc_name,
-        created_at,
-        updated_at
-      FROM business_unit_groups
-      ORDER BY name ASC
+        bug.id,
+        bug.name,
+        bug.description,
+        COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
+        COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
+        COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+        bug.created_at,
+        bug.updated_at
+      FROM business_unit_groups bug
+      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
+      LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+      ORDER BY bug.name ASC
     `
     return { success: true, data: result }
   } catch (error) {
@@ -45,17 +47,38 @@ export async function getTargetBusinessGroups(organizationId?: number) {
     if (organizationId) {
       // Filter by functional area if provided
       result = await sql`
-        SELECT DISTINCT bug.*
+        SELECT DISTINCT 
+          bug.id,
+          bug.name,
+          bug.description,
+          COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
+          COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
+          COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+          bug.created_at,
+          bug.updated_at
         FROM business_unit_groups bug
         INNER JOIN functional_area_business_group_mapping fabgm ON bug.id = fabgm.target_business_group_id
+        LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
+        LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
         WHERE fabgm.functional_area_id = ${organizationId}
         ORDER BY bug.name ASC
       `
     } else {
       // Get all target business groups (same as business_unit_groups after merger)
       result = await sql`
-        SELECT * FROM business_unit_groups
-        ORDER BY name ASC
+        SELECT 
+          bug.id,
+          bug.name,
+          bug.description,
+          COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
+          COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
+          COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+          bug.created_at,
+          bug.updated_at
+        FROM business_unit_groups bug
+        LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
+        LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+        ORDER BY bug.name ASC
       `
     }
     return { success: true, data: result }
@@ -100,9 +123,19 @@ export async function getOrganizations() {
 export async function getTargetBusinessGroupsByOrganization(organizationId: number) {
 try {
     const result = await sql`
-      SELECT DISTINCT bug.*
+      SELECT DISTINCT 
+        bug.id,
+        bug.name,
+        bug.description,
+        COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
+        COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
+        COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+        bug.created_at,
+        bug.updated_at
       FROM business_unit_groups bug
       INNER JOIN functional_area_business_group_mapping fabgm ON bug.id = fabgm.target_business_group_id
+      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
+      LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
       WHERE fabgm.functional_area_id = ${organizationId}
       ORDER BY bug.name ASC
     `
@@ -756,12 +789,12 @@ export async function getSpocForTargetBusinessGroup(targetBusinessGroupId: numbe
   try {
     const result = await sql`
       SELECT 
-        bug.spoc_name,
-        u.id,
-        u.full_name,
-        u.email
+        COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
+        pspoc.id,
+        pspoc.full_name,
+        pspoc.email
       FROM business_unit_groups bug
-      LEFT JOIN users u ON LOWER(TRIM(u.full_name)) = LOWER(TRIM(bug.spoc_name))
+      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
       WHERE bug.id = ${targetBusinessGroupId}
       LIMIT 1
     `

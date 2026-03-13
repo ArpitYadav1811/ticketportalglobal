@@ -400,7 +400,7 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
                   <SelectItem value="all" className="text-sm font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1">
                     All Roles
                   </SelectItem>
-                  {roles.map((r: any) => (
+                {roles.map((r: any) => (
                     <SelectItem 
                       key={r.value} 
                       value={r.value}

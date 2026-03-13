@@ -162,6 +162,15 @@ export async function updateUser(
       data.email = sanitizedEmail
     }
 
+    // Get old full_name before update to sync SPOC names in business_unit_groups
+    let oldFullName: string | null = null
+    if (data.fullName) {
+      const oldUser = await sql`SELECT full_name FROM users WHERE id = ${id}`
+      if (oldUser.length > 0) {
+        oldFullName = oldUser[0].full_name
+      }
+    }
+
     // Update user with all fields using Neon's template literals
     const result = await sql`
       UPDATE users
@@ -174,6 +183,31 @@ export async function updateUser(
       WHERE id = ${id}
       RETURNING id, email, full_name, role, avatar_url, created_at, updated_at
     `
+
+    // If full_name was updated, sync SPOC names in business_unit_groups
+    if (data.fullName && oldFullName && oldFullName !== data.fullName) {
+      try {
+        // Update primary SPOC name
+        await sql`
+          UPDATE business_unit_groups
+          SET spoc_name = ${data.fullName},
+              primary_spoc_name = ${data.fullName},
+              updated_at = CURRENT_TIMESTAMP
+          WHERE LOWER(TRIM(spoc_name)) = LOWER(TRIM(${oldFullName}))
+             OR LOWER(TRIM(primary_spoc_name)) = LOWER(TRIM(${oldFullName}))
+        `
+        // Update secondary SPOC name
+        await sql`
+          UPDATE business_unit_groups
+          SET secondary_spoc_name = ${data.fullName},
+              updated_at = CURRENT_TIMESTAMP
+          WHERE LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${oldFullName}))
+        `
+      } catch (syncError) {
+        console.error("Error syncing SPOC names in business_unit_groups:", syncError)
+        // Don't fail the user update if SPOC sync fails
+      }
+    }
 
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update user" }
