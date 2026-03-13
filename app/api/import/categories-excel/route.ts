@@ -171,7 +171,17 @@ export async function POST(request: NextRequest) {
 
       // Parse estimated hours and convert to minutes (database stores minutes)
       let estimatedDurationMinutes = 60; // Default: 1 hour = 60 minutes
-      if (estimatedHrs) {
+      
+      // Special case: If Category is "Other" and Sub Category is "Other", set to 8 hours
+      const categoryTrimmed = category?.toString().trim().toLowerCase();
+      const subcategoryTrimmed = subcategory?.toString().trim().toLowerCase();
+      if ((categoryTrimmed === 'other' || categoryTrimmed === 'others') && 
+          (subcategoryTrimmed === 'other' || subcategoryTrimmed === 'others')) {
+        estimatedDurationMinutes = 8 * 60; // 8 hours = 480 minutes
+        if (index === 0) {
+          console.log(`  Special case: Category "Other" + Sub Category "Other" -> Setting estimated time to 8 hours (480 minutes)`);
+        }
+      } else if (estimatedHrs) {
         const parsed = parseFloat(estimatedHrs.toString().trim());
         if (!isNaN(parsed) && parsed > 0) {
           // Convert hours to minutes
