@@ -841,13 +841,28 @@ export async function bulkDeleteAllMasterData() {
       return { success: false, error: "Unauthorized: Super Admin access required" }
     }
 
-    // Delete all mappings first
+    // Step 1: Delete all mappings first
     await sql`DELETE FROM ticket_classification_mapping`
     
-    // Delete subcategories (cascades handled by FK)
+    // Step 2: Get count of tickets that will be affected
+    const ticketsToUpdate = await sql`
+      SELECT COUNT(*) as count
+      FROM tickets 
+      WHERE category_id IS NOT NULL OR subcategory_id IS NOT NULL
+    `
+    const ticketsCount = ticketsToUpdate[0]?.count || 0
+    
+    // Step 3: Set category_id and subcategory_id to NULL in tickets to avoid FK constraint violations
+    await sql`
+      UPDATE tickets 
+      SET category_id = NULL, subcategory_id = NULL 
+      WHERE category_id IS NOT NULL OR subcategory_id IS NOT NULL
+    `
+    
+    // Step 4: Delete subcategories (now safe since tickets no longer reference them)
     const subcatResult = await sql`DELETE FROM subcategories RETURNING id`
     
-    // Delete categories
+    // Step 5: Delete categories
     const catResult = await sql`DELETE FROM categories RETURNING id`
 
     await addSystemAuditLog({
@@ -855,7 +870,7 @@ export async function bulkDeleteAllMasterData() {
       entityType: "master_data",
       performedBy: currentUser.id,
       performedByName: currentUser.full_name || currentUser.email || "Unknown",
-      notes: `Deleted ${catResult.length} categories, ${subcatResult.length} subcategories, and all classification mappings`,
+      notes: `Deleted ${catResult.length} categories, ${subcatResult.length} subcategories, and all classification mappings. Updated ${ticketsCount} tickets to remove category/subcategory references.`,
     })
 
     revalidatePath("/admin")
@@ -864,15 +879,17 @@ export async function bulkDeleteAllMasterData() {
 
     return { 
       success: true, 
-      message: `Successfully deleted ${catResult.length} categories and ${subcatResult.length} subcategories`,
+      message: `Successfully deleted ${catResult.length} categories and ${subcatResult.length} subcategories. ${ticketsCount} tickets were updated to remove category/subcategory references.`,
       deletedCount: {
         categories: catResult.length,
-        subcategories: subcatResult.length
+        subcategories: subcatResult.length,
+        ticketsUpdated: Number(ticketsCount)
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error bulk deleting master data:", error)
-    return { success: false, error: "Failed to delete master data" }
+    const errorMessage = error?.message || error?.detail || "Failed to delete master data"
+    return { success: false, error: errorMessage }
   }
 }
 
