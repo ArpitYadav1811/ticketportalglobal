@@ -21,24 +21,12 @@ import {
   X,
   Calendar,
   BarChart3,
-  List,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Maximize2,
 } from "lucide-react"
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts"
+// Chart imports removed - only showing list view now
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -73,7 +61,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<{ stats?: string; history?: string } | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  const [viewMode, setViewMode] = useState<"list" | "chart">("chart")
+  // Removed viewMode - only showing list view now
   const [sortOrder, setSortOrder] = useState<"date-asc" | "date-desc" | "count-asc" | "count-desc">("date-desc")
 
   const loadData = useCallback(async (forceRefresh = false) => {
@@ -221,12 +209,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
       : 0,
   } : null
 
-  // Prepare chart data
-  const chartData = filteredTicketHistory.map(item => ({
-    date: formatDate(item.date),
-    count: item.count,
-    fullDate: item.date,
-  }))
+  // Chart data removed - only showing list view now
 
   // Export functionality
   const handleExport = () => {
@@ -578,34 +561,6 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                    </div>
                  </div>
 
-                 {/* View Mode Toggle - Enhanced */}
-                 <div className="relative group/view">
-                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 via-purple-500/20 to-indigo-500/30 rounded-xl blur-xl opacity-0 group-hover/view:opacity-100 transition-opacity duration-500"></div>
-                   <div className="relative flex items-center gap-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-2 border-indigo-500/40 rounded-xl p-1 shadow-lg hover:shadow-xl hover:shadow-indigo-500/20 hover:border-indigo-500/60 transition-all duration-300">
-                     <button
-                       onClick={() => setViewMode("chart")}
-                       className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
-                         viewMode === "chart"
-                           ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md scale-105"
-                           : "text-muted-foreground hover:text-foreground hover:bg-indigo-500/10"
-                       }`}
-                     >
-                       <BarChart3 className="w-3.5 h-3.5" />
-                       <span>Chart</span>
-                     </button>
-                     <button
-                       onClick={() => setViewMode("list")}
-                       className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 ${
-                         viewMode === "list"
-                           ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md scale-105"
-                           : "text-muted-foreground hover:text-foreground hover:bg-indigo-500/10"
-                       }`}
-                     >
-                       <List className="w-3.5 h-3.5" />
-                       <span>List</span>
-                     </button>
-                   </div>
-                 </div>
                </div>
 
                {/* Second Row: Sort and Export - Enhanced */}
@@ -722,74 +677,9 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
              </div>
            )}
 
-           {/* Chart or List View */}
-           {viewMode === "chart" ? (
-             <div className="relative bg-gradient-to-br from-background/50 via-background/30 to-background/50 backdrop-blur-sm border-2 border-purple-500/20 rounded-lg p-3 mb-3">
-               {chartData.length > 0 ? (
-                 <div className="h-[350px] w-full">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                       <defs>
-                         <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="0%" stopColor="#a855f7" stopOpacity={0.8} />
-                           <stop offset="50%" stopColor="#6366f1" stopOpacity={0.8} />
-                           <stop offset="100%" stopColor="#a855f7" stopOpacity={0.4} />
-                         </linearGradient>
-                       </defs>
-                       <CartesianGrid strokeDasharray="3 3" stroke="#a855f7" opacity={0.2} />
-                       <XAxis 
-                         dataKey="date" 
-                         angle={-45}
-                         textAnchor="end"
-                         height={80}
-                         tick={{ fill: "currentColor", fontSize: 11 }}
-                         stroke="#a855f7"
-                         opacity={0.6}
-                       />
-                       <YAxis 
-                         tick={{ fill: "currentColor", fontSize: 11 }}
-                         stroke="#a855f7"
-                         opacity={0.6}
-                       />
-                       <Tooltip
-                         contentStyle={{
-                           backgroundColor: "rgba(0, 0, 0, 0.8)",
-                           border: "1px solid #a855f7",
-                           borderRadius: "8px",
-                           color: "#fff",
-                         }}
-                         labelStyle={{ color: "#a855f7", fontWeight: "bold" }}
-                         formatter={(value: any) => [value, "Tickets"]}
-                       />
-                       <Bar 
-                         dataKey="count" 
-                         radius={[8, 8, 0, 0]}
-                         fill="url(#barGradient)"
-                       >
-                         {chartData.map((entry, index) => (
-                           <Cell 
-                             key={`cell-${index}`} 
-                             fill={entry.count === historyStats?.peakDay.count ? "#f59e0b" : undefined}
-                           />
-                         ))}
-                       </Bar>
-                     </BarChart>
-                   </ResponsiveContainer>
-                 </div>
-               ) : (
-                 <div className="h-[350px] flex items-center justify-center">
-                   <div className="text-center">
-                     <BarChart3 className="w-16 h-16 text-purple-600/40 mx-auto mb-4" />
-                     <p className="text-sm font-bold text-foreground">No data to display</p>
-                   </div>
-                 </div>
-               )}
-             </div>
-           ) : null}
-
-           {/* Enhanced History List - Only show in list mode */}
-           {viewMode === "list" && (
-             <div className="space-y-1.5 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+           {/* Enhanced History List with Detailed Ticket Information */}
+           {
+             <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
                {loading ? (
                <div className="text-center py-12">
                  <div className="relative w-12 h-12 mx-auto mb-4">
@@ -854,14 +744,14 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                  return (
                    <div
                      key={item.date || idx}
-                     className="group/item relative bg-gradient-to-r from-background/60 via-background/40 to-background/60 backdrop-blur-sm border-2 border-purple-500/20 rounded-lg p-3 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden"
+                     className="group/item relative bg-gradient-to-r from-background/70 via-background/50 to-background/70 backdrop-blur-sm border-2 border-purple-500/20 rounded-xl p-4 hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden"
                      style={{ animationDelay: `${idx * 50}ms` }}
                    >
                      {/* Animated background gradient */}
                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500"></div>
                      
                      {/* Progress bar background */}
-                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-500/10">
+                     <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-purple-500/10">
                        <div 
                          className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-500 transition-all duration-700 group-hover/item:shadow-lg group-hover/item:shadow-purple-500/50"
                          style={{ width: `${percentage}%` }}
@@ -872,45 +762,75 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                      <div className="absolute inset-0 -translate-x-full group-hover/item:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                      
                      {/* Left border accent with glow */}
-                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-purple-500 via-indigo-500 to-purple-500 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 shadow-lg shadow-purple-500/50"></div>
+                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-purple-500 via-indigo-500 to-purple-500 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 shadow-lg shadow-purple-500/50"></div>
                      
-                     <div className="relative z-10 flex items-center justify-between gap-4">
-                       <div className="flex items-center gap-4 flex-1">
-                         <div className="relative">
-                           <div className="p-2.5 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-xl shadow-md group-hover/item:shadow-lg group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-500 border border-purple-400/30">
-                             <Ticket className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                           </div>
-                           <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background shadow-sm"></div>
-                         </div>
-                         <div className="flex-1">
-                           <div className="flex items-center gap-2 mb-1">
-                             <Calendar className="w-3.5 h-3.5 text-purple-600/60" />
-                             <p className="text-sm font-extrabold text-foreground group-hover/item:text-purple-600 transition-colors bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                               {formatDate(item.date)}
-                             </p>
-                           </div>
-                           <div className="flex items-center gap-2">
-                             <div className="h-2 flex-1 max-w-[120px] bg-purple-500/10 rounded-full overflow-hidden">
-                               <div 
-                                 className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500"
-                                 style={{ width: `${percentage}%` }}
-                               ></div>
+                     <div className="relative z-10">
+                       {/* Header Row */}
+                       <div className="flex items-start justify-between gap-4 mb-3">
+                         <div className="flex items-center gap-3 flex-1">
+                           <div className="relative">
+                             <div className="p-3 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-xl shadow-md group-hover/item:shadow-lg group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-500 border border-purple-400/30">
+                               <Ticket className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                              </div>
-                             <span className="text-xs font-semibold text-muted-foreground">{percentage.toFixed(0)}%</span>
+                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background shadow-sm animate-pulse"></div>
+                           </div>
+                           <div className="flex-1">
+                             <div className="flex items-center gap-2 mb-1.5">
+                               <Calendar className="w-4 h-4 text-purple-600/70" />
+                               <p className="text-base font-extrabold text-foreground group-hover/item:text-purple-600 transition-colors">
+                                 {formatDate(item.date)}
+                               </p>
+                               <span className="px-2 py-0.5 bg-purple-500/20 text-purple-700 dark:text-purple-300 text-[10px] font-bold rounded-full">
+                                 {item.date}
+                               </span>
+                             </div>
+                             <div className="flex items-center gap-3 mt-2">
+                               <div className="h-2.5 flex-1 max-w-[150px] bg-purple-500/10 rounded-full overflow-hidden">
+                                 <div 
+                                   className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500"
+                                   style={{ width: `${percentage}%` }}
+                                 ></div>
+                               </div>
+                               <span className="text-xs font-bold text-muted-foreground">{percentage.toFixed(1)}% of peak</span>
+                             </div>
                            </div>
                          </div>
-                       </div>
-                       <div className="flex items-center gap-3">
                          <div className="text-right">
-                           <p className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                           <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                              {item.count}
                            </p>
-                           <p className="text-xs font-semibold text-muted-foreground">ticket{item.count !== 1 ? "s" : ""}</p>
+                           <p className="text-xs font-semibold text-muted-foreground">ticket{item.count !== 1 ? "s" : ""} created</p>
                          </div>
-                         <div className="px-4 py-2 bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-purple-500/20 backdrop-blur-sm border-2 border-purple-400/30 rounded-xl shadow-md group-hover/item:shadow-lg group-hover/item:border-purple-400/50 transition-all duration-300">
-                           <div className="flex items-center gap-1.5">
-                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                             <span className="text-xs font-bold text-purple-700 dark:text-purple-300">Active</span>
+                       </div>
+                       
+                       {/* Details Row */}
+                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-purple-500/20">
+                         <div className="flex items-center gap-2 p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                           <div>
+                             <p className="text-[10px] font-semibold text-muted-foreground">Total</p>
+                             <p className="text-sm font-bold text-purple-700 dark:text-purple-300">{item.count}</p>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2 p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                           <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                           <div>
+                             <p className="text-[10px] font-semibold text-muted-foreground">Date</p>
+                             <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">{formatDate(item.date)}</p>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                           <div>
+                             <p className="text-[10px] font-semibold text-muted-foreground">Status</p>
+                             <p className="text-sm font-bold text-green-700 dark:text-green-300">Active</p>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                           <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                           <div>
+                             <p className="text-[10px] font-semibold text-muted-foreground">Peak Ratio</p>
+                             <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{percentage.toFixed(0)}%</p>
                            </div>
                          </div>
                        </div>
@@ -920,7 +840,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                })
              )}
              </div>
-           )}
+           }
          </div>
        </div>
 
