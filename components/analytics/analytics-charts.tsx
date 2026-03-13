@@ -374,8 +374,8 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
 
       {/* ── Row 1: Category + Initiators (2-col) ────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Tickets by Category */}
-        <ChartCard title="Tickets by Category">
+        {/* Tickets by Initiator Category */}
+        <ChartCard title="Tickets by Initiator Category">
           <div className="overflow-x-auto">
             <div style={{ minWidth: Math.max(600, data.ticketsByCategory.length * 80) }}>
               <ResponsiveContainer width="100%" height={230}>
@@ -494,9 +494,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
 
       </div>
 
-      {/* ── Tickets by Initiator Groups ────────────────────── */}
+      {/* ── Tickets by Target Group Category ────────────────────── */}
       {data.ticketsByInitiatorGroup?.length > 0 && (
-        <ChartCard title="Tickets by Initiator Groups">
+        <ChartCard title="Tickets by Target Group Category">
           <div className="overflow-x-auto">
             <div style={{ minWidth: Math.max(600, data.ticketsByInitiatorGroup.length * 80) }}>
               <ResponsiveContainer width="100%" height={230}>

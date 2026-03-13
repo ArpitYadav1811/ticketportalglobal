@@ -136,13 +136,18 @@ export async function getAnalyticsData(
               GROUP BY bu.name ORDER BY ticket_count DESC
             `
 
-    // --- Tickets by Category ---
+    // --- Tickets by Initiator Category (Category of the initiator's business group) ---
+    // Shows tickets grouped by category, where the category belongs to the creator's business group
     const ticketsByCategory = hasCombinedFilter
       ? await sql`
-          SELECT c.name as category, COUNT(t.id) as ticket_count
-          FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
-          WHERE c.name IS NOT NULL
-            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+          SELECT 
+            COALESCE(c.name, 'Uncategorized') as category, 
+            COUNT(t.id) as ticket_count
+          FROM tickets t
+          LEFT JOIN categories c ON t.category_id = c.id
+          LEFT JOIN users creator ON t.created_by = creator.id
+          LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
               t.target_business_group_id = ANY(${businessGroupIds})
@@ -151,34 +156,50 @@ export async function getAnalyticsData(
               OR t.spoc_user_id = ${userId}
               ${hasTeamMembers ? sql`OR t.created_by = ANY(${teamMemberIds}) OR t.assigned_to = ANY(${teamMemberIds}) OR t.spoc_user_id = ANY(${teamMemberIds})` : sql``}
             )
+            AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
           GROUP BY c.name ORDER BY ticket_count DESC
         `
       : hasUserFilter
         ? await sql`
-            SELECT c.name as category, COUNT(t.id) as ticket_count
-            FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
-            WHERE c.name IS NOT NULL
-              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            SELECT 
+              COALESCE(c.name, 'Uncategorized') as category, 
+              COUNT(t.id) as ticket_count
+            FROM tickets t
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN users creator ON t.created_by = creator.id
+            LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
+            WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
             GROUP BY c.name ORDER BY ticket_count DESC
           `
         : hasGroupFilter
           ? await sql`
-              SELECT c.name as category, COUNT(t.id) as ticket_count
-              FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
-              WHERE c.name IS NOT NULL
-                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+              SELECT 
+                COALESCE(c.name, 'Uncategorized') as category, 
+                COUNT(t.id) as ticket_count
+              FROM tickets t
+              LEFT JOIN categories c ON t.category_id = c.id
+              LEFT JOIN users creator ON t.created_by = creator.id
+              LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
+              WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND t.target_business_group_id = ANY(${businessGroupIds})
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+                AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
               GROUP BY c.name ORDER BY ticket_count DESC
             `
           : await sql`
-              SELECT c.name as category, COUNT(t.id) as ticket_count
-              FROM tickets t LEFT JOIN categories c ON t.category_id = c.id
-              WHERE c.name IS NOT NULL
-                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+              SELECT 
+                COALESCE(c.name, 'Uncategorized') as category, 
+                COUNT(t.id) as ticket_count
+              FROM tickets t
+              LEFT JOIN categories c ON t.category_id = c.id
+              LEFT JOIN users creator ON t.created_by = creator.id
+              LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
+              WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+                AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
               GROUP BY c.name ORDER BY ticket_count DESC
             `
 
@@ -623,15 +644,17 @@ export async function getAnalyticsData(
               GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
             `
 
-    // --- Tickets by Initiator Groups ---
+    // --- Tickets by Target Group Category (Category of the target group for which ticket was raised) ---
+    // Shows tickets grouped by category, where the category belongs to the target business group
     const ticketsByInitiatorGroup = hasCombinedFilter
       ? await sql`
-          SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+          SELECT 
+            COALESCE(c.name, 'Uncategorized') as initiator_group, 
+            COUNT(t.id) as ticket_count
           FROM tickets t
-          LEFT JOIN users u ON t.created_by = u.id
-          LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
-          WHERE bug.name IS NOT NULL
-            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+          LEFT JOIN categories c ON t.category_id = c.id
+          LEFT JOIN business_unit_groups target_bg ON t.target_business_group_id = target_bg.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
               t.target_business_group_id = ANY(${businessGroupIds})
@@ -640,41 +663,48 @@ export async function getAnalyticsData(
               OR t.spoc_user_id = ${userId}
               ${hasTeamMembers ? sql`OR t.created_by = ANY(${teamMemberIds}) OR t.assigned_to = ANY(${teamMemberIds}) OR t.spoc_user_id = ANY(${teamMemberIds})` : sql``}
             )
-          GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
+            AND (c.business_unit_group_id = target_bg.id OR c.id IS NULL)
+          GROUP BY c.name ORDER BY ticket_count DESC LIMIT 10
         `
       : hasUserFilter
         ? await sql`
-            SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+            SELECT 
+              COALESCE(c.name, 'Uncategorized') as initiator_group, 
+              COUNT(t.id) as ticket_count
             FROM tickets t
-            LEFT JOIN users u ON t.created_by = u.id
-            LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
-            WHERE bug.name IS NOT NULL
-              AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN business_unit_groups target_bg ON t.target_business_group_id = target_bg.id
+            WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
               AND (t.created_by = ${userId} OR t.assigned_to = ${userId})
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-            GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
+              AND (c.business_unit_group_id = target_bg.id OR c.id IS NULL)
+            GROUP BY c.name ORDER BY ticket_count DESC LIMIT 10
           `
         : hasGroupFilter
           ? await sql`
-              SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+              SELECT 
+                COALESCE(c.name, 'Uncategorized') as initiator_group, 
+                COUNT(t.id) as ticket_count
               FROM tickets t
-              LEFT JOIN users u ON t.created_by = u.id
-              LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
-              WHERE bug.name IS NOT NULL
-                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+              LEFT JOIN categories c ON t.category_id = c.id
+              LEFT JOIN business_unit_groups target_bg ON t.target_business_group_id = target_bg.id
+              WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND t.target_business_group_id = ANY(${businessGroupIds})
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-              GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
+                AND (c.business_unit_group_id = target_bg.id OR c.id IS NULL)
+              GROUP BY c.name ORDER BY ticket_count DESC LIMIT 10
             `
           : await sql`
-              SELECT bug.name as initiator_group, COUNT(t.id) as ticket_count
+              SELECT 
+                COALESCE(c.name, 'Uncategorized') as initiator_group, 
+                COUNT(t.id) as ticket_count
               FROM tickets t
-              LEFT JOIN users u ON t.created_by = u.id
-              LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
-              WHERE bug.name IS NOT NULL
-                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+              LEFT JOIN categories c ON t.category_id = c.id
+              LEFT JOIN business_unit_groups target_bg ON t.target_business_group_id = target_bg.id
+              WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-              GROUP BY bug.name ORDER BY ticket_count DESC LIMIT 10
+                AND (c.business_unit_group_id = target_bg.id OR c.id IS NULL)
+              GROUP BY c.name ORDER BY ticket_count DESC LIMIT 10
             `
 
     // --- Tickets by SPOC ---

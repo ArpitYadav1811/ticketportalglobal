@@ -656,11 +656,35 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  if (formData.ticketType === "requirement") {
  ticketTitle = formData.title
  } else {
- const selectedCategory = categories.find((c) => c.id.toString() === formData.categoryId)
- const selectedSubcategory = subcategories.find((s) => s.id.toString() === formData.subcategoryId)
+ const selectedCategory = categories.find((c) => c.id.toString() === formData.categoryId || (formData.categoryId === "others" && (c.name === "Others" || c.name === "Other")))
+ const selectedSubcategory = subcategories.find((s) => s.id.toString() === formData.subcategoryId || (formData.subcategoryId === "others" && (s.name === "Others" || s.name === "Other")))
  ticketTitle = selectedSubcategory
- ? `${selectedCategory?.name} - ${selectedSubcategory?.name}`
- : selectedCategory?.name || "Untitled Ticket"
+ ? `${selectedCategory?.name || "Other"} - ${selectedSubcategory?.name || "Other"}`
+ : selectedCategory?.name || "Other"
+ }
+
+ // Handle "others" category/subcategory - find actual IDs
+ let finalCategoryId: number | null = null
+ let finalSubcategoryId: number | null = null
+
+ if (formData.categoryId === "others") {
+   // Find the "Others" category for the target business group
+   const othersCategory = categories.find((c) => c.name === "Others" || c.name === "Other")
+   if (othersCategory) {
+     finalCategoryId = othersCategory.id
+     // If subcategory is also "others", find the "Others" subcategory
+     if (formData.subcategoryId === "others") {
+       const othersSubcategory = subcategories.find((s) => (s.name === "Others" || s.name === "Other") && s.category_id === othersCategory.id)
+       if (othersSubcategory && typeof othersSubcategory.id === "number") {
+         finalSubcategoryId = othersSubcategory.id
+       }
+     } else if (formData.subcategoryId && formData.subcategoryId !== "N/A") {
+       finalSubcategoryId = Number(formData.subcategoryId) || null
+     }
+   }
+ } else {
+   finalCategoryId = formData.categoryId ? Number(formData.categoryId) : null
+   finalSubcategoryId = formData.subcategoryId && formData.subcategoryId !== "N/A" && formData.subcategoryId !== "others" ? Number(formData.subcategoryId) : null
  }
 
  const result = await createTicket({
@@ -668,8 +692,8 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  parentTicketId: isSubTicket && parentTicketId ? Number(parentTicketId) : null,
  targetBusinessGroupId: Number(formData.targetBusinessGroupId),
  projectId: formData.projectId ? Number(formData.projectId) : null,
- categoryId: formData.categoryId ? Number(formData.categoryId) : null,
- subcategoryId: formData.subcategoryId && formData.subcategoryId !== "N/A" ? Number(formData.subcategoryId) : null,
+ categoryId: finalCategoryId,
+ subcategoryId: finalSubcategoryId,
  title: ticketTitle,
  description: formData.description || "",
       estimatedDuration: Number(formData.estimatedDuration) || 0, // Convert string to number (hours)

@@ -169,7 +169,7 @@ export default function TicketsTableBody({
          <div className="text-xs font-medium text-foreground truncate" title={ticket.title || "Untitled"}>{ticket.title || "Untitled"}</div>
         ) : (
          <>
-          <div className="text-xs font-medium text-foreground truncate" title={ticket.category_name || "N/A"}>{ticket.category_name || "N/A"}</div>
+          <div className="text-xs font-medium text-foreground truncate" title={ticket.category_name || "Other"}>{ticket.category_name || "Other"}</div>
           {ticket.subcategory_name && (
            <div
             className="text-[11px] text-foreground-secondary truncate"

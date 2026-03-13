@@ -526,7 +526,7 @@ export default function TicketsTable({ filters, onExportReady, onTicketsChange, 
  "Type": ticket.ticket_type,
  "Ticket ID": ticket.ticket_id,
  "Title": ticket.ticket_type === "requirement" ? (ticket.title || "Untitled") : "-",
- "Category": ticket.ticket_type === "support" ? (ticket.category_name || "N/A") : "-",
+ "Category": ticket.ticket_type === "support" ? (ticket.category_name || "Other") : "-",
  "Subcategory": ticket.ticket_type === "support" ? (ticket.subcategory_name || "-") : "-",
  "Project": ticket.project_name || "-",
  "Release Date": ticket.estimated_release_date

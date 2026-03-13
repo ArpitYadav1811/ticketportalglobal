@@ -103,7 +103,7 @@ export default function RecentTickets() {
                   <td className="px-4 py-3">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-foreground">
-                        {ticket.category_name || "N/A"}
+                        {ticket.category_name || "Other"}
                       </span>
                       {ticket.subcategory_name && (
                         <span className="text-xs text-muted-foreground">
