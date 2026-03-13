@@ -54,15 +54,30 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
     categories: 0,
     teams: 0,
   })
-  const [ticketHistory, setTicketHistory] = useState<{ date: string; count: number }[]>([])
-  const [filteredTicketHistory, setFilteredTicketHistory] = useState<{ date: string; count: number }[]>([])
+  interface TicketHistoryItem {
+    id: number
+    ticket_id: string
+    title: string
+    description: string | null
+    status: string
+    created_at: string
+    created_by: number | null
+    creator_name: string | null
+    creator_email: string | null
+    assignee_name: string | null
+    spoc_name: string | null
+    category_name: string | null
+    business_group_name: string | null
+    target_business_group_name: string | null
+  }
+  const [ticketHistory, setTicketHistory] = useState<TicketHistoryItem[]>([])
+  const [filteredTicketHistory, setFilteredTicketHistory] = useState<TicketHistoryItem[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [timeFilter, setTimeFilter] = useState<"today" | "7days" | "30days" | "90days" | "overall">("30days")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<{ stats?: string; history?: string } | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  // Removed viewMode - only showing list view now
-  const [sortOrder, setSortOrder] = useState<"date-asc" | "date-desc" | "count-asc" | "count-desc">("date-desc")
+  const [sortOrder, setSortOrder] = useState<"date-desc" | "date-asc" | "title-asc" | "title-desc">("date-desc")
 
   const loadData = useCallback(async (forceRefresh = false) => {
     try {
@@ -73,11 +88,12 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
       const cacheKey = "overview-dashboard"
       if (!forceRefresh) {
         const cachedStats = adminCache.get<typeof stats>(`${cacheKey}-stats`)
-        const cachedHistory = adminCache.get<{ date: string; count: number }[]>(`${cacheKey}-history`)
+        const cachedHistory = adminCache.get<TicketHistoryItem[]>(`${cacheKey}-history`)
 
         if (cachedStats && cachedHistory) {
           setStats(cachedStats)
           setTicketHistory(cachedHistory)
+          setFilteredTicketHistory(cachedHistory)
           setLoading(false)
           // Still fetch in background for fresh data
         }
@@ -107,8 +123,20 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
 
       if (historyResult.success && historyResult.data) {
         const historyData = (historyResult.data || []).map((item: any) => ({
-          date: item.date || "",
-          count: Number(item.count || 0),
+          id: item.id || 0,
+          ticket_id: item.ticket_id || "",
+          title: item.title || "",
+          description: item.description || null,
+          status: item.status || "",
+          created_at: item.created_at || "",
+          created_by: item.created_by || null,
+          creator_name: item.creator_name || null,
+          creator_email: item.creator_email || null,
+          assignee_name: item.assignee_name || null,
+          spoc_name: item.spoc_name || null,
+          category_name: item.category_name || null,
+          business_group_name: item.business_group_name || null,
+          target_business_group_name: item.target_business_group_name || null,
         }))
         setTicketHistory(historyData)
         setFilteredTicketHistory(historyData)
@@ -175,23 +203,30 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
     // Apply search filter
     if (searchQuery.trim()) {
       filtered = ticketHistory.filter((item) => {
-        const dateStr = formatDate(item.date).toLowerCase()
-        const countStr = item.count.toString()
         const searchLower = searchQuery.toLowerCase()
-        return dateStr.includes(searchLower) || countStr.includes(searchLower)
+        const title = (item.title || "").toLowerCase()
+        const ticketId = (item.ticket_id || "").toLowerCase()
+        const creator = (item.creator_name || "").toLowerCase()
+        const category = (item.category_name || "").toLowerCase()
+        const dateStr = formatDate(item.created_at).toLowerCase()
+        return title.includes(searchLower) || 
+               ticketId.includes(searchLower) || 
+               creator.includes(searchLower) || 
+               category.includes(searchLower) ||
+               dateStr.includes(searchLower)
       })
     }
     
     // Apply sorting
     const sorted = [...filtered].sort((a, b) => {
       if (sortOrder === "date-asc") {
-        return new Date(a.date).getTime() - new Date(b.date).getTime()
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       } else if (sortOrder === "date-desc") {
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
-      } else if (sortOrder === "count-asc") {
-        return a.count - b.count
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      } else if (sortOrder === "title-asc") {
+        return (a.title || "").localeCompare(b.title || "")
       } else {
-        return b.count - a.count
+        return (b.title || "").localeCompare(a.title || "")
       }
     })
     
@@ -200,13 +235,10 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
 
   // Calculate additional statistics
   const historyStats = filteredTicketHistory.length > 0 ? {
-    totalTickets: filteredTicketHistory.reduce((sum, item) => sum + item.count, 0),
-    averagePerDay: Math.round(filteredTicketHistory.reduce((sum, item) => sum + item.count, 0) / filteredTicketHistory.length),
-    peakDay: filteredTicketHistory.reduce((max, item) => item.count > max.count ? item : max, filteredTicketHistory[0]),
-    minDay: filteredTicketHistory.reduce((min, item) => item.count < min.count ? item : min, filteredTicketHistory[0]),
-    trend: filteredTicketHistory.length >= 2 
-      ? filteredTicketHistory[filteredTicketHistory.length - 1].count - filteredTicketHistory[0].count
-      : 0,
+    totalTickets: filteredTicketHistory.length,
+    averagePerDay: Math.round(filteredTicketHistory.length / (timeFilter === "today" ? 1 : timeFilter === "7days" ? 7 : timeFilter === "30days" ? 30 : timeFilter === "90days" ? 90 : 365)),
+    peakDay: { date: filteredTicketHistory[0]?.created_at || "", count: 1 }, // Just show first ticket date
+    trend: 0, // Not applicable for individual tickets
   } : null
 
   // Chart data removed - only showing list view now
@@ -214,8 +246,17 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
   // Export functionality
   const handleExport = () => {
     const csv = [
-      ["Date", "Tickets Created"],
-      ...filteredTicketHistory.map(item => [formatDate(item.date), item.count.toString()])
+      ["Ticket ID", "Title", "Creator", "Status", "Category", "Created At", "Assignee", "SPOC"],
+      ...filteredTicketHistory.map(item => [
+        item.ticket_id || "",
+        (item.title || "").replace(/,/g, ";"),
+        item.creator_name || "",
+        item.status || "",
+        item.category_name || "",
+        formatDate(item.created_at),
+        item.assignee_name || "Unassigned",
+        item.spoc_name || "Unassigned"
+      ])
     ].map(row => row.join(",")).join("\n")
     
     const blob = new Blob([csv], { type: "text/csv" })
@@ -227,7 +268,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
     a.click()
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
-    toast.success("History exported successfully")
+    toast.success("Ticket history exported successfully")
   }
 
   const statCards = [
@@ -545,7 +586,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                      </div>
                      <input
                        type="text"
-                       placeholder="Search by date or count..."
+                       placeholder="Search by ticket ID, title, creator, or category..."
                        value={searchQuery}
                        onChange={(e) => setSearchQuery(e.target.value)}
                        className="flex-1 bg-transparent border-none outline-none text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 focus:ring-0"
@@ -586,11 +627,11 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                          <SelectItem value="date-asc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
                            Date (Oldest First)
                          </SelectItem>
-                         <SelectItem value="count-desc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Count (High to Low)
+                         <SelectItem value="title-asc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
+                           Title (A-Z)
                          </SelectItem>
-                         <SelectItem value="count-asc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Count (Low to High)
+                         <SelectItem value="title-desc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
+                           Title (Z-A)
                          </SelectItem>
                        </SelectContent>
                      </Select>
@@ -616,62 +657,32 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
 
            {/* Enhanced Stats Summary */}
            {!loading && historyStats && (
-             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                <div className="relative bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-transparent border border-purple-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
                  <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Total Days</p>
+                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Total Tickets</p>
                    <p className="text-xl font-extrabold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-                     {filteredTicketHistory.length}
+                     {historyStats.totalTickets.toLocaleString()}
                    </p>
                  </div>
                </div>
                <div className="relative bg-gradient-to-br from-indigo-500/20 via-indigo-500/10 to-transparent border border-indigo-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
                  <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Total Tickets</p>
+                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Avg. Per Day</p>
                    <p className="text-xl font-extrabold bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
-                     {historyStats.totalTickets.toLocaleString()}
+                     {historyStats.averagePerDay}
                    </p>
                  </div>
                </div>
                <div className="relative bg-gradient-to-br from-green-500/20 via-green-500/10 to-transparent border border-green-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
                  <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Avg. Per Day</p>
+                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Showing</p>
                    <p className="text-xl font-extrabold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
-                     {historyStats.averagePerDay}
+                     {filteredTicketHistory.length}
                    </p>
-                 </div>
-               </div>
-               <div className="relative bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
-                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
-                 <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Peak Day</p>
-                   <p className="text-base font-extrabold bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
-                     {historyStats.peakDay.count}
-                   </p>
-                   <p className="text-[9px] text-muted-foreground mt-0.5">{formatDate(historyStats.peakDay.date)}</p>
-                 </div>
-               </div>
-               <div className="relative bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-transparent border border-blue-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
-                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
-                 <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Trend</p>
-                   <div className="flex items-center gap-1">
-                     {historyStats.trend > 0 ? (
-                       <ArrowUp className="w-3.5 h-3.5 text-green-500" />
-                     ) : historyStats.trend < 0 ? (
-                       <ArrowDown className="w-3.5 h-3.5 text-red-500" />
-                     ) : (
-                       <Activity className="w-3.5 h-3.5 text-muted-foreground" />
-                     )}
-                     <p className={`text-base font-extrabold ${
-                       historyStats.trend > 0 ? "text-green-600" : historyStats.trend < 0 ? "text-red-600" : "text-muted-foreground"
-                     }`}>
-                       {historyStats.trend > 0 ? "+" : ""}{historyStats.trend}
-                     </p>
-                   </div>
                  </div>
                </div>
              </div>
@@ -697,7 +708,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                      <Ticket className="w-10 h-10 text-purple-600/60" />
                    </div>
                  </div>
-                 <p className="text-base font-bold text-foreground mb-1">No tickets created in the last 30 days</p>
+                 <p className="text-base font-bold text-foreground mb-1">No tickets found</p>
                  <p className="text-xs text-muted-foreground">Ticket creation history will appear here</p>
                </div>
              ) : error?.history ? (
@@ -738,100 +749,89 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                </div>
              ) : (
                filteredTicketHistory.map((item, idx) => {
-                 const maxCount = Math.max(...ticketHistory.map(i => i.count), 1)
-                 const percentage = (item.count / maxCount) * 100
+                 const createdDate = new Date(item.created_at)
+                 const timeStr = createdDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
                  
                  return (
                    <div
-                     key={item.date || idx}
-                     className="group/item relative bg-gradient-to-r from-background/70 via-background/50 to-background/70 backdrop-blur-sm border-2 border-purple-500/20 rounded-xl p-4 hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden"
+                     key={item.id || idx}
+                     className="group/item relative bg-gradient-to-r from-background/60 via-background/40 to-background/60 backdrop-blur-sm border-2 border-purple-500/20 rounded-lg p-3 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden"
                      style={{ animationDelay: `${idx * 50}ms` }}
                    >
                      {/* Animated background gradient */}
                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500"></div>
                      
-                     {/* Progress bar background */}
-                     <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-purple-500/10">
-                       <div 
-                         className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-500 transition-all duration-700 group-hover/item:shadow-lg group-hover/item:shadow-purple-500/50"
-                         style={{ width: `${percentage}%` }}
-                       ></div>
-                     </div>
-                     
                      {/* Hover shine effect */}
                      <div className="absolute inset-0 -translate-x-full group-hover/item:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                      
                      {/* Left border accent with glow */}
-                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-purple-500 via-indigo-500 to-purple-500 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 shadow-lg shadow-purple-500/50"></div>
+                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-purple-500 via-indigo-500 to-purple-500 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 shadow-lg shadow-purple-500/50"></div>
                      
-                     <div className="relative z-10">
-                       {/* Header Row */}
-                       <div className="flex items-start justify-between gap-4 mb-3">
-                         <div className="flex items-center gap-3 flex-1">
-                           <div className="relative">
-                             <div className="p-3 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-xl shadow-md group-hover/item:shadow-lg group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-500 border border-purple-400/30">
-                               <Ticket className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                             </div>
-                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background shadow-sm animate-pulse"></div>
-                           </div>
-                           <div className="flex-1">
-                             <div className="flex items-center gap-2 mb-1.5">
-                               <Calendar className="w-4 h-4 text-purple-600/70" />
-                               <p className="text-base font-extrabold text-foreground group-hover/item:text-purple-600 transition-colors">
-                                 {formatDate(item.date)}
-                               </p>
-                               <span className="px-2 py-0.5 bg-purple-500/20 text-purple-700 dark:text-purple-300 text-[10px] font-bold rounded-full">
-                                 {item.date}
-                               </span>
-                             </div>
-                             <div className="flex items-center gap-3 mt-2">
-                               <div className="h-2.5 flex-1 max-w-[150px] bg-purple-500/10 rounded-full overflow-hidden">
-                                 <div 
-                                   className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500"
-                                   style={{ width: `${percentage}%` }}
-                                 ></div>
-                               </div>
-                               <span className="text-xs font-bold text-muted-foreground">{percentage.toFixed(1)}% of peak</span>
-                             </div>
-                           </div>
-                         </div>
-                         <div className="text-right">
-                           <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                             {item.count}
-                           </p>
-                           <p className="text-xs font-semibold text-muted-foreground">ticket{item.count !== 1 ? "s" : ""} created</p>
+                     <div className="relative z-10 flex items-start gap-4">
+                       <div className="relative flex-shrink-0">
+                         <div className="p-2.5 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-xl shadow-md group-hover/item:shadow-lg group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-500 border border-purple-400/30">
+                           <Ticket className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                          </div>
                        </div>
-                       
-                       {/* Details Row */}
-                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-purple-500/20">
-                         <div className="flex items-center gap-2 p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                           <div>
-                             <p className="text-[10px] font-semibold text-muted-foreground">Total</p>
-                             <p className="text-sm font-bold text-purple-700 dark:text-purple-300">{item.count}</p>
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-start justify-between gap-3 mb-2">
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2 mb-1">
+                               <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded">
+                                 {item.ticket_id || `#${item.id}`}
+                               </span>
+                               <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                                 item.status === "open" ? "bg-blue-500/20 text-blue-700 dark:text-blue-300" :
+                                 item.status === "resolved" ? "bg-green-500/20 text-green-700 dark:text-green-300" :
+                                 item.status === "closed" ? "bg-gray-500/20 text-gray-700 dark:text-gray-300" :
+                                 "bg-amber-500/20 text-amber-700 dark:text-amber-300"
+                               }`}>
+                                 {item.status || "open"}
+                               </span>
+                             </div>
+                             <p className="text-sm font-bold text-foreground mb-1 line-clamp-2 group-hover/item:text-purple-600 transition-colors">
+                               {item.title || "No title"}
+                             </p>
+                             {item.description && (
+                               <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                                 {item.description}
+                               </p>
+                             )}
                            </div>
                          </div>
-                         <div className="flex items-center gap-2 p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                           <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                           <div>
-                             <p className="text-[10px] font-semibold text-muted-foreground">Date</p>
-                             <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">{formatDate(item.date)}</p>
+                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                           <div className="flex items-center gap-1.5">
+                             <Calendar className="w-3.5 h-3.5 text-purple-600/60" />
+                             <span className="font-semibold">{formatDate(item.created_at)}</span>
+                             <span className="text-muted-foreground/60">at {timeStr}</span>
                            </div>
-                         </div>
-                         <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
-                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                           <div>
-                             <p className="text-[10px] font-semibold text-muted-foreground">Status</p>
-                             <p className="text-sm font-bold text-green-700 dark:text-green-300">Active</p>
-                           </div>
-                         </div>
-                         <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                           <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                           <div>
-                             <p className="text-[10px] font-semibold text-muted-foreground">Peak Ratio</p>
-                             <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{percentage.toFixed(0)}%</p>
-                           </div>
+                           {item.creator_name && (
+                             <>
+                               <span className="text-muted-foreground/60">•</span>
+                               <div className="flex items-center gap-1.5">
+                                 <Users className="w-3.5 h-3.5 text-indigo-600/60" />
+                                 <span className="font-semibold">Created by: <span className="text-foreground font-bold">{item.creator_name}</span></span>
+                               </div>
+                             </>
+                           )}
+                           {item.category_name && (
+                             <>
+                               <span className="text-muted-foreground/60">•</span>
+                               <span className="font-semibold">Category: <span className="text-foreground font-bold">{item.category_name}</span></span>
+                             </>
+                           )}
+                           {item.assignee_name && (
+                             <>
+                               <span className="text-muted-foreground/60">•</span>
+                               <span className="font-semibold">Assignee: <span className="text-foreground font-bold">{item.assignee_name}</span></span>
+                             </>
+                           )}
+                           {item.spoc_name && (
+                             <>
+                               <span className="text-muted-foreground/60">•</span>
+                               <span className="font-semibold">SPOC: <span className="text-foreground font-bold">{item.spoc_name}</span></span>
+                             </>
+                           )}
                          </div>
                        </div>
                      </div>

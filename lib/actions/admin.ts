@@ -1065,32 +1065,52 @@ export async function getTicketCreationHistory(days: number = 30) {
       return { success: false, error: "Unauthorized: Super Admin access required" }
     }
 
-    // For "today", get only today's date
-    if (days === 1) {
-      const result = await sql`
-        SELECT 
-          TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
-          COUNT(*) as count
-        FROM tickets
-        WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-          AND DATE(created_at) = CURRENT_DATE
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) DESC
-      `
-      return { success: true, data: result }
+    // Determine date filter
+    let dateFilter = `AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${days}`
+    let limitClause = `LIMIT 100` // Default limit
+
+    if (days === 1) { // Today
+      dateFilter = `AND DATE(created_at) = CURRENT_DATE`
+      limitClause = `LIMIT 200` // More tickets for today
+    } else if (days === 3650) { // Overall (10 years)
+      dateFilter = `` // No date filter
+      limitClause = `LIMIT 500` // More tickets for overall
+    } else if (days <= 7) {
+      limitClause = `LIMIT 150`
+    } else if (days <= 30) {
+      limitClause = `LIMIT 200`
+    } else if (days <= 90) {
+      limitClause = `LIMIT 300`
     }
 
-    // For other periods, use the interval
+    // Fetch individual tickets with details
     const result = await sql`
       SELECT 
-        TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
-        COUNT(*) as count
-      FROM tickets
-      WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-        AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${days}
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) DESC
-      LIMIT ${days > 90 ? 1000 : days + 10}
+        t.id,
+        t.ticket_id,
+        t.title,
+        t.description,
+        t.status,
+        t.created_at,
+        t.created_by,
+        creator.full_name as creator_name,
+        creator.email as creator_email,
+        a.full_name as assignee_name,
+        spoc.full_name as spoc_name,
+        c.name as category_name,
+        bug.name as business_group_name,
+        tbg.name as target_business_group_name
+      FROM tickets t
+      LEFT JOIN users creator ON t.created_by = creator.id
+      LEFT JOIN users a ON t.assigned_to = a.id
+      LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
+      LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
+      WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+        ${sql.unsafe(dateFilter)}
+      ORDER BY t.created_at DESC
+      ${sql.unsafe(limitClause)}
     `
 
     return { success: true, data: result }
