@@ -64,11 +64,13 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
     created_by: number | null
     creator_name: string | null
     creator_email: string | null
+    creator_role: string | null
     assignee_name: string | null
     spoc_name: string | null
     category_name: string | null
     business_group_name: string | null
     target_business_group_name: string | null
+    organization_name: string | null
   }
   const [ticketHistory, setTicketHistory] = useState<TicketHistoryItem[]>([])
   const [filteredTicketHistory, setFilteredTicketHistory] = useState<TicketHistoryItem[]>([])
@@ -132,11 +134,13 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
           created_by: item.created_by || null,
           creator_name: item.creator_name || null,
           creator_email: item.creator_email || null,
+          creator_role: item.creator_role || null,
           assignee_name: item.assignee_name || null,
           spoc_name: item.spoc_name || null,
           category_name: item.category_name || null,
           business_group_name: item.business_group_name || null,
           target_business_group_name: item.target_business_group_name || null,
+          organization_name: item.organization_name || null,
         }))
         setTicketHistory(historyData)
         setFilteredTicketHistory(historyData)
@@ -246,16 +250,17 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
   // Export functionality
   const handleExport = () => {
     const csv = [
-      ["Ticket ID", "Title", "Creator", "Status", "Category", "Created At", "Assignee", "SPOC"],
+      ["Ticket ID", "Title", "Creator", "Role", "Status", "Category", "Business Group", "Functional Area", "Created At"],
       ...filteredTicketHistory.map(item => [
-        item.ticket_id || "",
+        item.ticket_id ? item.ticket_id.replace(/^TKT-\d{6}-/, '') : "",
         (item.title || "").replace(/,/g, ";"),
         item.creator_name || "",
+        item.creator_role || "",
         item.status || "",
         item.category_name || "",
-        formatDate(item.created_at),
-        item.assignee_name || "Unassigned",
-        item.spoc_name || "Unassigned"
+        item.target_business_group_name || "",
+        item.organization_name || "",
+        formatDate(item.created_at)
       ])
     ].map(row => row.join(",")).join("\n")
     
@@ -457,41 +462,8 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
         ))}
       </div>
 
-      {/* Quick Actions Panel - Full Width Single Row */}
-      <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-lg shadow-lg p-3 hover:shadow-xl hover:border-primary/30 transition-all duration-500 overflow-hidden group">
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
-        {/* Floating particles effect */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-blue-500/5 to-transparent rounded-full blur-2xl"></div>
-        
-        <div className="relative z-10">
-          <h3 className="text-xs font-bold text-foreground mb-2 flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg shadow-sm group-hover:shadow-md group-hover:scale-110 transition-all duration-300">
-              <Activity className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Quick Actions</span>
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-            {quickActions.map((action, idx) => (
-              <Button
-                key={idx}
-                onClick={action.onClick}
-                className={`${action.color} h-auto py-2 flex flex-col items-center gap-1.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 relative overflow-hidden group/btn`}
-              >
-                {/* Button shine effect */}
-                <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                <div className="relative z-10">{action.icon}</div>
-                <span className="text-[11px] font-semibold relative z-10">{action.label}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Ticket Created History - Full Width with Enhanced Styling */}
-      <div className="relative bg-gradient-to-br from-card/95 via-card/90 to-card/95 backdrop-blur-xl border-2 border-purple-500/20 rounded-xl shadow-2xl px-4 pt-3 pb-4 hover:shadow-purple-500/20 hover:border-purple-500/40 transition-all duration-700 overflow-hidden group">
+      {/* Ticket Created History - Compact Full Width */}
+      <div className="relative bg-gradient-to-br from-card/95 via-card/90 to-card/95 backdrop-blur-xl border-2 border-purple-500/20 rounded-xl shadow-2xl px-3 pt-2.5 pb-3 hover:shadow-purple-500/20 hover:border-purple-500/40 transition-all duration-700 overflow-hidden group">
          {/* Animated background gradient */}
          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-indigo-500/10 to-purple-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
          
@@ -507,180 +479,152 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
          
          <div className="relative z-10">
-           {/* Enhanced Header */}
-           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2.5">
-             <div className="flex items-center gap-2.5">
+           {/* Compact Header with Title and Controls in One Row */}
+           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 mb-2.5">
+             {/* Title */}
+             <div className="flex items-center gap-2">
                <div className="relative">
-                 <div className="p-2 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-lg shadow-lg group-hover:shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-purple-400/30">
-                   <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                 <div className="p-1.5 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-lg shadow-md group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-purple-400/30">
+                   <BarChart3 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                  </div>
-                 <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card animate-pulse"></div>
+                 <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border-2 border-card animate-pulse"></div>
                </div>
-               <div>
-                 <h3 className="text-base font-extrabold text-foreground bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                   Ticket Created History
-                 </h3>
-                 <p className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center gap-1.5">
-                   <Calendar className="w-3 h-3" />
-                   {timeFilter === "today" ? "Today" : 
-                    timeFilter === "7days" ? "Last 7 Days" :
-                    timeFilter === "30days" ? "Last 30 Days" :
-                    timeFilter === "90days" ? "Last 90 Days" :
-                    "Overall"}
-                 </p>
+               <h3 className="text-sm font-extrabold text-foreground bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                 Ticket Created History
+               </h3>
+             </div>
+           
+             {/* Compact Controls Row */}
+             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+               {/* Time Period Filter - Compact */}
+               <div className="relative group/filter">
+                 <div className="relative flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-indigo-500/40 rounded-lg px-2.5 h-8 shadow-md hover:shadow-lg hover:shadow-indigo-500/20 hover:border-indigo-500/60 transition-all duration-300">
+                   <Calendar className="w-3 h-3 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                   <Select
+                     value={timeFilter}
+                     onValueChange={(value) => {
+                       setTimeFilter(value as typeof timeFilter)
+                       loadData(true)
+                     }}
+                   >
+                     <SelectTrigger className="bg-transparent border-none outline-none text-xs font-semibold text-foreground cursor-pointer shadow-none focus:ring-0 focus:ring-offset-0 h-auto py-0 px-0 pr-4 [&>svg]:hidden">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-indigo-500/30 rounded-lg shadow-xl p-1">
+                       <SelectItem value="today" className="text-xs font-medium cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Today
+                       </SelectItem>
+                       <SelectItem value="7days" className="text-xs font-medium cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Last 7 Days
+                       </SelectItem>
+                       <SelectItem value="30days" className="text-xs font-medium cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Last 30 Days
+                       </SelectItem>
+                       <SelectItem value="90days" className="text-xs font-medium cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Last 90 Days
+                       </SelectItem>
+                       <SelectItem value="overall" className="text-xs font-medium cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Overall
+                       </SelectItem>
+                     </SelectContent>
+                   </Select>
+                   <div className="absolute right-2 pointer-events-none">
+                     <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-indigo-600 dark:border-t-indigo-400"></div>
+                   </div>
+                 </div>
                </div>
+               
+               {/* Compact Search Bar */}
+               <div className="relative flex-1 lg:min-w-[250px] group/search">
+                 <div className="relative flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-purple-500/40 rounded-lg px-2.5 h-8 shadow-md hover:shadow-lg hover:shadow-purple-500/20 hover:border-purple-500/60 transition-all duration-300">
+                   <Search className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                   <input
+                     type="text"
+                     placeholder="Search tickets..."
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     className="flex-1 bg-transparent border-none outline-none text-xs font-medium text-foreground placeholder:text-muted-foreground/50 focus:ring-0"
+                   />
+                   {searchQuery && (
+                     <button
+                       onClick={() => setSearchQuery("")}
+                       className="p-1 hover:bg-purple-500/20 rounded transition-all duration-300 hover:scale-110 active:scale-95 flex-shrink-0"
+                     >
+                       <X className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                     </button>
+                   )}
+                 </div>
+               </div>
+
+               {/* Sort Dropdown - Compact */}
+               <div className="relative group/sort">
+                 <div className="relative flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-purple-500/40 rounded-lg px-2.5 h-8 shadow-md hover:shadow-lg hover:shadow-purple-500/20 hover:border-purple-500/60 transition-all duration-300">
+                   <ArrowUpDown className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                   <Select
+                     value={sortOrder}
+                     onValueChange={(value) => setSortOrder(value as typeof sortOrder)}
+                   >
+                     <SelectTrigger className="bg-transparent border-none outline-none text-xs font-semibold text-foreground cursor-pointer shadow-none focus:ring-0 focus:ring-offset-0 h-auto py-0 px-0 pr-4 [&>svg]:hidden">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg shadow-xl p-1">
+                       <SelectItem value="date-desc" className="text-xs font-medium cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Newest First
+                       </SelectItem>
+                       <SelectItem value="date-asc" className="text-xs font-medium cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Oldest First
+                       </SelectItem>
+                       <SelectItem value="title-asc" className="text-xs font-medium cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Title (A-Z)
+                       </SelectItem>
+                       <SelectItem value="title-desc" className="text-xs font-medium cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-md px-2 py-1.5 transition-colors">
+                         Title (Z-A)
+                       </SelectItem>
+                     </SelectContent>
+                   </Select>
+                   <div className="absolute right-2 pointer-events-none">
+                     <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-purple-600 dark:border-t-purple-400"></div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Export Button - Compact */}
+               <button
+                 onClick={handleExport}
+                 className="relative group/export flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-green-500/40 rounded-lg px-2.5 h-8 shadow-md hover:shadow-lg hover:shadow-green-500/20 hover:border-green-500/60 transition-all duration-300"
+               >
+                 <Download className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                 <span className="text-xs font-semibold text-green-700 dark:text-green-300 whitespace-nowrap">Export</span>
+               </button>
              </div>
            </div>
-           
-           {/* Controls Row */}
-           <div className="flex flex-col gap-2.5 mb-3">
-               {/* First Row: Time Filter, Search, View Toggle */}
-               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                 {/* Time Period Filter - Enhanced with Custom Select */}
-                 <div className="relative group/filter">
-                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 via-purple-500/20 to-indigo-500/30 rounded-xl blur-xl opacity-0 group-hover/filter:opacity-100 transition-opacity duration-500"></div>
-                   <div className="relative flex items-center gap-2.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-2 border-indigo-500/40 rounded-xl px-4 py-2.5 shadow-lg hover:shadow-xl hover:shadow-indigo-500/20 hover:border-indigo-500/60 hover:scale-[1.02] transition-all duration-300">
-                     <div className="p-1.5 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg">
-                       <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                     </div>
-                     <Select
-                       value={timeFilter}
-                       onValueChange={(value) => {
-                         setTimeFilter(value as typeof timeFilter)
-                         loadData(true)
-                       }}
-                     >
-                       <SelectTrigger className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-foreground cursor-pointer shadow-none focus:ring-0 focus:ring-offset-0 h-auto py-0 px-0 pr-6 [&>svg]:hidden">
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-indigo-500/30 rounded-xl shadow-2xl p-2">
-                         <SelectItem value="today" className="text-sm font-semibold cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Today
-                         </SelectItem>
-                         <SelectItem value="7days" className="text-sm font-semibold cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Last 7 Days
-                         </SelectItem>
-                         <SelectItem value="30days" className="text-sm font-semibold cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Last 30 Days
-                         </SelectItem>
-                         <SelectItem value="90days" className="text-sm font-semibold cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Last 90 Days
-                         </SelectItem>
-                         <SelectItem value="overall" className="text-sm font-semibold cursor-pointer hover:bg-indigo-500/20 focus:bg-indigo-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Overall
-                         </SelectItem>
-                       </SelectContent>
-                     </Select>
-                     <div className="absolute right-3 pointer-events-none">
-                       <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-indigo-600 dark:border-t-indigo-400"></div>
-                     </div>
-                   </div>
-                 </div>
-                 
-                 {/* Enhanced Search Bar */}
-                 <div className="relative flex-1 sm:min-w-[300px] group/search">
-                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-indigo-500/20 to-purple-500/30 rounded-xl blur-xl opacity-0 group-hover/search:opacity-100 transition-opacity duration-500"></div>
-                   <div className="relative flex items-center gap-2.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-2 border-purple-500/40 rounded-xl px-4 py-2.5 shadow-lg hover:shadow-xl hover:shadow-purple-500/20 hover:border-purple-500/60 hover:scale-[1.02] transition-all duration-300">
-                     <div className="p-1.5 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-lg">
-                       <Search className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                     </div>
-                     <input
-                       type="text"
-                       placeholder="Search by ticket ID, title, creator, or category..."
-                       value={searchQuery}
-                       onChange={(e) => setSearchQuery(e.target.value)}
-                       className="flex-1 bg-transparent border-none outline-none text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 focus:ring-0"
-                     />
-                     {searchQuery && (
-                       <button
-                         onClick={() => setSearchQuery("")}
-                         className="p-1.5 hover:bg-purple-500/20 rounded-lg transition-all duration-300 hover:scale-110 active:scale-95"
-                       >
-                         <X className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                       </button>
-                     )}
-                   </div>
-                 </div>
 
-               </div>
-
-               {/* Second Row: Sort and Export - Enhanced */}
-               <div className="flex flex-wrap items-center gap-3">
-                 {/* Sort Dropdown - Enhanced with Custom Select */}
-                 <div className="relative group/sort">
-                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-indigo-500/20 to-purple-500/30 rounded-xl blur-xl opacity-0 group-hover/sort:opacity-100 transition-opacity duration-500"></div>
-                   <div className="relative flex items-center gap-2.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-2 border-purple-500/40 rounded-xl px-4 py-2.5 shadow-lg hover:shadow-xl hover:shadow-purple-500/20 hover:border-purple-500/60 hover:scale-[1.02] transition-all duration-300 min-w-[200px]">
-                     <div className="p-1.5 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-lg">
-                       <ArrowUpDown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                     </div>
-                     <Select
-                       value={sortOrder}
-                       onValueChange={(value) => setSortOrder(value as typeof sortOrder)}
-                     >
-                       <SelectTrigger className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-foreground cursor-pointer shadow-none focus:ring-0 focus:ring-offset-0 h-auto py-0 px-0 pr-7 [&>svg]:hidden">
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-purple-500/30 rounded-xl shadow-2xl p-2">
-                         <SelectItem value="date-desc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Date (Newest First)
-                         </SelectItem>
-                         <SelectItem value="date-asc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Date (Oldest First)
-                         </SelectItem>
-                         <SelectItem value="title-asc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Title (A-Z)
-                         </SelectItem>
-                         <SelectItem value="title-desc" className="text-sm font-semibold cursor-pointer hover:bg-purple-500/20 focus:bg-purple-500/20 rounded-lg my-0.5 px-3 py-2.5 transition-colors">
-                           Title (Z-A)
-                         </SelectItem>
-                       </SelectContent>
-                     </Select>
-                     <div className="absolute right-3 pointer-events-none">
-                       <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-purple-600 dark:border-t-purple-400"></div>
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* Export Button - Enhanced */}
-                 <button
-                   onClick={handleExport}
-                   className="relative group/export flex items-center gap-2.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-2 border-green-500/40 rounded-xl px-4 py-2.5 shadow-lg hover:shadow-xl hover:shadow-green-500/20 hover:border-green-500/60 hover:scale-[1.02] transition-all duration-300"
-                 >
-                   <div className="absolute inset-0 bg-gradient-to-r from-green-500/30 via-green-500/20 to-green-500/30 rounded-xl blur-xl opacity-0 group-hover/export:opacity-100 transition-opacity duration-500"></div>
-                   <div className="p-1.5 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg relative z-10">
-                     <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
-                   </div>
-                   <span className="text-sm font-bold text-green-700 dark:text-green-300 relative z-10">Export CSV</span>
-                 </button>
-               </div>
-             </div>
-
-           {/* Enhanced Stats Summary */}
+           {/* Compact Stats Summary */}
            {!loading && historyStats && (
-             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-               <div className="relative bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-transparent border border-purple-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
+             <div className="grid grid-cols-3 gap-2 mb-2.5">
+               <div className="relative bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-transparent border border-purple-500/30 rounded-lg p-2 backdrop-blur-sm overflow-hidden group/stat">
                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
                  <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Total Tickets</p>
-                   <p className="text-xl font-extrabold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
+                   <p className="text-[9px] font-semibold text-muted-foreground mb-0.5">Total Tickets</p>
+                   <p className="text-lg font-extrabold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
                      {historyStats.totalTickets.toLocaleString()}
                    </p>
                  </div>
                </div>
-               <div className="relative bg-gradient-to-br from-indigo-500/20 via-indigo-500/10 to-transparent border border-indigo-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
+               <div className="relative bg-gradient-to-br from-indigo-500/20 via-indigo-500/10 to-transparent border border-indigo-500/30 rounded-lg p-2 backdrop-blur-sm overflow-hidden group/stat">
                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
                  <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Avg. Per Day</p>
-                   <p className="text-xl font-extrabold bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
+                   <p className="text-[9px] font-semibold text-muted-foreground mb-0.5">Avg. Per Day</p>
+                   <p className="text-lg font-extrabold bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
                      {historyStats.averagePerDay}
                    </p>
                  </div>
                </div>
-               <div className="relative bg-gradient-to-br from-green-500/20 via-green-500/10 to-transparent border border-green-500/30 rounded-lg p-2.5 backdrop-blur-sm overflow-hidden group/stat">
+               <div className="relative bg-gradient-to-br from-green-500/20 via-green-500/10 to-transparent border border-green-500/30 rounded-lg p-2 backdrop-blur-sm overflow-hidden group/stat">
                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300"></div>
                  <div className="relative z-10">
-                   <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Showing</p>
-                   <p className="text-xl font-extrabold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+                   <p className="text-[9px] font-semibold text-muted-foreground mb-0.5">Showing</p>
+                   <p className="text-lg font-extrabold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
                      {filteredTicketHistory.length}
                    </p>
                  </div>
@@ -688,9 +632,9 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
              </div>
            )}
 
-           {/* Enhanced History List with Detailed Ticket Information */}
+           {/* Compact History List with Detailed Ticket Information */}
            {
-             <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+             <div className="space-y-1.5 max-h-[450px] overflow-y-auto custom-scrollbar pr-1">
                {loading ? (
                <div className="text-center py-12">
                  <div className="relative w-12 h-12 mx-auto mb-4">
@@ -755,7 +699,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                  return (
                    <div
                      key={item.id || idx}
-                     className="group/item relative bg-gradient-to-r from-background/60 via-background/40 to-background/60 backdrop-blur-sm border-2 border-purple-500/20 rounded-lg p-3 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden"
+                     className="group/item relative bg-gradient-to-r from-background/60 via-background/40 to-background/60 backdrop-blur-sm border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/40 hover:shadow-md hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden"
                      style={{ animationDelay: `${idx * 50}ms` }}
                    >
                      {/* Animated background gradient */}
@@ -767,18 +711,18 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                      {/* Left border accent with glow */}
                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-purple-500 via-indigo-500 to-purple-500 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 shadow-lg shadow-purple-500/50"></div>
                      
-                     <div className="relative z-10 flex items-start gap-4">
+                     <div className="relative z-10 flex items-start gap-2.5">
                        <div className="relative flex-shrink-0">
-                         <div className="p-2.5 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-xl shadow-md group-hover/item:shadow-lg group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-500 border border-purple-400/30">
-                           <Ticket className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                         <div className="p-1.5 bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-indigo-500/20 rounded-lg shadow-md group-hover/item:shadow-lg group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-500 border border-purple-400/30">
+                           <Ticket className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                          </div>
                        </div>
                        <div className="flex-1 min-w-0">
-                         <div className="flex items-start justify-between gap-3 mb-2">
+                         <div className="flex items-start justify-between gap-3 mb-1.5">
                            <div className="flex-1 min-w-0">
                              <div className="flex items-center gap-2 mb-1">
                                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded">
-                                 {item.ticket_id || `#${item.id}`}
+                                 {item.ticket_id ? item.ticket_id.replace(/^TKT-\d{6}-/, '') : `#${item.id}`}
                                </span>
                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                                  item.status === "open" ? "bg-blue-500/20 text-blue-700 dark:text-blue-300" :
@@ -789,47 +733,57 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
                                  {item.status || "open"}
                                </span>
                              </div>
-                             <p className="text-sm font-bold text-foreground mb-1 line-clamp-2 group-hover/item:text-purple-600 transition-colors">
+                             <p className="text-sm font-bold text-foreground mb-1 line-clamp-1 group-hover/item:text-purple-600 transition-colors">
                                {item.title || "No title"}
                              </p>
-                             {item.description && (
-                               <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
-                                 {item.description}
-                               </p>
-                             )}
                            </div>
                          </div>
-                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                            <div className="flex items-center gap-1.5">
-                             <Calendar className="w-3.5 h-3.5 text-purple-600/60" />
-                             <span className="font-semibold">{formatDate(item.created_at)}</span>
-                             <span className="text-muted-foreground/60">at {timeStr}</span>
+                             <Calendar className="w-3 h-3 text-purple-600/60" />
+                             <span className="font-medium">{formatDate(item.created_at)}</span>
+                             <span className="text-muted-foreground/60 text-[10px]">{timeStr}</span>
                            </div>
                            {item.creator_name && (
                              <>
                                <span className="text-muted-foreground/60">•</span>
                                <div className="flex items-center gap-1.5">
-                                 <Users className="w-3.5 h-3.5 text-indigo-600/60" />
-                                 <span className="font-semibold">Created by: <span className="text-foreground font-bold">{item.creator_name}</span></span>
+                                 <Users className="w-3 h-3 text-indigo-600/60" />
+                                 <span className="font-medium text-foreground">{item.creator_name}</span>
+                                 {item.creator_role && (
+                                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                     item.creator_role.toLowerCase() === "superadmin" ? "bg-red-500/20 text-red-700 dark:text-red-300" :
+                                     item.creator_role.toLowerCase() === "spoc" ? "bg-blue-500/20 text-blue-700 dark:text-blue-300" :
+                                     "bg-gray-500/20 text-gray-700 dark:text-gray-300"
+                                   }`}>
+                                     {item.creator_role.toUpperCase()}
+                                   </span>
+                                 )}
+                               </div>
+                             </>
+                           )}
+                           {item.target_business_group_name && (
+                             <>
+                               <span className="text-muted-foreground/60">•</span>
+                               <div className="flex items-center gap-1.5">
+                                 <Building2 className="w-3 h-3 text-green-600/60" />
+                                 <span className="font-medium text-foreground">{item.target_business_group_name}</span>
+                               </div>
+                             </>
+                           )}
+                           {item.organization_name && (
+                             <>
+                               <span className="text-muted-foreground/60">•</span>
+                               <div className="flex items-center gap-1.5">
+                                 <FolderTree className="w-3 h-3 text-amber-600/60" />
+                                 <span className="font-medium text-foreground">{item.organization_name}</span>
                                </div>
                              </>
                            )}
                            {item.category_name && (
                              <>
                                <span className="text-muted-foreground/60">•</span>
-                               <span className="font-semibold">Category: <span className="text-foreground font-bold">{item.category_name}</span></span>
-                             </>
-                           )}
-                           {item.assignee_name && (
-                             <>
-                               <span className="text-muted-foreground/60">•</span>
-                               <span className="font-semibold">Assignee: <span className="text-foreground font-bold">{item.assignee_name}</span></span>
-                             </>
-                           )}
-                           {item.spoc_name && (
-                             <>
-                               <span className="text-muted-foreground/60">•</span>
-                               <span className="font-semibold">SPOC: <span className="text-foreground font-bold">{item.spoc_name}</span></span>
+                               <span className="font-medium">Cat: <span className="text-foreground font-semibold">{item.category_name}</span></span>
                              </>
                            )}
                          </div>

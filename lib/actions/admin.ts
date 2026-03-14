@@ -81,10 +81,10 @@ export async function getSystemAuditLogs(filters?: {
     // Since we can't use sql`` with dynamic WHERE clauses easily, we'll fetch all and filter in JS
     // OR use a simpler approach: fetch all logs and apply filters in JavaScript
     let logs = await sql`
-      SELECT sal.*, u.email as performer_email
-      FROM system_audit_log sal
-      LEFT JOIN users u ON sal.performed_by = u.id
-      ORDER BY sal.created_at DESC
+        SELECT sal.*, u.email as performer_email
+        FROM system_audit_log sal
+        LEFT JOIN users u ON sal.performed_by = u.id
+        ORDER BY sal.created_at DESC
     `
 
     // Apply filters in JavaScript (similar to getTickets approach)
@@ -1111,11 +1111,13 @@ export async function getTicketCreationHistory(days: number = 30) {
           t.created_by,
           creator.full_name as creator_name,
           creator.email as creator_email,
+          creator.role as creator_role,
           a.full_name as assignee_name,
           spoc.full_name as spoc_name,
           c.name as category_name,
           bug.name as business_group_name,
-          tbg.name as target_business_group_name
+          tbg.name as target_business_group_name,
+          fa.name as organization_name
         FROM tickets t
         LEFT JOIN users creator ON t.created_by = creator.id
         LEFT JOIN users a ON t.assigned_to = a.id
@@ -1123,6 +1125,8 @@ export async function getTicketCreationHistory(days: number = 30) {
         LEFT JOIN categories c ON t.category_id = c.id
         LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
         LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
+        LEFT JOIN functional_area_business_group_mapping fabgm ON tbg.id = fabgm.target_business_group_id
+        LEFT JOIN functional_areas fa ON fabgm.functional_area_id = fa.id
         WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
           AND DATE(t.created_at) = CURRENT_DATE
         ORDER BY t.created_at DESC
@@ -1141,11 +1145,13 @@ export async function getTicketCreationHistory(days: number = 30) {
           t.created_by,
           creator.full_name as creator_name,
           creator.email as creator_email,
+          creator.role as creator_role,
           a.full_name as assignee_name,
           spoc.full_name as spoc_name,
           c.name as category_name,
           bug.name as business_group_name,
-          tbg.name as target_business_group_name
+          tbg.name as target_business_group_name,
+          fa.name as organization_name
         FROM tickets t
         LEFT JOIN users creator ON t.created_by = creator.id
         LEFT JOIN users a ON t.assigned_to = a.id
@@ -1153,6 +1159,8 @@ export async function getTicketCreationHistory(days: number = 30) {
         LEFT JOIN categories c ON t.category_id = c.id
         LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
         LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
+        LEFT JOIN functional_area_business_group_mapping fabgm ON tbg.id = fabgm.target_business_group_id
+        LEFT JOIN functional_areas fa ON fabgm.functional_area_id = fa.id
         WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
         ORDER BY t.created_at DESC
         LIMIT ${limit}
@@ -1170,11 +1178,13 @@ export async function getTicketCreationHistory(days: number = 30) {
           t.created_by,
           creator.full_name as creator_name,
           creator.email as creator_email,
+          creator.role as creator_role,
           a.full_name as assignee_name,
           spoc.full_name as spoc_name,
           c.name as category_name,
           bug.name as business_group_name,
-          tbg.name as target_business_group_name
+          tbg.name as target_business_group_name,
+          fa.name as organization_name
         FROM tickets t
         LEFT JOIN users creator ON t.created_by = creator.id
         LEFT JOIN users a ON t.assigned_to = a.id
@@ -1182,6 +1192,8 @@ export async function getTicketCreationHistory(days: number = 30) {
         LEFT JOIN categories c ON t.category_id = c.id
         LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
         LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
+        LEFT JOIN functional_area_business_group_mapping fabgm ON tbg.id = fabgm.target_business_group_id
+        LEFT JOIN functional_areas fa ON fabgm.functional_area_id = fa.id
         WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
           AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${days}
         ORDER BY t.created_at DESC

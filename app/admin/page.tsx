@@ -138,9 +138,9 @@ export default function AdminDashboardPage() {
 
       case "roles":
   return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <RolePermissionsManager />
           </div>
           </div>
@@ -151,10 +151,10 @@ export default function AdminDashboardPage() {
 
       case "business-groups":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
         </div>
           </div>
@@ -162,10 +162,10 @@ export default function AdminDashboardPage() {
 
       case "functional-areas":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <FAMappingsVisual currentUser={user} />
             </div>
           </div>
@@ -173,10 +173,10 @@ export default function AdminDashboardPage() {
 
       case "fa-mappings":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <FAMappingsVisual currentUser={user} />
             </div>
           </div>
@@ -184,10 +184,10 @@ export default function AdminDashboardPage() {
 
       case "teams":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <TeamsTab />
             </div>
           </div>
@@ -195,10 +195,10 @@ export default function AdminDashboardPage() {
 
       case "categories":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
             </div>
           </div>
@@ -206,10 +206,10 @@ export default function AdminDashboardPage() {
 
       case "projects":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
             </div>
           </div>
@@ -217,10 +217,10 @@ export default function AdminDashboardPage() {
 
       case "import-export":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
                 </div>
           </div>
@@ -228,10 +228,10 @@ export default function AdminDashboardPage() {
 
       case "system-management":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-red-500/30 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-red-500/30 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-red-500/20 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
                 <SystemManagementTab />
             </div>
           </div>
@@ -239,10 +239,10 @@ export default function AdminDashboardPage() {
 
       case "audit-logs":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 via-transparent to-gray-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-slate-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full">
               <EnhancedAuditLogs />
             </div>
           </div>
@@ -265,10 +265,10 @@ export default function AdminDashboardPage() {
           />
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto lg:ml-0">
-            <div className="space-y-4 p-3 lg:p-4">
-              {/* Header with gradient background */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/15 via-primary/8 to-primary/5 border-2 border-primary/30 p-4 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-500 group">
+          <div className="flex-1 overflow-hidden lg:ml-0">
+            <div className="space-y-2 p-2 h-full overflow-y-auto">
+              {/* Compact Header */}
+              <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-primary/15 via-primary/8 to-primary/5 border border-primary/30 p-2.5 backdrop-blur-md shadow-md hover:shadow-lg transition-all duration-500 group">
                 {/* Animated grid pattern */}
                 <div className="absolute inset-0 bg-grid-pattern opacity-5 group-hover:opacity-10 transition-opacity duration-500"></div>
                 
@@ -278,24 +278,24 @@ export default function AdminDashboardPage() {
                 {/* Shimmer effect */}
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                 
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary via-primary/90 to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                      <Shield className="w-5 h-5 text-primary-foreground drop-shadow-sm" />
+                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary via-primary/90 to-primary/80 rounded-lg flex items-center justify-center shadow-md shadow-primary/30 group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                      <Shield className="w-4 h-4 text-primary-foreground drop-shadow-sm" />
                     </div>
                     <div>
-                      <h1 className="text-xl sm:text-2xl font-extrabold text-foreground bg-gradient-to-r from-foreground via-foreground/90 to-foreground/80 bg-clip-text drop-shadow-sm">
+                      <h1 className="text-base font-extrabold text-foreground bg-gradient-to-r from-foreground via-foreground/90 to-foreground/80 bg-clip-text drop-shadow-sm">
                         Super Admin Dashboard
                       </h1>
-                      <p className="text-xs text-muted-foreground font-medium">
+                      <p className="text-[10px] text-muted-foreground font-medium">
                         Full access to all system modules and configurations
                       </p>
                     </div>
                   </div>
                   {isSuperAdmin && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/25 to-amber-600/25 backdrop-blur-sm border-2 border-amber-400/40 rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
-                      <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-500/50"></div>
-                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Super Admin</span>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-500/25 to-amber-600/25 backdrop-blur-sm border border-amber-400/40 rounded-full shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105">
+                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shadow-sm shadow-amber-500/50"></div>
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">Super Admin</span>
                     </div>
                   )}
       </div>
@@ -344,131 +344,121 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
   }, [loadUsers])
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Enhanced Header with Filters */}
-      <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group">
+    <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Compact User Management - Merged Header, Filters, and Table */}
+      <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg overflow-hidden group h-full flex flex-col">
         {/* Animated background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         
         {/* Floating particles */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl"></div>
         
-        <div className="relative z-10">
-          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-extrabold text-foreground mb-1 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                User Management
-              </h2>
-              <p className="text-xs text-muted-foreground font-medium">
-                Manage users, roles, and permissions
-              </p>
-            </div>
-            <Button 
-              onClick={() => setShowCreateModal(true)} 
-              size="sm" 
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
-            >
-              <Plus className="w-4 h-4 mr-1.5" /> Create User
-            </Button>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <div className="relative flex-1 w-full group/search">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-primary/5 group-focus-within/search:bg-primary/10 transition-all duration-300">
-                <Search className="w-4 h-4 text-muted-foreground group-focus-within/search:text-primary group-focus-within/search:scale-110 transition-all duration-300" />
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Compact Header with Controls */}
+          <div className="p-2 border-b border-border/50 flex-shrink-0">
+            <div className="flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between mb-2">
+              <div>
+                <h2 className="text-sm font-extrabold text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  User Management
+                </h2>
+                <p className="text-[9px] text-muted-foreground font-medium">
+                  Manage users, roles, and permissions
+                </p>
               </div>
+              <Button 
+                onClick={() => setShowCreateModal(true)} 
+                size="sm" 
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 h-7 text-[11px] px-2.5"
+              >
+                <Plus className="w-3 h-3 mr-1" /> Create User
+              </Button>
+            </div>
+            
+            {/* Compact Filters Row */}
+            <div className="flex flex-wrap gap-1.5 items-center">
+              <div className="relative flex-1 min-w-[180px] group/search">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground group-focus-within/search:text-primary transition-all duration-300" />
               <input
                 type="text"
                 placeholder="Search by name or email..."
                 value={filters.search}
                 onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
-                className="w-full pl-11 pr-4 py-2.5 border-2 border-border/50 rounded-lg bg-background/90 backdrop-blur-sm text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 font-medium"
+                  className="w-full pl-7 pr-2 h-7 border border-border/50 rounded-md bg-background/90 backdrop-blur-sm text-[11px] focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 font-medium"
               />
             </div>
-            <div className="relative min-w-[180px] group/filter">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-md bg-primary/5 pointer-events-none">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <Select
+              <div className="relative min-w-[120px] group/filter">
+                <Filter className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <Select
                 value={filters.role}
-                onValueChange={(value) => setFilters((p) => ({ ...p, role: value }))}
-              >
-                <SelectTrigger className="w-full pl-11 pr-4 py-2.5 border-2 border-border/50 rounded-lg bg-background/90 backdrop-blur-sm text-sm shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 font-medium focus:ring-2 focus:ring-primary/50 focus:border-primary/50">
-                  <SelectValue placeholder="All Roles" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
-                  <SelectItem value="all" className="text-sm font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1">
-                    All Roles
-                  </SelectItem>
-                {roles.map((r: any) => (
-                    <SelectItem 
-                      key={r.value} 
-                      value={r.value}
-                      className="text-sm font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
-                    >
-                      {r.label}
+                  onValueChange={(value) => setFilters((p) => ({ ...p, role: value }))}
+                >
+                  <SelectTrigger className="w-full pl-7 pr-2 h-7 border border-border/50 rounded-md bg-background/90 backdrop-blur-sm text-[11px] shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-primary/30 rounded-lg shadow-xl p-1">
+                    <SelectItem value="all" className="text-xs font-medium cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-md px-2 py-1.5 transition-colors">
+                      All Roles
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {roles.map((r: any) => (
+                      <SelectItem 
+                        key={r.value} 
+                        value={r.value}
+                        className="text-xs font-medium cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-md px-2 py-1.5 transition-colors"
+                      >
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border-2 border-border/50 rounded-lg hover:bg-muted/50 hover:border-primary/30 text-sm whitespace-nowrap font-medium shadow-sm hover:shadow-md transition-all duration-300 bg-background/90 backdrop-blur-sm">
+              <label className="flex items-center gap-1.5 cursor-pointer px-2 h-7 border border-border/50 rounded-md hover:bg-muted/50 hover:border-primary/30 text-[11px] whitespace-nowrap font-medium shadow-sm hover:shadow-md transition-all duration-300 bg-background/90 backdrop-blur-sm">
               <input
                 type="checkbox"
                 checked={filters.includeInactive}
                 onChange={(e) => setFilters((p) => ({ ...p, includeInactive: e.target.checked }))}
-                className="w-4 h-4 accent-primary"
+                  className="w-3 h-3 accent-primary"
               />
               Show Inactive
             </label>
-          </div>
-          
-          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs font-semibold text-muted-foreground">
-                {loading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    Loading...
-                  </span>
-                ) : (
-                  `Showing ${users.length} user${users.length !== 1 ? "s" : ""}`
-                )}
-              </span>
-            </div>
-            {users.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={loadUsers}
-                className="h-7 px-2 text-xs hover:bg-muted/50"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-[10px] font-semibold text-muted-foreground">
+                  {loading ? (
+                    <span className="inline-flex items-center gap-1">
+                      <div className="w-2 h-2 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      Loading...
+                    </span>
+                  ) : (
+                    `${users.length} user${users.length !== 1 ? "s" : ""}`
+                  )}
+                </span>
+                {users.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={loadUsers}
+                    className="h-6 px-1.5 text-xs hover:bg-muted/50"
+                  >
+                    <RefreshCw className="w-3 h-3" />
           </Button>
-            )}
+                )}
         </div>
         </div>
       </div>
 
-      {/* Enhanced Users Table Container */}
-      <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg overflow-hidden group">
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-blue-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
-        <div className="relative z-10">
-          <UsersTable
-            users={users}
-            loading={loading}
-            onEditUser={(u: any) => {
-              setSelectedUser(u)
-              setShowEditModal(true)
-            }}
-            onRefresh={loadUsers}
-            isSuperAdmin={userRole === "superadmin"}
-            currentUserId={userId}
-          />
+          {/* Users Table - Scrollable */}
+          <div className="flex-1 overflow-hidden">
+            <UsersTable
+              users={users}
+              loading={loading}
+              onEditUser={(u: any) => {
+                setSelectedUser(u)
+                setShowEditModal(true)
+              }}
+              onRefresh={loadUsers}
+              isSuperAdmin={userRole === "superadmin"}
+              currentUserId={userId}
+            />
+          </div>
         </div>
       </div>
 
@@ -550,61 +540,62 @@ function TeamsTab() {
  }
 
  return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Enhanced Header */}
-      <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group">
+    <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Compact Header */}
+      <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-md p-2 hover:shadow-lg transition-all duration-500 overflow-hidden group flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full blur-3xl"></div>
         <div className="relative z-10 flex justify-between items-center">
               <div>
-            <h3 className="text-xl font-extrabold text-foreground flex items-center gap-2 mb-1">
-              <div className="p-2 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-lg shadow-sm">
-                <FolderTree className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-sm font-extrabold text-foreground flex items-center gap-1.5 mb-0.5">
+              <div className="p-1.5 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-md shadow-sm">
+                <FolderTree className="w-3.5 h-3.5 text-indigo-600" />
  </div>
               <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                 Teams Management
               </span>
             </h3>
-            <p className="text-xs text-muted-foreground font-medium ml-12">
+            <p className="text-[10px] text-muted-foreground font-medium ml-8">
               Create and manage teams for organizing users
         </p>
  </div>
             <Button 
               size="sm" 
-            className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+            className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 h-7 text-[11px] px-2.5"
             onClick={() => {
               setEditTeam(null)
               setFormData({ name: "", description: "" })
               setShowModal(true)
             }}
           >
-            <Plus className="w-4 h-4 mr-1.5" /> Create Team
+            <Plus className="w-3 h-3 mr-1" /> Create Team
  </Button>
  </div>
  </div>
 
+      <div className="flex-1 overflow-y-auto mt-2">
         {loading ? (
-        <div className="text-center py-12">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-lg"></div>
-          <p className="text-sm font-semibold text-muted-foreground">Loading teams...</p>
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3 shadow-lg"></div>
+          <p className="text-xs font-semibold text-muted-foreground">Loading teams...</p>
  </div>
       ) : teams.length === 0 ? (
-        <div className="relative bg-card/80 backdrop-blur-sm border-2 border-dashed border-border/50 rounded-xl p-12 text-center overflow-hidden group">
+        <div className="relative bg-card/80 backdrop-blur-sm border border-dashed border-border/50 rounded-lg p-8 text-center overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div className="relative z-10">
-            <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FolderTree className="w-8 h-8 text-muted-foreground" />
+            <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-3">
+              <FolderTree className="w-6 h-6 text-muted-foreground" />
  </div>
-            <p className="text-sm font-semibold text-foreground mb-1">No teams yet</p>
-            <p className="text-xs text-muted-foreground">Create your first team to get started</p>
+            <p className="text-xs font-semibold text-foreground mb-1">No teams yet</p>
+            <p className="text-[10px] text-muted-foreground">Create your first team to get started</p>
               </div>
               </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {teams.map((team, idx) => (
             <div
               key={team.id}
-              className="relative bg-card/90 backdrop-blur-sm border-2 border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300 overflow-hidden group/team"
+              className="relative bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2.5 hover:shadow-lg transition-all duration-300 overflow-hidden group/team"
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               {/* Animated background */}
@@ -615,22 +606,22 @@ function TeamsTab() {
               
               <div className="relative z-10 flex justify-between items-center">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-lg shadow-sm group-hover/team:scale-110 transition-transform duration-300">
-                      <Users className="w-4 h-4 text-indigo-600" />
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-md shadow-sm group-hover/team:scale-110 transition-transform duration-300">
+                      <Users className="w-3 h-3 text-indigo-600" />
  </div>
-                    <h4 className="font-bold text-sm text-foreground group-hover/team:text-indigo-600 transition-colors">
+                    <h4 className="font-bold text-xs text-foreground group-hover/team:text-indigo-600 transition-colors">
                       {team.name}
                     </h4>
-                    <span className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-full border border-indigo-300 dark:border-indigo-700 shadow-sm">
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold rounded-full border border-indigo-300 dark:border-indigo-700 shadow-sm">
                       {team.member_count || 0} members
                     </span>
  </div>
-                  <p className="text-xs text-muted-foreground font-medium ml-11">
+                  <p className="text-[10px] text-muted-foreground font-medium ml-7">
                     {team.description || "No description"}
         </p>
       </div>
-                <div className="flex gap-1.5 opacity-0 group-hover/team:opacity-100 transition-opacity duration-300">
+                <div className="flex gap-1 opacity-0 group-hover/team:opacity-100 transition-opacity duration-300">
             <Button 
                     variant="ghost"
               size="sm" 
@@ -639,17 +630,17 @@ function TeamsTab() {
                       setFormData({ name: team.name, description: team.description || "" })
                       setShowModal(true)
                     }}
-                    className="p-2 hover:bg-primary/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md"
+                    className="p-1.5 hover:bg-primary/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md"
                   >
-                    <Edit className="w-4 h-4 text-primary" />
+                    <Edit className="w-3.5 h-3.5 text-primary" />
             </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(team.id, team.name)}
-                    className="p-2 hover:bg-red-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md"
+                    className="p-1.5 hover:bg-red-500/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md"
                   >
-                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
             </Button>
  </div>
  </div>
@@ -657,6 +648,7 @@ function TeamsTab() {
                 ))}
           </div>
         )}
+      </div>
 
       {/* Enhanced Team Modal */}
       {showModal && (
@@ -925,67 +917,67 @@ function SystemManagementTab() {
   }
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Enhanced Header */}
-      <div className="relative bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent border-2 border-red-500/30 rounded-xl shadow-lg p-5 overflow-hidden group">
+    <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Compact Header */}
+      <div className="relative bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent border border-red-500/30 rounded-lg shadow-md p-2.5 overflow-hidden group flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-red-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-red-500/20 rounded-lg shadow-md">
-              <Database className="w-6 h-6 text-red-600 dark:text-red-400" />
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-red-500/20 rounded-md shadow-sm">
+              <Database className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-extrabold text-foreground flex items-center gap-2">
+              <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
           System Management
-                <span className="px-3 py-1 bg-gradient-to-r from-red-500/30 to-red-600/30 backdrop-blur-sm border-2 border-red-500/50 text-red-700 dark:text-red-400 text-xs font-bold rounded-full shadow-md animate-pulse">
+                <span className="px-2 py-0.5 bg-gradient-to-r from-red-500/30 to-red-600/30 backdrop-blur-sm border border-red-500/50 text-red-700 dark:text-red-400 text-[9px] font-bold rounded-full shadow-sm animate-pulse">
                   ⚠️ DANGER ZONE
           </span>
         </h2>
-              <p className="text-sm text-muted-foreground font-medium mt-1">
-          Bulk delete operations for system data. These actions are irreversible and should be used with extreme caution.
+              <p className="text-[10px] text-muted-foreground font-medium">
+          Bulk delete operations for system data. These actions are irreversible.
         </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Import Section */}
-      <div className="relative bg-gradient-to-r from-blue-50 via-blue-50/80 to-blue-50 dark:from-blue-900/20 dark:via-blue-900/15 dark:to-blue-900/20 border-2 border-blue-300 dark:border-blue-800 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-500 overflow-hidden group mb-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-200/20 to-transparent"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
-        <div className="relative z-10">
-          <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-1">
-                <div className="p-1.5 bg-blue-500/20 rounded-lg">
-              <Download className="w-4 h-4 text-blue-600" />
-                </div>
-              Import Categories from Excel
-            </h3>
-              <p className="text-xs text-muted-foreground font-medium ml-7">
-              Upload an Excel file to import categories and subcategories for a specific Business Group.
-            </p>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto mt-2 space-y-2">
+        {/* Compact Import Section */}
+        <div className="relative bg-gradient-to-r from-blue-50 via-blue-50/80 to-blue-50 dark:from-blue-900/20 dark:via-blue-900/15 dark:to-blue-900/20 border border-blue-300 dark:border-blue-800 rounded-lg p-2.5 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-200/20 to-transparent"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+                <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-0.5">
+                  <div className="p-1 bg-blue-500/20 rounded-md">
+                <Download className="w-3 h-3 text-blue-600" />
+                  </div>
+                Import Categories from Excel
+              </h3>
+                <p className="text-[10px] text-muted-foreground font-medium ml-6">
+                Upload an Excel file to import categories and subcategories for a specific Business Group.
+              </p>
+            </div>
+          </div>
+          <ImportCategoriesSection />
           </div>
         </div>
-        <ImportCategoriesSection />
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {/* Enhanced Delete All Users */}
-        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden group">
+        {/* Compact Delete All Users */}
+        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-red-200/20 to-transparent"></div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-full blur-2xl"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                <div className="p-1.5 bg-red-500/20 rounded-lg">
-                <Users className="w-4 h-4 text-red-600" />
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-0.5">
+                <div className="p-1 bg-red-500/20 rounded-md">
+                <Users className="w-3 h-3 text-red-600" />
                 </div>
                 Delete All Users
               </h3>
-              <p className="text-xs text-muted-foreground font-medium ml-7">
+              <p className="text-[10px] text-muted-foreground font-medium ml-5">
                 Permanently delete all users except yourself. This will remove all user accounts and their associated data.
               </p>
             </div>
@@ -996,27 +988,27 @@ function SystemManagementTab() {
                 confirmDelete("users", "Delete All Users", "This will permanently delete ALL users except yourself. This action cannot be undone.", bulkDeleteAllUsers)
               }
               disabled={loading}
-              className="ml-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-red-400"
+              className="ml-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 border border-red-400 h-7 text-[10px] px-2.5"
             >
-              <Trash2 className="w-4 h-4 mr-1.5" />
+              <Trash2 className="w-3 h-3 mr-1" />
               Delete All Users
             </Button>
           </div>
         </div>
 
-        {/* Enhanced Delete All Tickets */}
-        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden group">
+        {/* Compact Delete All Tickets */}
+        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-red-200/20 to-transparent"></div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-full blur-2xl"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                <div className="p-1.5 bg-red-500/20 rounded-lg">
-                <ScrollText className="w-4 h-4 text-red-600" />
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-0.5">
+                <div className="p-1 bg-red-500/20 rounded-md">
+                <ScrollText className="w-3 h-3 text-red-600" />
                 </div>
                 Delete All Tickets
               </h3>
-              <p className="text-xs text-muted-foreground font-medium ml-7">
+              <p className="text-[10px] text-muted-foreground font-medium ml-5">
                 Permanently delete all tickets, comments, attachments, and audit logs. This will clear the entire ticket history.
               </p>
             </div>
@@ -1032,27 +1024,27 @@ function SystemManagementTab() {
                 )
               }
               disabled={loading}
-              className="ml-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-red-400"
+              className="ml-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 border border-red-400 h-7 text-[10px] px-2.5"
             >
-              <Trash2 className="w-4 h-4 mr-1.5" />
+              <Trash2 className="w-3 h-3 mr-1" />
               Delete All Tickets
             </Button>
           </div>
         </div>
 
-        {/* Enhanced Delete All Business Groups */}
-        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden group">
+        {/* Compact Delete All Business Groups */}
+        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-red-200/20 to-transparent"></div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-full blur-2xl"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                <div className="p-1.5 bg-red-500/20 rounded-lg">
-                <Building2 className="w-4 h-4 text-red-600" />
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-0.5">
+                <div className="p-1 bg-red-500/20 rounded-md">
+                <Building2 className="w-3 h-3 text-red-600" />
                 </div>
                 Delete All Business Groups
               </h3>
-              <p className="text-xs text-muted-foreground font-medium ml-7">
+              <p className="text-[10px] text-muted-foreground font-medium ml-5">
                 Permanently delete all business groups and related mappings. User and ticket references will be set to NULL.
               </p>
             </div>
@@ -1068,27 +1060,27 @@ function SystemManagementTab() {
                 )
               }
               disabled={loading}
-              className="ml-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-red-400"
+              className="ml-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 border border-red-400 h-7 text-[10px] px-2.5"
             >
-              <Trash2 className="w-4 h-4 mr-1.5" />
+              <Trash2 className="w-3 h-3 mr-1" />
               Delete All Groups
             </Button>
           </div>
         </div>
 
-        {/* Enhanced Delete All Functional Areas */}
-        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden group">
+        {/* Compact Delete All Functional Areas */}
+        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-red-200/20 to-transparent"></div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-full blur-2xl"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                <div className="p-1.5 bg-red-500/20 rounded-lg">
-                <FolderTree className="w-4 h-4 text-red-600" />
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-0.5">
+                <div className="p-1 bg-red-500/20 rounded-md">
+                <FolderTree className="w-3 h-3 text-red-600" />
                 </div>
                 Delete All Functional Areas
               </h3>
-              <p className="text-xs text-muted-foreground font-medium ml-7">
+              <p className="text-[10px] text-muted-foreground font-medium ml-5">
                 Permanently delete all functional areas (organizations) and their business group mappings.
               </p>
             </div>
@@ -1104,27 +1096,27 @@ function SystemManagementTab() {
                 )
               }
               disabled={loading}
-              className="ml-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-red-400"
+              className="ml-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 border border-red-400 h-7 text-[10px] px-2.5"
             >
-              <Trash2 className="w-4 h-4 mr-1.5" />
+              <Trash2 className="w-3 h-3 mr-1" />
               Delete All FAs
             </Button>
           </div>
         </div>
 
-        {/* Enhanced Delete All Master Data */}
-        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden group">
+        {/* Compact Delete All Master Data */}
+        <div className="relative bg-gradient-to-r from-red-50 via-red-50/80 to-red-50 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-red-200/20 to-transparent"></div>
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-full blur-2xl"></div>
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                <div className="p-1.5 bg-red-500/20 rounded-lg">
-                <Database className="w-4 h-4 text-red-600" />
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-0.5">
+                <div className="p-1 bg-red-500/20 rounded-md">
+                <Database className="w-3 h-3 text-red-600" />
                 </div>
                 Delete All Categories & Subcategories
               </h3>
-              <p className="text-xs text-muted-foreground font-medium ml-7">
+              <p className="text-[10px] text-muted-foreground font-medium ml-5">
                 Permanently delete all categories, subcategories, and ticket classification mappings.
               </p>
             </div>
@@ -1140,31 +1132,31 @@ function SystemManagementTab() {
                 )
               }
               disabled={loading}
-              className="ml-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 border-red-400"
+              className="ml-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 border border-red-400 h-7 text-[10px] px-2.5"
             >
-              <Trash2 className="w-4 h-4 mr-1.5" />
+              <Trash2 className="w-3 h-3 mr-1" />
               Delete All Master Data
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Enhanced Warning Banner */}
-      <div className="relative mt-6 p-5 bg-gradient-to-r from-amber-50 via-amber-50/80 to-amber-50 dark:from-amber-900/20 dark:via-amber-900/15 dark:to-amber-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-xl shadow-lg overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 to-transparent"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-3xl"></div>
-        <div className="relative z-10 flex items-start gap-3">
-          <div className="p-2 bg-amber-500/20 rounded-lg shadow-sm">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200 mb-1">Important Warning</h4>
-            <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+        {/* Compact Warning Banner */}
+        <div className="relative mt-2 p-2.5 bg-gradient-to-r from-amber-50 via-amber-50/80 to-amber-50 dark:from-amber-900/20 dark:via-amber-900/15 dark:to-amber-900/20 border border-amber-300 dark:border-amber-800 rounded-lg shadow-sm overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 to-transparent"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="relative z-10 flex items-start gap-2">
+            <div className="p-1.5 bg-amber-500/20 rounded-md shadow-sm">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 mb-0.5">Important Warning</h4>
+              <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">
               All bulk delete operations are <strong className="font-extrabold">permanent and irreversible</strong>. Make sure you have a
               database backup before performing any of these operations. These actions will be logged in the audit trail.
             </p>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Enhanced Confirmation Dialog */}

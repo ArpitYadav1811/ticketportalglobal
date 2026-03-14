@@ -236,40 +236,40 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
 
   if (loading) {
     return (
-      <div className="p-12 text-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-lg"></div>
-        <p className="text-sm font-medium text-muted-foreground">Loading users...</p>
+      <div className="p-8 text-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3 shadow-lg"></div>
+        <p className="text-xs font-medium text-muted-foreground">Loading users...</p>
       </div>
     )
   }
 
   if (users.length === 0) {
     return (
-      <div className="p-12 text-center">
-        <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Users className="w-8 h-8 text-muted-foreground" />
+      <div className="p-8 text-center">
+        <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Users className="w-6 h-6 text-muted-foreground" />
         </div>
-        <p className="text-sm font-semibold text-foreground mb-1">No users found</p>
-        <p className="text-xs text-muted-foreground">Try adjusting your filters</p>
+        <p className="text-xs font-semibold text-foreground mb-1">No users found</p>
+        <p className="text-[10px] text-muted-foreground">Try adjusting your filters</p>
       </div>
     )
   }
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="h-full overflow-x-auto overflow-y-auto">
         <table className="w-full">
-          <thead className="bg-gradient-to-r from-muted/50 via-muted/30 to-muted/50 border-b-2 border-border/50 sticky top-0 z-10 backdrop-blur-sm">
+          <thead className="bg-gradient-to-r from-muted/50 via-muted/30 to-muted/50 border-b border-border/50 sticky top-0 z-10 backdrop-blur-sm">
             <tr>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">User</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Email</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Role</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Business Group</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Teams</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Tickets</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Created</th>
-              <th className="px-4 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wider">Actions</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">User</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Email</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Role</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Business Group</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Teams</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Tickets</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Status</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Created</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-foreground uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -281,22 +281,22 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
               }`}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-2">
                     {user.avatar_url ? (
                       <div className="relative group/avatar">
                         <img 
                           src={user.avatar_url} 
                           alt={user.full_name} 
-                          className="w-9 h-9 rounded-full ring-2 ring-border group-hover/row:ring-primary/50 transition-all duration-300 shadow-sm group-hover/row:shadow-md group-hover/row:scale-110" 
+                          className="w-7 h-7 rounded-full ring-2 ring-border group-hover/row:ring-primary/50 transition-all duration-300 shadow-sm group-hover/row:shadow-md group-hover/row:scale-110" 
                         />
                         {user.is_active === false && (
                           <div className="absolute inset-0 rounded-full bg-red-500/20 border-2 border-red-500/50"></div>
                         )}
                       </div>
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 ring-2 ring-border group-hover/row:ring-primary/50 transition-all duration-300 shadow-sm group-hover/row:shadow-md group-hover/row:scale-110">
-                        <span className="text-primary font-bold text-xs">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 ring-2 ring-border group-hover/row:ring-primary/50 transition-all duration-300 shadow-sm group-hover/row:shadow-md group-hover/row:scale-110">
+                        <span className="text-primary font-bold text-[10px]">
                           {user.full_name
                             .split(" ")
                             .map((n) => n[0])
@@ -307,11 +307,11 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-sm text-foreground group-hover/row:text-primary transition-colors">
+                      <div className="font-semibold text-xs text-foreground group-hover/row:text-primary transition-colors">
                         {user.full_name}
                       </div>
                       {user.is_active === false && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs text-red-600 font-semibold bg-red-50 dark:bg-red-900/20">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] text-red-600 font-semibold bg-red-50 dark:bg-red-900/20">
                           <XCircle className="w-3 h-3" />
                           Inactive
                         </span>
@@ -319,10 +319,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <span className="text-xs font-medium text-muted-foreground group-hover/row:text-foreground transition-colors">{user.email}</span>
+                <td className="px-3 py-2">
+                  <span className="text-[11px] font-medium text-muted-foreground group-hover/row:text-foreground transition-colors">{user.email}</span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   {isSuperAdmin && user.id !== currentUserId ? (
                     <div className="relative inline-flex max-w-[160px]">
                       {roleChangingId === user.id ? (
@@ -350,18 +350,18 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       )}
                     </div>
                   ) : (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${getRoleBadgeColor(user.role)}`}>
-                      <Key className="w-3 h-3" />
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shadow-sm ${getRoleBadgeColor(user.role)}`}>
+                      <Key className="w-2.5 h-2.5" />
                       {formatRoleName(user.role)}
                       {user.id === currentUserId && (
-                        <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold">You</span>
+                        <span className="ml-1 px-1 py-0.5 rounded bg-primary/20 text-primary text-[9px] font-bold">You</span>
                       )}
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   {isSuperAdmin ? (
-                    <div className="flex items-center gap-1 max-w-[200px]">
+                    <div className="flex items-center gap-1 max-w-[180px]">
                       {bgChangingId === user.id ? (
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
@@ -399,49 +399,49 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       )}
                     </div>
                   ) : user.business_group_name ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-xs font-semibold shadow-sm border border-blue-200 dark:border-blue-800">
-                      <Building2 className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold shadow-sm border border-blue-200 dark:border-blue-800">
+                      <Building2 className="w-2.5 h-2.5" />
                       {user.business_group_name}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground font-medium">—</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   {user.team_names ? (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1">
                       {user.team_names.split(", ").map((team, i) => (
                         <span 
                           key={i} 
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 text-purple-700 dark:text-purple-300 text-xs font-semibold shadow-sm border border-purple-200 dark:border-purple-800"
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 text-purple-700 dark:text-purple-300 text-[10px] font-semibold shadow-sm border border-purple-200 dark:border-purple-800"
                         >
-                          <Users className="w-3 h-3" />
+                          <Users className="w-2.5 h-2.5" />
                           {team}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground font-medium">—</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   {user.ticket_count > 0 ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex flex-col gap-1 cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-foreground">Total: {user.ticket_count}</span>
+                        <div className="flex flex-col gap-0.5 cursor-pointer">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-foreground">Total: {user.ticket_count}</span>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1 flex-wrap">
                             {user.ticket_count_resolved > 0 && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-50 text-green-700 text-[11px] font-medium">
-                                <CheckCircle className="w-3 h-3" />
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-50 text-green-700 text-[9px] font-medium">
+                                <CheckCircle className="w-2.5 h-2.5" />
                                 Resolved: {user.ticket_count_resolved}
                               </span>
                             )}
                             {user.ticket_count_on_hold > 0 && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-[11px] font-medium">
-                                <AlertTriangle className="w-3 h-3" />
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-medium">
+                                <AlertTriangle className="w-2.5 h-2.5" />
                                 Hold: {user.ticket_count_on_hold}
                               </span>
                             )}
@@ -522,35 +522,35 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                     <span className="text-xs text-muted-foreground">0</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   {user.is_active === false ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-red-700 dark:text-red-400 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border border-red-200 dark:border-red-800 shadow-sm">
-                      <XCircle className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold text-red-700 dark:text-red-400 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border border-red-200 dark:border-red-800 shadow-sm">
+                      <XCircle className="w-2.5 h-2.5" />
                       Inactive
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-green-700 dark:text-green-400 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800 shadow-sm">
-                      <CheckCircle className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold text-green-700 dark:text-green-400 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800 shadow-sm">
+                      <CheckCircle className="w-2.5 h-2.5" />
                       Active
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3">
-                  <span className="text-xs font-medium text-muted-foreground group-hover/row:text-foreground transition-colors">
+                <td className="px-3 py-2">
+                  <span className="text-[11px] font-medium text-muted-foreground group-hover/row:text-foreground transition-colors">
                     {format(new Date(user.created_at), "MMM dd, yyyy")}
                   </span>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5">
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className="p-2 hover:bg-primary/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                          className="p-1.5 hover:bg-primary/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
                           title="Edit User"
                           onClick={() => onEditUser(user)}
                           disabled={processingId === user.id}
                         >
-                          <Edit className="w-4 h-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
+                          <Edit className="w-3.5 h-3.5 text-muted-foreground group-hover/btn:text-primary transition-colors" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>Edit User</TooltipContent>
@@ -559,12 +559,12 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          className="p-2 hover:bg-blue-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                          className="p-1.5 hover:bg-blue-500/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
                           title="Reset Password"
                           onClick={(e) => handleResetPassword(user, e)}
                           disabled={processingId === user.id}
                         >
-                          <Key className="w-4 h-4 text-blue-600 group-hover/btn:scale-110 transition-transform" />
+                          <Key className="w-3.5 h-3.5 text-blue-600 group-hover/btn:scale-110 transition-transform" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>Reset Password</TooltipContent>
@@ -573,12 +573,12 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            className="p-2 hover:bg-green-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                            className="p-1.5 hover:bg-green-500/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
                             title="Activate User"
                             onClick={() => handleActivate(user)}
                             disabled={processingId === user.id}
                           >
-                            <CheckCircle className="w-4 h-4 text-green-600 group-hover/btn:scale-110 transition-transform" />
+                            <CheckCircle className="w-3.5 h-3.5 text-green-600 group-hover/btn:scale-110 transition-transform" />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent>Activate User</TooltipContent>
@@ -587,12 +587,12 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            className="p-2 hover:bg-yellow-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                            className="p-1.5 hover:bg-yellow-500/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
                             title="Deactivate User"
                             onClick={() => handleDeactivate(user)}
                             disabled={processingId === user.id}
                           >
-                            <XCircle className="w-4 h-4 text-yellow-600 group-hover/btn:scale-110 transition-transform" />
+                            <XCircle className="w-3.5 h-3.5 text-yellow-600 group-hover/btn:scale-110 transition-transform" />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent>Deactivate User</TooltipContent>
@@ -601,12 +601,12 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className="p-2 hover:bg-red-500/10 rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                          className="p-1.5 hover:bg-red-500/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
                           title="Delete User"
                           onClick={() => handleDelete(user)}
                           disabled={processingId === user.id}
                         >
-                          <Trash2 className="w-4 h-4 text-red-600 group-hover/btn:scale-110 transition-transform" />
+                          <Trash2 className="w-3.5 h-3.5 text-red-600 group-hover/btn:scale-110 transition-transform" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>Delete User</TooltipContent>

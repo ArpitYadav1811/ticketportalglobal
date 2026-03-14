@@ -24,6 +24,16 @@ export function TicketSuccessDialog({
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const [countdown, setCountdown] = useState(3)
 
+  // Extract short ticket ID (e.g., "04821" from "TKT-202603-04821")
+  const getShortTicketId = (fullTicketId: string | null): string | null => {
+    if (!fullTicketId) return null
+    // Extract the last part after the last hyphen
+    const parts = fullTicketId.split('-')
+    return parts.length > 0 ? parts[parts.length - 1] : fullTicketId
+  }
+
+  const displayTicketId = getShortTicketId(ticketId)
+
   useEffect(() => {
     if (isOpen) {
       setCountdown(3)
@@ -60,9 +70,9 @@ export function TicketSuccessDialog({
             <DialogTitle className="text-lg font-bold text-green-800 dark:text-green-300">
               Ticket Created Successfully!
             </DialogTitle>
-            {ticketId && (
+            {displayTicketId && (
               <DialogDescription className="text-xs">
-                Your ticket has been created with ID: <span className="font-semibold text-slate-900 dark:text-slate-100">{ticketId}</span>
+                Your ticket has been created with ID: <span className="font-semibold text-slate-900 dark:text-slate-100">{displayTicketId}</span>
               </DialogDescription>
             )}
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
