@@ -248,208 +248,267 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
   }, {} as Record<string, any[]>)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <ScrollText className="w-6 h-6" />
+          <h2 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <ScrollText className="w-6 h-6 text-primary" />
+            </div>
             System Audit Logs
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-2">
             Track all system changes and administrative actions
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setViewMode(viewMode === "table" ? "timeline" : "table")}>
-            {viewMode === "table" ? <Clock className="w-4 h-4 mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
+        <div className="flex gap-2 flex-wrap">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setViewMode(viewMode === "table" ? "timeline" : "table")}
+            className="gap-2"
+          >
+            {viewMode === "table" ? <Clock className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
             {viewMode === "table" ? "Timeline" : "Table"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)} disabled={logs.length === 0}>
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowExportDialog(true)} 
+            disabled={logs.length === 0}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export
           </Button>
-          <Button variant="outline" size="sm" onClick={loadLogs} disabled={loading}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadLogs} 
+            disabled={loading}
+            className="gap-2"
+          >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
           </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-card border rounded-lg p-4">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Filters:</span>
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded">
+              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Filters</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {total} total records
+            </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <select
-              value={filters.entityType}
-              onChange={(e) => setFilters((p) => ({ ...p, entityType: e.target.value, offset: 0 }))}
-              className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">All Entities</option>
-              {entityTypes.map((t) => (
-                <option key={t} value={t}>
-                  {t.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filters.actionType}
-              onChange={(e) => setFilters((p) => ({ ...p, actionType: e.target.value, offset: 0 }))}
-              className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">All Actions</option>
-              {actionTypes.map((t) => (
-                <option key={t} value={t}>
-                  {t.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filters.userId}
-              onChange={(e) => setFilters((p) => ({ ...p, userId: e.target.value, offset: 0 }))}
-              className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={loadingUsers}
-            >
-              <option value="">All Users</option>
-              {allUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.full_name} ({u.email})
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value, offset: 0 }))}
-              className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="From Date"
-            />
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value, offset: 0 }))}
-              className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="To Date"
-            />
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value, offset: 0 }))}
-              placeholder="Search in notes, values, names..."
-              className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Entity Type</label>
+              <select
+                value={filters.entityType}
+                onChange={(e) => setFilters((p) => ({ ...p, entityType: e.target.value, offset: 0 }))}
+                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              >
+                <option value="">All Entities</option>
+                {entityTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Action Type</label>
+              <select
+                value={filters.actionType}
+                onChange={(e) => setFilters((p) => ({ ...p, actionType: e.target.value, offset: 0 }))}
+                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              >
+                <option value="">All Actions</option>
+                {actionTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">User</label>
+              <select
+                value={filters.userId}
+                onChange={(e) => setFilters((p) => ({ ...p, userId: e.target.value, offset: 0 }))}
+                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                disabled={loadingUsers}
+              >
+                <option value="">All Users</option>
+                {allUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.full_name} ({u.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">From Date</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value, offset: 0 }))}
+                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">To Date</label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value, offset: 0 }))}
+                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Search</label>
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value, offset: 0 }))}
+                placeholder="Search notes, values..."
+                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
           </div>
           {(filters.entityType || filters.actionType || filters.userId || filters.dateFrom || filters.dateTo || filters.search) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setFilters({ entityType: "", actionType: "", userId: "", dateFrom: "", dateTo: "", search: "", limit, offset: 0 })}
-              className="text-xs"
-            >
-              Clear Filters
-            </Button>
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters({ entityType: "", actionType: "", userId: "", dateFrom: "", dateTo: "", search: "", limit, offset: 0 })}
+                className="gap-2"
+              >
+                <X className="w-3 h-3" />
+                Clear All Filters
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="text-center py-12">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <div className="text-center py-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Loading audit logs...</p>
         </div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-12 bg-card border rounded-lg">
-          <ScrollText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <p className="text-sm text-muted-foreground">No audit logs found</p>
+        <div className="text-center py-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          <div className="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-full w-fit mx-auto mb-4">
+            <ScrollText className="w-12 h-12 text-muted-foreground opacity-50" />
+          </div>
+          <p className="text-base font-medium text-foreground mb-1">No audit logs found</p>
+          <p className="text-sm text-muted-foreground">Try adjusting your filters or check back later</p>
         </div>
       ) : viewMode === "table" ? (
         <>
-          <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-card border-b">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Time</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Action</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Entity</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Details</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">By</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground w-12"></th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Action</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Entity</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Details</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Performed By</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-foreground uppercase tracking-wider w-12"></th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                   {logs.map((log) => {
                     const isExpanded = expandedLogs.has(log.id)
                     return (
-                      <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30">
-                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDateShort(log.created_at)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 text-xs rounded font-medium ${getActionColor(log.action_type)}`}
-                          >
-                            {log.action_type?.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs">
-                          {log.entity_type?.replace(/_/g, " ") || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs max-w-[200px]">
-                          {log.notes || (
-                            <span className="text-muted-foreground">
-                              {log.old_value && log.new_value
-                                ? `${log.old_value} → ${log.new_value}`
-                                : log.new_value || log.old_value || "—"}
+                      <>
+                        <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4 text-xs text-muted-foreground whitespace-nowrap font-mono">
+                            {formatDateShort(log.created_at)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 text-xs rounded-md font-semibold ${getActionColor(log.action_type)}`}
+                            >
+                              {log.action_type?.replace(/_/g, " ").toUpperCase()}
                             </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                          {log.performed_by_name || log.performer_email || "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => toggleExpand(log.id)}
-                            className="p-1 hover:bg-muted rounded"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" />
+                          </td>
+                          <td className="px-6 py-4 text-sm font-medium text-foreground">
+                            {log.entity_type?.replace(/_/g, " ").split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-foreground max-w-[300px] truncate">
+                            {log.notes || (
+                              <span className="text-muted-foreground">
+                                {log.old_value && log.new_value
+                                  ? `${log.old_value} → ${log.new_value}`
+                                  : log.new_value || log.old_value || "—"}
+                              </span>
                             )}
-                          </button>
-                        </td>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3.5 h-3.5" />
+                              {log.performed_by_name || log.performer_email || "—"}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => toggleExpand(log.id)}
+                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
+                              title={isExpanded ? "Collapse details" : "Expand details"}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </button>
+                          </td>
+                        </tr>
                         {isExpanded && (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-3 bg-muted/30">
-                              <div className="space-y-2 text-xs">
+                          <tr key={`${log.id}-details`}>
+                            <td colSpan={6} className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50">
+                              <div className="space-y-3 text-sm max-w-4xl">
                                 {log.old_value && (
-                                  <div>
-                                    <span className="font-medium">Old Value:</span> {log.old_value}
+                                  <div className="flex gap-2">
+                                    <span className="font-semibold text-foreground min-w-[100px]">Old Value:</span>
+                                    <span className="text-muted-foreground flex-1">{log.old_value}</span>
                                   </div>
                                 )}
                                 {log.new_value && (
-                                  <div>
-                                    <span className="font-medium">New Value:</span> {log.new_value}
+                                  <div className="flex gap-2">
+                                    <span className="font-semibold text-foreground min-w-[100px]">New Value:</span>
+                                    <span className="text-foreground flex-1">{log.new_value}</span>
                                   </div>
                                 )}
                                 {log.notes && (
-                                  <div>
-                                    <span className="font-medium">Notes:</span> {log.notes}
+                                  <div className="flex gap-2">
+                                    <span className="font-semibold text-foreground min-w-[100px]">Notes:</span>
+                                    <span className="text-muted-foreground flex-1">{log.notes}</span>
                                   </div>
                                 )}
-                                <div className="text-muted-foreground">
-                                  Full timestamp: {formatDate(log.created_at)}
+                                <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                                  <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
+                                  <span className="text-xs text-muted-foreground">
+                                    Full timestamp: {formatDate(log.created_at)}
+                                  </span>
                                 </div>
                               </div>
                             </td>
                           </tr>
                         )}
-                      </tr>
+                      </>
                     )
                   })}
                 </tbody>
@@ -458,9 +517,11 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
           </div>
 
           {/* Pagination */}
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-muted-foreground">
-              Showing {filters.offset + 1}–{Math.min(filters.offset + filters.limit, total)} of {total}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-semibold text-foreground">{filters.offset + 1}</span> to{" "}
+              <span className="font-semibold text-foreground">{Math.min(filters.offset + filters.limit, total)}</span> of{" "}
+              <span className="font-semibold text-foreground">{total}</span> records
             </p>
             <div className="flex gap-2">
               <Button
@@ -471,6 +532,9 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
               >
                 Previous
               </Button>
+              <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md text-sm font-medium">
+                Page {Math.floor(filters.offset / filters.limit) + 1} of {Math.ceil(total / filters.limit)}
+              </div>
               <Button
                 size="sm"
                 variant="outline"
@@ -489,27 +553,31 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
             .map(([date, dateLogs]) => {
               const logsArray = dateLogs as any[]
               return (
-              <div key={date} className="bg-card border rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="font-semibold text-sm">{date}</h3>
-                  <span className="text-xs text-muted-foreground">({logsArray.length} events)</span>
+              <div key={date} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base text-foreground">{date}</h3>
+                    <span className="text-xs text-muted-foreground">{logsArray.length} event{logsArray.length !== 1 ? 's' : ''}</span>
+                  </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {logsArray.map((log: any) => (
                     <div
                       key={log.id}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors"
+                      className="flex items-start gap-4 p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                     >
-                      <div className={`mt-1 p-1.5 rounded ${getActionColor(log.action_type)}`}>
-                        <Clock className="w-3 h-3" />
+                      <div className={`mt-1 p-2 rounded-lg ${getActionColor(log.action_type)}`}>
+                        <Clock className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium">
-                            {log.action_type?.replace(/_/g, " ")} {log.entity_type?.replace(/_/g, " ")}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            {log.action_type?.replace(/_/g, " ").toUpperCase()} {log.entity_type?.replace(/_/g, " ").split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground font-mono">
                             {new Date(log.created_at).toLocaleTimeString("en-IN", {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -517,18 +585,19 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
                           </span>
                         </div>
                         {log.notes && (
-                          <p className="text-xs text-muted-foreground mb-1">{log.notes}</p>
+                          <p className="text-sm text-foreground mb-2">{log.notes}</p>
                         )}
                         {(log.old_value || log.new_value) && (
-                          <p className="text-xs text-muted-foreground">
-                            {log.old_value && <span className="line-through">{log.old_value}</span>}
-                            {log.old_value && log.new_value && " → "}
-                            {log.new_value && <span>{log.new_value}</span>}
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {log.old_value && <span className="line-through opacity-75">{log.old_value}</span>}
+                            {log.old_value && log.new_value && <span className="mx-2">→</span>}
+                            {log.new_value && <span className="font-medium text-foreground">{log.new_value}</span>}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          by {log.performed_by_name || log.performer_email || "Unknown"}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <User className="w-3.5 h-3.5" />
+                          <span>by {log.performed_by_name || log.performer_email || "Unknown"}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -536,6 +605,74 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
               </div>
               )
             })}
+        </div>
+      )}
+
+      {/* Export Dialog */}
+      {showExportDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowExportDialog(false)}>
+          <div
+            className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Download className="w-5 h-5 text-primary" />
+                Export Audit Logs
+              </h3>
+              <button
+                onClick={() => setShowExportDialog(false)}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Select the fields you want to include in the CSV export:
+            </p>
+            <div className="space-y-2 mb-6 max-h-[300px] overflow-y-auto">
+              {[
+                { value: "time", label: "Time" },
+                { value: "action", label: "Action" },
+                { value: "entity", label: "Entity" },
+                { value: "old_value", label: "Old Value" },
+                { value: "new_value", label: "New Value" },
+                { value: "performed_by", label: "Performed By" },
+                { value: "notes", label: "Notes" },
+                { value: "entity_id", label: "Entity ID" },
+              ].map((field) => (
+                <label key={field.value} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-md cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={exportFields.includes(field.value)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setExportFields([...exportFields, field.value])
+                      } else {
+                        setExportFields(exportFields.filter((f) => f !== field.value))
+                      }
+                    }}
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="text-sm text-foreground">{field.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowExportDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleExport}
+                disabled={exportFields.length === 0}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

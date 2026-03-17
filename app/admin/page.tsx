@@ -239,10 +239,10 @@ export default function AdminDashboardPage() {
 
       case "audit-logs":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full flex flex-col">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 via-transparent to-gray-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-slate-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10 h-full">
+            <div className="relative z-10 h-full overflow-auto">
               <EnhancedAuditLogs />
             </div>
           </div>
