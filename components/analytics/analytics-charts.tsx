@@ -522,7 +522,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       {/* NEW: Detailed User & SPOC Analytics */}
       <div className="grid grid-cols-1 gap-4 mt-4">
         {/* Tickets by Initiators */}
-        <ChartCard title={`Tickets by Initiators${filterType === 'initiator' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Initiators">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -536,7 +536,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by Initiators - Open Status */}
-        <ChartCard title={`Tickets by Initiators (Open)${filterType === 'initiator' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Initiators (Open)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -550,7 +550,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by Initiators - Resolved Status */}
-        <ChartCard title={`Tickets by Initiators (Resolved)${filterType === 'initiator' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Initiators (Resolved)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -564,7 +564,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by SPOC */}
-        <ChartCard title={`Tickets by SPOC${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by SPOC">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -578,7 +578,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by SPOC - Open Status */}
-        <ChartCard title={`Tickets by SPOC (Open)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by SPOC (Open)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -592,7 +592,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by SPOC - On-Hold Status */}
-        <ChartCard title={`Tickets by SPOC (On-Hold)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by SPOC (On-Hold)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -606,7 +606,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by SPOC - Resolved Status */}
-        <ChartCard title={`Tickets by SPOC (Resolved)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by SPOC (Resolved)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -620,7 +620,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by Assignee */}
-        <ChartCard title={`Tickets by Assignee${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Assignee">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -634,7 +634,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by Assignee - Open Status */}
-        <ChartCard title={`Tickets by Assignee (Open)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Assignee (Open)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -648,7 +648,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by Assignee - On-Hold Status */}
-        <ChartCard title={`Tickets by Assignee (On-Hold)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Assignee (On-Hold)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
@@ -662,7 +662,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
 
         {/* Tickets by Assignee - Resolved Status */}
-        <ChartCard title={`Tickets by Assignee (Resolved)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+        <ChartCard title="Tickets by Assignee (Resolved)">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
               <CartesianGrid {...GRID} />
