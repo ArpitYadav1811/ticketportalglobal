@@ -37,9 +37,10 @@ import ConfirmationDialog, { ChangeDetail } from "@/components/ui/confirmation-d
 interface UnifiedMasterDataV2Props {
   userId?: number
   userRole?: string
+  hideCardWrapper?: boolean
 }
 
-export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterDataV2Props) {
+export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper = false }: UnifiedMasterDataV2Props) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("business-groups")
   const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
@@ -551,7 +552,7 @@ export default function UnifiedMasterDataV2({ userId, userRole }: UnifiedMasterD
         loading={confirmDialog.loading}
         destructive={confirmDialog.actionType === "delete" || confirmDialog.actionType === "remove"}
       />
-    <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-6">
+    <div className={hideCardWrapper ? "bg-transparent border-0 rounded-xl p-0" : "bg-white dark:bg-slate-800 border border-border rounded-xl p-6"}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="business-groups">Business Groups</TabsTrigger>

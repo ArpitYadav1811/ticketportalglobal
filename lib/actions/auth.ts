@@ -252,8 +252,13 @@ export async function getUserByEmail(email: string) {
     `
     return result[0] || null
   } catch (error) {
-    console.error("Error fetching user by email:", error)
-    return null
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error("Error fetching user by email:", errorMessage)
+    // Re-throw to let retry logic handle it, but log the specific error
+    if (errorMessage.includes('ETIMEDOUT') || errorMessage.includes('fetch failed')) {
+      console.error("[Auth] Database connection timeout - this will be retried automatically")
+    }
+    throw error // Re-throw so withRetry can handle it
   }
 }
 
@@ -267,8 +272,13 @@ export async function getUserByMicrosoftId(microsoftId: string) {
     `
     return result[0] || null
   } catch (error) {
-    console.error("Error fetching user by Microsoft ID:", error)
-    return null
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error("Error fetching user by Microsoft ID:", errorMessage)
+    // Re-throw to let retry logic handle it
+    if (errorMessage.includes('ETIMEDOUT') || errorMessage.includes('fetch failed')) {
+      console.error("[Auth] Database connection timeout - this will be retried automatically")
+    }
+    throw error // Re-throw so withRetry can handle it
   }
 }
 
@@ -298,8 +308,22 @@ export async function findOrCreateSSOUser({
     
     const sanitizedName = sanitizeString(name)
 
-    let user = await getUserByMicrosoftId(microsoftId)
-    if (!user) user = await getUserByEmail(sanitizedEmail)
+    let user: any = null
+    try {
+      user = await getUserByMicrosoftId(microsoftId)
+    } catch (error) {
+      // Retry logic already handled by sql wrapper, but if it still fails, try email lookup
+      console.warn("[Auth] Failed to get user by Microsoft ID, trying email lookup...")
+    }
+    
+    if (!user) {
+      try {
+        user = await getUserByEmail(sanitizedEmail)
+      } catch (error) {
+        // Both lookups failed - connection issue
+        console.error("[Auth] Failed to get user by email after retries")
+      }
+    }
 
     if (user) {
       if (!user.microsoft_id) {

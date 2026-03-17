@@ -8,17 +8,8 @@ import { existsSync, readFileSync } from "fs"
 // Note: fetchConnectionCache is deprecated - all queries now use connection pool/cache automatically
 
 // Configure fetch with timeout for cold start handling
-// This ensures we wait up to 30 seconds for Neon to wake up from scale-to-zero
-const fetchWithTimeout = (url: RequestInfo, init?: RequestInit) => {
-  return fetch(url, {
-    ...init,
-    signal: AbortSignal.timeout(30000), // 30 second timeout for cold starts
-  })
-}
-
-// Set custom fetch function with timeout globally
-// This ensures all Neon queries use the timeout configuration
-neonConfig.fetchFunction = fetchWithTimeout
+// This will be set after WSL detection
+let fetchWithTimeout: ((url: RequestInfo, init?: RequestInit) => Promise<Response>) | null = null
 
 // ─── Global Singleton Pattern for Development ────────────────────────────────
 // Prevents creating new database connections on every Fast Refresh (HMR)
@@ -64,6 +55,21 @@ if (isWSL) {
     process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --dns-result-order=ipv4first`
   }
 }
+
+// Configure fetch with timeout for cold start handling
+// Increased timeout for WSL environments and Neon cold starts
+// WSL networking can be slower, so we use 60 seconds for better reliability
+const fetchTimeout = isWSL ? 60000 : 45000 // 60s for WSL, 45s for others
+fetchWithTimeout = (url: RequestInfo, init?: RequestInit) => {
+  return fetch(url, {
+    ...init,
+    signal: AbortSignal.timeout(fetchTimeout),
+  })
+}
+
+// Set custom fetch function with timeout globally
+// This ensures all Neon queries use the timeout configuration
+neonConfig.fetchFunction = fetchWithTimeout
 
 // Get or create the Neon client using singleton pattern
 // This ensures we don't create multiple connection pools on hot-reload
@@ -152,8 +158,8 @@ function isRetryableError(error: unknown): boolean {
 // This gracefully handles the initial "wake up" lag without crashing the app
 async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 5,
-  delayMs: number = 2000 // Initial 2s delay accommodates typical cold start (1-3s)
+  maxRetries: number = isWSL ? 6 : 5, // Extra retry for WSL
+  delayMs: number = isWSL ? 3000 : 2000 // Longer initial delay for WSL (3s vs 2s)
 ): Promise<T> {
   let lastError: Error | unknown
   
@@ -171,10 +177,19 @@ async function withRetry<T>(
         if (attempt === maxRetries && isRetryable) {
           console.error(`[DB Retry] All ${maxRetries} attempts failed. Final error:`, error)
           console.error('[DB Retry] Possible causes:')
-          console.error('  1) Database cold start taking longer than expected (>30s)')
+          console.error(`  1) Database cold start taking longer than expected (>${Math.round(fetchTimeout/1000)}s)`)
           console.error('  2) Network connectivity issues')
-          console.error('  3) WSL networking problems (if running in WSL)')
+          if (isWSL) {
+            console.error('  3) WSL networking detected - try:')
+            console.error('     - Restart WSL: wsl --shutdown then restart')
+            console.error('     - Check Windows firewall settings')
+            console.error('     - Verify DNS resolution: ping your-database-host')
+          } else {
+            console.error('  3) Network connectivity problems')
+          }
           console.error('  4) Database may be suspended - check Neon dashboard')
+          console.error('  5) Verify DATABASE_URL is correct in .env.local')
+          console.error('  6) Check if database is accessible: test connection in Neon dashboard')
         }
         throw error
       }

@@ -151,12 +151,12 @@ export default function AdminDashboardPage() {
 
       case "business-groups":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full flex flex-col">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10 h-full">
-              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
-        </div>
+            <div className="relative z-10 h-full overflow-auto p-4">
+              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} hideCardWrapper={true} />
+            </div>
           </div>
         )
 
@@ -195,22 +195,22 @@ export default function AdminDashboardPage() {
 
       case "categories":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full flex flex-col">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10 h-full">
-              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
+            <div className="relative z-10 h-full overflow-auto p-4">
+              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} hideCardWrapper={true} />
             </div>
           </div>
         )
 
       case "projects":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full flex flex-col">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10 h-full">
-              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
+            <div className="relative z-10 h-full overflow-auto p-4">
+              <UnifiedMasterDataV2 userId={user.id} userRole={userRole} hideCardWrapper={true} />
             </div>
           </div>
         )
