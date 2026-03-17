@@ -260,17 +260,36 @@ export default function SettingsPage() {
  e.preventDefault()
 
  if (!currentUser?.id) {
- alert("User not authenticated")
+ toast.error("User not authenticated")
  return
  }
 
- if (newPassword !== confirmPassword) {
- alert("New passwords do not match!")
+ // Validate current password
+ if (!currentPassword || currentPassword.trim() === "") {
+ toast.error("Please enter your current password")
+ return
+ }
+
+ // Validate new password
+ if (!newPassword || newPassword.trim() === "") {
+ toast.error("Please enter a new password")
  return
  }
 
  if (newPassword.length < 6) {
- alert("Password must be at least 6 characters long")
+ toast.error("Password must be at least 6 characters long")
+ return
+ }
+
+ // Check if passwords match
+ if (newPassword !== confirmPassword) {
+ toast.error("New passwords do not match!")
+ return
+ }
+
+ // Check if new password is different from current
+ if (currentPassword === newPassword) {
+ toast.error("New password must be different from current password")
  return
  }
 
@@ -279,17 +298,17 @@ export default function SettingsPage() {
  const result = await changeUserPassword(currentUser.id, currentPassword, newPassword)
 
  if (result.success) {
- alert("Password changed successfully!")
+ toast.success("Password changed successfully!")
  setCurrentPassword("")
  setNewPassword("")
  setConfirmPassword("")
  setShowPasswordSection(false)
  } else {
- alert(result.error || "Failed to change password")
+ toast.error(result.error || "Failed to change password")
  }
  } catch (error) {
  console.error("Error changing password:", error)
- alert("Failed to change password")
+ toast.error("Failed to change password. Please try again.")
  } finally {
  setSaving(false)
  }

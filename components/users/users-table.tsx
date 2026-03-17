@@ -626,19 +626,23 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
       </div>
 
       {/* Password Change Dialog */}
-      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+      <Dialog open={passwordDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleCancelPasswordDialog()
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
-              Set a new password for {selectedUser?.full_name || "this user"}
+              Set a new password for {selectedUser?.full_name || "this user"}. Password must be at least 6 characters long.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label htmlFor="newPassword" className="text-sm font-medium text-foreground">
-                New Password
+                New Password <span className="text-red-500">*</span>
               </label>
               <input
                 id="newPassword"
@@ -648,15 +652,21 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                   setNewPassword(e.target.value)
                   setPasswordError("")
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newPassword && confirmPassword) {
+                    handleUpdatePassword()
+                  }
+                }}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
-                placeholder="Enter new password"
+                placeholder="Enter new password (min 6 characters)"
                 disabled={isUpdatingPassword}
+                autoFocus
               />
             </div>
             
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-                Confirm New Password
+                Confirm New Password <span className="text-red-500">*</span>
               </label>
               <input
                 id="confirmPassword"
@@ -666,6 +676,11 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                   setConfirmPassword(e.target.value)
                   setPasswordError("")
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newPassword && confirmPassword) {
+                    handleUpdatePassword()
+                  }
+                }}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
                 placeholder="Confirm new password"
                 disabled={isUpdatingPassword}
@@ -673,8 +688,9 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
             </div>
 
             {passwordError && (
-              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800">
-                {passwordError}
+              <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{passwordError}</span>
               </div>
             )}
           </div>
@@ -691,7 +707,14 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
               onClick={handleUpdatePassword}
               disabled={isUpdatingPassword || !newPassword || !confirmPassword}
             >
-              {isUpdatingPassword ? "Updating..." : "Update"}
+              {isUpdatingPassword ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Updating...
+                </>
+              ) : (
+                "Update Password"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
