@@ -65,8 +65,8 @@ export default function AnalyticsPage() {
             />
             <div className="mt-4">
               <TabsList className="inline-flex h-8 w-auto gap-1 p-1 bg-slate-100 dark:bg-slate-800">
-                <TabsTrigger value="initiator" className="text-xs px-3 py-1 h-6">Ticket By Initiator</TabsTrigger>
-                <TabsTrigger value="target" className="text-xs px-3 py-1 h-6">Ticket Target Group</TabsTrigger>
+                <TabsTrigger value="initiator" className="text-xs px-3 py-1 h-6">Tickets By Initiator Group</TabsTrigger>
+                <TabsTrigger value="target" className="text-xs px-3 py-1 h-6">Tickets By Target Group</TabsTrigger>
               </TabsList>
             </div>
           </div>
