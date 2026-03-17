@@ -104,6 +104,15 @@ const ChartCard = ({ title, children, className = "" }: { title: string; childre
   </div>
 )
 
+/* ── Status Colors ─────────────────────────────────────────── */
+const STATUS_COLORS = {
+  total: "#6366f1",    // indigo
+  open: "#ef4444",     // red
+  resolved: "#10b981", // green
+  on_hold: "#f59e0b",  // amber
+  closed: "#64748b",   // slate
+}
+
 /* ════════════════════════════════════════════════════════════ */
 
 interface AnalyticsChartsProps {
@@ -577,6 +586,181 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                 activeDot={{ r: 5, fill: CHART_COLORS.secondary, stroke: "#fff", strokeWidth: 2 }}
                 name="Tickets"
               />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* NEW: Detailed User & SPOC Analytics */}
+      <div className="grid grid-cols-1 gap-4 mt-4">
+        {/* Tickets by Initiators */}
+        <ChartCard title={`Tickets by Initiators${filterType === 'initiator' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by Initiators - Open Status */}
+        <ChartCard title={`Tickets by Initiators (Open)${filterType === 'initiator' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by Initiators - Resolved Status */}
+        <ChartCard title={`Tickets by Initiators (Resolved)${filterType === 'initiator' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by SPOC */}
+        <ChartCard title={`Tickets by SPOC${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="spoc" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by SPOC - Open Status */}
+        <ChartCard title={`Tickets by SPOC (Open)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="spoc" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by SPOC - On-Hold Status */}
+        <ChartCard title={`Tickets by SPOC (On-Hold)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="spoc" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by SPOC - Resolved Status */}
+        <ChartCard title={`Tickets by SPOC (Resolved)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="spoc" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by Assignee */}
+        <ChartCard title={`Tickets by Assignee${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by Assignee - Open Status */}
+        <ChartCard title={`Tickets by Assignee (Open)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by Assignee - On-Hold Status */}
+        <ChartCard title={`Tickets by Assignee (On-Hold)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Tickets by Assignee - Resolved Status */}
+        <ChartCard title={`Tickets by Assignee (Resolved)${filterType === 'target' ? ' (Your Group)' : ''}`}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Annual Ticket Trend (Last 12 Months) */}
+        <ChartCard title="Annual Ticket Trend (Last 12 Months)">
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={data.annualTrend || []} margin={{ left: 10, right: 10, top: 10, bottom: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis dataKey="month" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Line type="monotone" dataKey="total" stroke={STATUS_COLORS.total} strokeWidth={2} dot={{ r: 3 }} name="Total" />
+              <Line type="monotone" dataKey="open" stroke={STATUS_COLORS.open} strokeWidth={2} dot={{ r: 3 }} name="Open" />
+              <Line type="monotone" dataKey="resolved" stroke={STATUS_COLORS.resolved} strokeWidth={2} dot={{ r: 3 }} name="Resolved" />
+              <Line type="monotone" dataKey="on_hold" stroke={STATUS_COLORS.on_hold} strokeWidth={2} dot={{ r: 3 }} name="On-Hold" />
+              <Line type="monotone" dataKey="closed" stroke={STATUS_COLORS.closed} strokeWidth={2} dot={{ r: 3 }} name="Closed" />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>

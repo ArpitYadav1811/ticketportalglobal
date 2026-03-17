@@ -825,6 +825,152 @@ export async function getAnalyticsData(
               ORDER BY DATE_TRUNC('month', created_at) ASC
             `
 
+    // --- NEW: Detailed Initiator Analytics ---
+    const ticketsByInitiators = hasGroupFilter
+      ? await sql`
+          SELECT 
+            u.full_name as initiator,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          LEFT JOIN users u ON t.created_by = u.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND t.business_unit_group_id = ANY(${businessGroupIds})
+            AND u.full_name IS NOT NULL
+          GROUP BY u.full_name
+          ORDER BY total DESC
+          LIMIT 20
+        `
+      : await sql`
+          SELECT 
+            u.full_name as initiator,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          LEFT JOIN users u ON t.created_by = u.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND u.full_name IS NOT NULL
+          GROUP BY u.full_name
+          ORDER BY total DESC
+          LIMIT 20
+        `
+
+    // --- NEW: Tickets by SPOC with status breakdown ---
+    const ticketsBySpocDetailed = hasGroupFilter
+      ? await sql`
+          SELECT 
+            u.full_name as spoc,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          LEFT JOIN users u ON t.spoc_user_id = u.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND ${groupFilterCondition}
+            AND u.full_name IS NOT NULL
+          GROUP BY u.full_name
+          ORDER BY total DESC
+          LIMIT 20
+        `
+      : await sql`
+          SELECT 
+            u.full_name as spoc,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          LEFT JOIN users u ON t.spoc_user_id = u.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND u.full_name IS NOT NULL
+          GROUP BY u.full_name
+          ORDER BY total DESC
+          LIMIT 20
+        `
+
+    // --- NEW: Tickets by Assignee with status breakdown ---
+    const ticketsByAssignee = hasGroupFilter
+      ? await sql`
+          SELECT 
+            u.full_name as assignee,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          LEFT JOIN users u ON t.assigned_to = u.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND ${groupFilterCondition}
+            AND u.full_name IS NOT NULL
+          GROUP BY u.full_name
+          ORDER BY total DESC
+          LIMIT 20
+        `
+      : await sql`
+          SELECT 
+            u.full_name as assignee,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          LEFT JOIN users u ON t.assigned_to = u.id
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND u.full_name IS NOT NULL
+          GROUP BY u.full_name
+          ORDER BY total DESC
+          LIMIT 20
+        `
+
+    // --- NEW: Annual Ticket Trend (last 12 months) ---
+    const annualTrend = hasGroupFilter
+      ? await sql`
+          SELECT 
+            TO_CHAR(DATE_TRUNC('month', t.created_at), 'Mon YYYY') as month,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed
+          FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '12 months'
+            AND ${groupFilterCondition}
+          GROUP BY DATE_TRUNC('month', t.created_at)
+          ORDER BY DATE_TRUNC('month', t.created_at) ASC
+        `
+      : await sql`
+          SELECT 
+            TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YYYY') as month,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'open') as open,
+            COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE status = 'on-hold') as on_hold,
+            COUNT(*) FILTER (WHERE status = 'closed') as closed
+          FROM tickets
+          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            AND created_at >= CURRENT_DATE - INTERVAL '12 months'
+          GROUP BY DATE_TRUNC('month', created_at)
+          ORDER BY DATE_TRUNC('month', created_at) ASC
+        `
+
     return {
       success: true,
       data: {
@@ -839,6 +985,11 @@ export async function getAnalyticsData(
         ticketsBySpoc: ticketsBySpoc || [],
         ticketsByMonth: ticketsByMonth || [],
         summaryStats: summaryStats[0] || { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
+        // New detailed analytics
+        ticketsByInitiators: ticketsByInitiators || [],
+        ticketsBySpocDetailed: ticketsBySpocDetailed || [],
+        ticketsByAssignee: ticketsByAssignee || [],
+        annualTrend: annualTrend || [],
       },
     }
   } catch (error) {
@@ -858,6 +1009,11 @@ export async function getAnalyticsData(
         ticketsBySpoc: [],
         ticketsByMonth: [],
         summaryStats: { total: 0, open: 0, resolved: 0, closed: 0, on_hold: 0 },
+        // New detailed analytics
+        ticketsByInitiators: [],
+        ticketsBySpocDetailed: [],
+        ticketsByAssignee: [],
+        annualTrend: [],
       },
     }
   }
