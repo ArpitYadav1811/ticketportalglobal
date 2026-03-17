@@ -4,11 +4,13 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import UnifiedMasterDataV2 from "@/components/master-data/unified-master-data-v2"
+import MasterDataHeader from "@/components/master-data/master-data-header"
 
 export default function MasterDataPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedGroupId, setSelectedGroupId] = useState<number | "all" | null>("all")
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -46,24 +48,45 @@ export default function MasterDataPage() {
     checkAccess()
   }, [router])
 
+  // Initialize selected group for non-Super Admin users
+  useEffect(() => {
+    if (!user || isLoading) return
+    
+    const userRole = user?.role?.toLowerCase()
+    const userGroupId = user?.business_unit_group_id
+    const isSuperAdmin = userRole === "superadmin"
+    
+    if (!isSuperAdmin && userGroupId) {
+      setSelectedGroupId(userGroupId)
+    }
+  }, [user, isLoading])
+
   // Show loading or nothing while checking permissions
   if (isLoading || !user) {
     return null
   }
 
+  const userRole = user?.role?.toLowerCase()
+  const userGroupId = user?.business_unit_group_id
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 bg-card dark:bg-gray-800 p-4 shadow-lg rounded-md border border-border">
-        <div>
-          <h1 className="text-3xl font-poppins font-bold text-foreground">
-            Master Data Management
-          </h1>
-          <p className="text-foreground-secondary mt-2">
-            Manage business groups, categories, subcategories, and ticket classification mappings
-          </p>
+      <div className="pl-6 pr-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
+        <div className="px-1 py-4">
+          <MasterDataHeader 
+            userId={user?.id} 
+            userRole={userRole} 
+            groupName={user?.group_name} 
+            userName={user?.full_name}
+            userGroupId={userGroupId}
+            selectedGroupId={selectedGroupId}
+            onGroupChange={setSelectedGroupId}
+          />
         </div>
-
-        <UnifiedMasterDataV2 userId={user.id} userRole={user.role?.toLowerCase()} />
+        <div className="border-b border-slate-200 dark:border-slate-700 mb-4" />
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4">
+          <UnifiedMasterDataV2 userId={user.id} userRole={userRole} />
+        </div>
       </div>
     </DashboardLayout>
   )
