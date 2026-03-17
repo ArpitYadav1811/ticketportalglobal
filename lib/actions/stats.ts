@@ -68,10 +68,14 @@ export async function getRecentTickets(limit = 5) {
  * - Super Admin / Admin: All tickets (no filter)
  * - Manager (SPOC): Only tickets targeted to their business groups
  * - User: Tickets for their business group + tickets where they are involved + tickets where team members are involved
+ * 
+ * filterType:
+ * - 'initiator': Filter by tickets where the user's group is the initiator (creator's group)
+ * - 'target': Filter by tickets where the user's group is the target (assigned group)
  */
 export async function getAnalyticsData(
   daysFilter: number = 30,
-  options?: { businessGroupIds?: number[]; userId?: number; teamMemberIds?: number[] }
+  options?: { businessGroupIds?: number[]; userId?: number; teamMemberIds?: number[]; filterType?: 'initiator' | 'target' }
 ) {
   try {
     // Use a large interval for "all time" so we always have a valid WHERE clause
@@ -80,6 +84,7 @@ export async function getAnalyticsData(
     const businessGroupIds = options?.businessGroupIds
     const userId = options?.userId
     const teamMemberIds = options?.teamMemberIds || []
+    const filterType = options?.filterType || 'target' // Default to 'target' for backward compatibility
     const hasGroupFilter = businessGroupIds && businessGroupIds.length > 0
     const hasUserFilter = !!userId
     const hasTeamMembers = teamMemberIds.length > 0
@@ -87,6 +92,11 @@ export async function getAnalyticsData(
     const hasCombinedFilter = hasGroupFilter && hasUserFilter
 
     // --- Tickets by Business Unit ---
+    // Helper: Build group filter condition based on filterType
+    const groupFilterCondition = filterType === 'initiator' 
+      ? sql`t.business_unit_group_id = ANY(${businessGroupIds})`
+      : sql`t.target_business_group_id = ANY(${businessGroupIds})`
+    
     const ticketsByBU = hasCombinedFilter
       ? await sql`
           SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
@@ -96,7 +106,7 @@ export async function getAnalyticsData(
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -122,7 +132,7 @@ export async function getAnalyticsData(
               LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
               WHERE bu.name IS NOT NULL
                 AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY bu.name ORDER BY ticket_count DESC
             `
@@ -150,7 +160,7 @@ export async function getAnalyticsData(
           WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -184,7 +194,7 @@ export async function getAnalyticsData(
               LEFT JOIN users creator ON t.created_by = creator.id
               LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
               WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
                 AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
               GROUP BY c.name ORDER BY ticket_count DESC
@@ -219,7 +229,7 @@ export async function getAnalyticsData(
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -255,7 +265,7 @@ export async function getAnalyticsData(
               FROM tickets t
               LEFT JOIN users u ON t.assigned_to = u.id
               WHERE u.full_name IS NOT NULL
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY u.full_name ORDER BY total DESC LIMIT 10
             `
@@ -281,7 +291,7 @@ export async function getAnalyticsData(
           WHERE (is_deleted IS NULL OR is_deleted = FALSE)
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR created_by = ${userId}
               OR assigned_to = ${userId}
               OR spoc_user_id = ${userId}
@@ -301,7 +311,7 @@ export async function getAnalyticsData(
           ? await sql`
               SELECT status, COUNT(*) as count FROM tickets
               WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-                AND target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY status ORDER BY count DESC
             `
@@ -325,7 +335,7 @@ export async function getAnalyticsData(
           WHERE (is_deleted IS NULL OR is_deleted = FALSE)
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR created_by = ${userId}
               OR assigned_to = ${userId}
               OR spoc_user_id = ${userId}
@@ -355,7 +365,7 @@ export async function getAnalyticsData(
                 COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
               FROM tickets
               WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-                AND target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             `
           : await sql`
@@ -377,7 +387,7 @@ export async function getAnalyticsData(
           WHERE (is_deleted IS NULL OR is_deleted = FALSE)
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR created_by = ${userId}
               OR assigned_to = ${userId}
               OR spoc_user_id = ${userId}
@@ -397,7 +407,7 @@ export async function getAnalyticsData(
           ? await sql`
               SELECT ticket_type, COUNT(*) as count FROM tickets
               WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-                AND target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY ticket_type ORDER BY count DESC
             `
@@ -415,7 +425,7 @@ export async function getAnalyticsData(
           WHERE (is_deleted IS NULL OR is_deleted = FALSE)
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR created_by = ${userId}
               OR assigned_to = ${userId}
               OR spoc_user_id = ${userId}
@@ -435,7 +445,7 @@ export async function getAnalyticsData(
           ? await sql`
               SELECT priority, COUNT(*) as count FROM tickets
               WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-                AND target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY priority ORDER BY count DESC
             `
@@ -453,7 +463,7 @@ export async function getAnalyticsData(
           WHERE (is_deleted IS NULL OR is_deleted = FALSE)
             AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR created_by = ${userId}
               OR assigned_to = ${userId}
               OR spoc_user_id = ${userId}
@@ -473,7 +483,7 @@ export async function getAnalyticsData(
           ? await sql`
               SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
               WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-                AND target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
             `
@@ -497,7 +507,7 @@ export async function getAnalyticsData(
           WHERE u.full_name IS NOT NULL
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -528,7 +538,7 @@ export async function getAnalyticsData(
               FROM tickets t
               LEFT JOIN users u ON t.assigned_to = u.id
               WHERE u.full_name IS NOT NULL
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
               GROUP BY u.full_name ORDER BY total_count DESC LIMIT 10
             `
           : await sql`
@@ -554,7 +564,7 @@ export async function getAnalyticsData(
         ? await sql`
             SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
             FROM tickets
-            WHERE resolved_at IS NOT NULL AND target_business_group_id = ANY(${businessGroupIds})
+            WHERE resolved_at IS NOT NULL AND ${groupFilterCondition}
           `
         : await sql`
             SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
@@ -580,7 +590,7 @@ export async function getAnalyticsData(
             LEFT JOIN users u ON t.created_by = u.id
             WHERE u.full_name IS NOT NULL
               AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-              AND t.target_business_group_id = ANY(${businessGroupIds})
+              AND ${groupFilterCondition}
               AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
           `
@@ -604,7 +614,7 @@ export async function getAnalyticsData(
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -630,7 +640,7 @@ export async function getAnalyticsData(
               LEFT JOIN users u ON t.assigned_to = u.id
               WHERE u.full_name IS NOT NULL
                 AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY u.full_name ORDER BY ticket_count DESC LIMIT 10
             `
@@ -657,7 +667,7 @@ export async function getAnalyticsData(
           WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -689,7 +699,7 @@ export async function getAnalyticsData(
               LEFT JOIN categories c ON t.category_id = c.id
               LEFT JOIN business_unit_groups target_bg ON t.target_business_group_id = target_bg.id
               WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
                 AND (c.business_unit_group_id = target_bg.id OR c.id IS NULL)
               GROUP BY c.name ORDER BY ticket_count DESC LIMIT 10
@@ -718,7 +728,7 @@ export async function getAnalyticsData(
           WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (
-              t.target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR t.created_by = ${userId}
               OR t.assigned_to = ${userId}
               OR t.spoc_user_id = ${userId}
@@ -750,7 +760,7 @@ export async function getAnalyticsData(
               FROM tickets t
               LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
               WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-                AND t.target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY spoc.full_name
               ORDER BY ticket_count DESC
@@ -777,7 +787,7 @@ export async function getAnalyticsData(
           WHERE (is_deleted IS NULL OR is_deleted = FALSE)
             AND created_at >= CURRENT_DATE - INTERVAL '12 months'
             AND (
-              target_business_group_id = ANY(${businessGroupIds})
+              ${groupFilterCondition}
               OR created_by = ${userId}
               OR assigned_to = ${userId}
               OR spoc_user_id = ${userId}
@@ -802,7 +812,7 @@ export async function getAnalyticsData(
               FROM tickets
               WHERE (is_deleted IS NULL OR is_deleted = FALSE)
                 AND created_at >= CURRENT_DATE - INTERVAL '12 months'
-                AND target_business_group_id = ANY(${businessGroupIds})
+                AND ${groupFilterCondition}
               GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
               ORDER BY DATE_TRUNC('month', created_at) ASC
             `

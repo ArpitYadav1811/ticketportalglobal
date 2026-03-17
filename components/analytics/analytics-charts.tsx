@@ -111,9 +111,10 @@ interface AnalyticsChartsProps {
   userRole?: string
   userGroupId?: number
   selectedGroupId?: number | "all" | null
+  filterType?: "initiator" | "target"
 }
 
-export default function AnalyticsCharts({ userId, userRole, userGroupId, selectedGroupId }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({ userId, userRole, userGroupId, selectedGroupId, filterType = "target" }: AnalyticsChartsProps) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [daysFilter, setDaysFilter] = useState(30)
@@ -244,18 +245,19 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
     // For regular users and SPOC (not admin), pass both userId and businessGroupIds + teamMemberIds
     // This enables combined filter: group tickets + user involvement + team member involvement
     const options = (isSuperAdmin && selectedGroupId !== "all" && selectedGroupId !== null)
-      ? { businessGroupIds: [selectedGroupId as number] }
+      ? { businessGroupIds: [selectedGroupId as number], filterType }
       : (!isAdmin && businessGroupIds && businessGroupIds.length > 0)
         ? { 
             businessGroupIds, 
             userId: userId, // Pass userId to enable combined filter
-            teamMemberIds: teamMemberIds.length > 0 ? teamMemberIds : undefined
+            teamMemberIds: teamMemberIds.length > 0 ? teamMemberIds : undefined,
+            filterType
           }
-        : undefined
+        : { filterType }
     const result = await getAnalyticsData(daysFilter, options)
     if (result.success) setData(result.data)
     setLoading(false)
-  }, [daysFilter, isAdmin, isSuperAdmin, businessGroupIds, selectedGroupId, userId, teamMemberIds])
+  }, [daysFilter, isAdmin, isSuperAdmin, businessGroupIds, selectedGroupId, userId, teamMemberIds, filterType])
 
   useEffect(() => {
     if (!filtersReady) return
