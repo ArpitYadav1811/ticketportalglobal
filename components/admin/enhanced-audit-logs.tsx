@@ -248,28 +248,30 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
   }, {} as Record<string, any[]>)
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <ScrollText className="w-6 h-6 text-primary" />
-            </div>
-            System Audit Logs
-          </h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Track all system changes and administrative actions
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <ScrollText className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">
+              System Audit Logs
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Track all system changes and administrative actions
+            </p>
+          </div>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => setViewMode(viewMode === "table" ? "timeline" : "table")}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            {viewMode === "table" ? <Clock className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+            {viewMode === "table" ? <Clock className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
             {viewMode === "table" ? "Timeline" : "Table"}
           </Button>
           <Button 
@@ -277,9 +279,9 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
             size="sm" 
             onClick={() => setShowExportDialog(true)} 
             disabled={logs.length === 0}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             Export
           </Button>
           <Button 
@@ -287,131 +289,117 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
             size="sm" 
             onClick={loadLogs} 
             disabled={loading}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
-            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded">
-              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
+                <Filter className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Filters</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">Filters</span>
-            <span className="text-xs text-muted-foreground ml-auto">
-              {total} total records
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Entity Type</label>
-              <select
-                value={filters.entityType}
-                onChange={(e) => setFilters((p) => ({ ...p, entityType: e.target.value, offset: 0 }))}
-                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              >
-                <option value="">All Entities</option>
-                {entityTypes.map((t) => (
-                  <option key={t} value={t}>
-                    {t.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Action Type</label>
-              <select
-                value={filters.actionType}
-                onChange={(e) => setFilters((p) => ({ ...p, actionType: e.target.value, offset: 0 }))}
-                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              >
-                <option value="">All Actions</option>
-                {actionTypes.map((t) => (
-                  <option key={t} value={t}>
-                    {t.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">User</label>
-              <select
-                value={filters.userId}
-                onChange={(e) => setFilters((p) => ({ ...p, userId: e.target.value, offset: 0 }))}
-                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                disabled={loadingUsers}
-              >
-                <option value="">All Users</option>
-                {allUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name} ({u.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">From Date</label>
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value, offset: 0 }))}
-                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">To Date</label>
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value, offset: 0 }))}
-                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Search</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value, offset: 0 }))}
-                placeholder="Search notes, values..."
-                className="w-full px-3 py-2 bg-background border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">
+                {total} records
+              </span>
+              {(filters.entityType || filters.actionType || filters.userId || filters.dateFrom || filters.dateTo || filters.search) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFilters({ entityType: "", actionType: "", userId: "", dateFrom: "", dateTo: "", search: "", limit, offset: 0 })}
+                  className="h-7 px-2 text-xs gap-1"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
-          {(filters.entityType || filters.actionType || filters.userId || filters.dateFrom || filters.dateTo || filters.search) && (
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFilters({ entityType: "", actionType: "", userId: "", dateFrom: "", dateTo: "", search: "", limit, offset: 0 })}
-                className="gap-2"
-              >
-                <X className="w-3 h-3" />
-                Clear All Filters
-              </Button>
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
+            <select
+              value={filters.entityType}
+              onChange={(e) => setFilters((p) => ({ ...p, entityType: e.target.value, offset: 0 }))}
+              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all hover:border-slate-300 dark:hover:border-slate-600"
+            >
+              <option value="">All Entities</option>
+              {entityTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filters.actionType}
+              onChange={(e) => setFilters((p) => ({ ...p, actionType: e.target.value, offset: 0 }))}
+              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all hover:border-slate-300 dark:hover:border-slate-600"
+            >
+              <option value="">All Actions</option>
+              {actionTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filters.userId}
+              onChange={(e) => setFilters((p) => ({ ...p, userId: e.target.value, offset: 0 }))}
+              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all hover:border-slate-300 dark:hover:border-slate-600"
+              disabled={loadingUsers}
+            >
+              <option value="">All Users</option>
+              {allUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value, offset: 0 }))}
+              placeholder="From Date"
+              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all hover:border-slate-300 dark:hover:border-slate-600"
+            />
+            <input
+              type="date"
+              value={filters.dateTo}
+              onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value, offset: 0 }))}
+              placeholder="To Date"
+              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all hover:border-slate-300 dark:hover:border-slate-600"
+            />
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value, offset: 0 }))}
+              placeholder="Search..."
+              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all hover:border-slate-300 dark:hover:border-slate-600"
+            />
+          </div>
         </div>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
-          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Loading audit logs...</p>
+        <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-muted-foreground">Loading audit logs...</p>
         </div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
-          <div className="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-full w-fit mx-auto mb-4">
-            <ScrollText className="w-12 h-12 text-muted-foreground opacity-50" />
+        <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+          <div className="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-full w-fit mx-auto mb-3">
+            <ScrollText className="w-8 h-8 text-muted-foreground opacity-50" />
           </div>
-          <p className="text-base font-medium text-foreground mb-1">No audit logs found</p>
-          <p className="text-sm text-muted-foreground">Try adjusting your filters or check back later</p>
+          <p className="text-sm font-medium text-foreground mb-1">No audit logs found</p>
+          <p className="text-xs text-muted-foreground">Try adjusting your filters or check back later</p>
         </div>
       ) : viewMode === "table" ? (
         <>
@@ -517,29 +505,30 @@ export default function EnhancedAuditLogs({ limit = 50 }: EnhancedAuditLogsProps
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-            <p className="text-sm text-muted-foreground">
-              Showing <span className="font-semibold text-foreground">{filters.offset + 1}</span> to{" "}
-              <span className="font-semibold text-foreground">{Math.min(filters.offset + filters.limit, total)}</span> of{" "}
-              <span className="font-semibold text-foreground">{total}</span> records
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">
+              Showing <span className="font-semibold text-foreground">{filters.offset + 1}</span>-<span className="font-semibold text-foreground">{Math.min(filters.offset + filters.limit, total)}</span> of{" "}
+              <span className="font-semibold text-foreground">{total}</span>
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Button
                 size="sm"
                 variant="outline"
                 disabled={filters.offset === 0}
                 onClick={() => setFilters((p) => ({ ...p, offset: Math.max(0, p.offset - p.limit) }))}
+                className="h-7 px-3 text-xs"
               >
                 Previous
               </Button>
-              <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md text-sm font-medium">
-                Page {Math.floor(filters.offset / filters.limit) + 1} of {Math.ceil(total / filters.limit)}
+              <div className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs font-medium text-foreground">
+                {Math.floor(filters.offset / filters.limit) + 1} / {Math.ceil(total / filters.limit)}
               </div>
               <Button
                 size="sm"
                 variant="outline"
                 disabled={filters.offset + filters.limit >= total}
                 onClick={() => setFilters((p) => ({ ...p, offset: p.offset + p.limit }))}
+                className="h-7 px-3 text-xs"
               >
                 Next
               </Button>
