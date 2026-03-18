@@ -316,7 +316,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Initiator Category */}
         <ChartCard title="Tickets by Initiator Category">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByCategory?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByCategory?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
               <defs>
                 <linearGradient id="catGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.9} />
@@ -324,7 +324,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                 </linearGradient>
               </defs>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="category" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="category" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -336,9 +336,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Initiators */}
         <ChartCard title="Tickets by Initiators">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={30}>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="initiator" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="initiator" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -358,7 +358,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {isAdmin && (
           <ChartCard title="Tickets by Business Unit">
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
                 <defs>
                   <linearGradient id="buGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
@@ -366,7 +366,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                   </linearGradient>
                 </defs>
                 <CartesianGrid {...GRID} />
-                <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+                <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
                 <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend content={<CustomLegend />} />
@@ -382,7 +382,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       {data.ticketsByInitiatorGroup?.length > 0 && (
         <ChartCard title="Tickets by Target Group Category">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByInitiatorGroup?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByInitiatorGroup?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
               <defs>
                 <linearGradient id="initiatorGroupGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.9} />
@@ -390,7 +390,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                 </linearGradient>
               </defs>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="initiator_group" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="initiator_group" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -466,9 +466,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by SPOC - All Status */}
         <ChartCard title="Tickets by SPOC">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={25}>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="spoc" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="spoc" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -483,9 +483,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee */}
         <ChartCard title="Tickets by Assignee">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -497,9 +497,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee - Open Status */}
         <ChartCard title="Tickets by Assignee (Open)">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -511,9 +511,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee - On-Hold Status */}
         <ChartCard title="Tickets by Assignee (On-Hold)">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
@@ -525,9 +525,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee - Resolved Status */}
         <ChartCard title="Tickets by Assignee (Resolved)">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
               <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
