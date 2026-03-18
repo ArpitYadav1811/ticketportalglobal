@@ -316,7 +316,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Initiator Category */}
         <ChartCard title="Tickets by Initiator Category">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByCategory?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByCategory?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <defs>
                 <linearGradient id="catGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.9} />
@@ -324,11 +324,11 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                 </linearGradient>
               </defs>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="category" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="category" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="ticket_count" fill="url(#catGrad)" radius={[0, 4, 4, 0]} name="Tickets" />
+              <Bar dataKey="ticket_count" fill="url(#catGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -336,15 +336,15 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Initiators */}
         <ChartCard title="Tickets by Initiators">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="initiator" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -358,7 +358,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {isAdmin && (
           <ChartCard title="Tickets by Business Unit">
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
                 <defs>
                   <linearGradient id="buGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
@@ -366,11 +366,11 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                   </linearGradient>
                 </defs>
                 <CartesianGrid {...GRID} />
-                <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                <YAxis dataKey="business_unit" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend content={<CustomLegend />} />
-                <Bar dataKey="ticket_count" fill="url(#buGrad)" radius={[0, 4, 4, 0]} name="Tickets" />
+                <Bar dataKey="ticket_count" fill="url(#buGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -382,7 +382,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       {data.ticketsByInitiatorGroup?.length > 0 && (
         <ChartCard title="Tickets by Target Group Category">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByInitiatorGroup?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByInitiatorGroup?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <defs>
                 <linearGradient id="initiatorGroupGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.9} />
@@ -390,11 +390,11 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
                 </linearGradient>
               </defs>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="initiator_group" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="initiator_group" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="ticket_count" fill="url(#initiatorGroupGrad)" radius={[0, 4, 4, 0]} name="Tickets" />
+              <Bar dataKey="ticket_count" fill="url(#initiatorGroupGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -466,16 +466,16 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by SPOC - All Status */}
         <ChartCard title="Tickets by SPOC">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsBySpocDetailed?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="spoc" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="spoc" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -483,13 +483,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee */}
         <ChartCard title="Tickets by Assignee">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -497,13 +497,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee - Open Status */}
         <ChartCard title="Tickets by Assignee (Open)">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -511,13 +511,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee - On-Hold Status */}
         <ChartCard title="Tickets by Assignee (On-Hold)">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -525,13 +525,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Assignee - Resolved Status */}
         <ChartCard title="Tickets by Assignee (Resolved)">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 60 }}>
               <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="assignee" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
+              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
