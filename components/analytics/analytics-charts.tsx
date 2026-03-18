@@ -311,97 +311,61 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </div>
       </div>
 
-      {/* ── Row 1: Category + Initiators (2-col) ────────────── */}
+      {/* ── Detailed Initiator Analytics (moved to top) ────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Tickets by Initiator Category */}
-        <ChartCard title="Tickets by Initiator Category">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, data.ticketsByCategory.length * 80) }}>
-              <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={data.ticketsByCategory} barSize={28}>
-                  <defs>
-                    <linearGradient id="catGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.9} />
-                      <stop offset="100%" stopColor={CHART_COLORS.secondary} stopOpacity={0.5} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid {...GRID} />
-                  <XAxis dataKey="category" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(168,85,247,0.06)" }} />
-                  <Bar dataKey="ticket_count" fill="url(#catGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        {/* Tickets by Initiators - Total */}
+        <ChartCard title="Tickets by Initiators (Total)">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </ChartCard>
 
-        {/* Top Initiators */}
-        {data.topInitiators?.length > 0 && (
-          <ChartCard title="Ticket By Initiators">
-            <div className="overflow-x-auto">
-              <div style={{ minWidth: Math.max(600, data.topInitiators.length * 80) }}>
-                <ResponsiveContainer width="100%" height={230}>
-                  <BarChart data={data.topInitiators} barSize={24}>
-                    <CartesianGrid {...GRID} />
-                    <XAxis dataKey="initiator" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(168,85,247,0.06)" }} />
-                    <Bar dataKey="ticket_count" fill={CHART_COLORS.secondary} radius={[4, 4, 0, 0]} name="Tickets Created" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </ChartCard>
-        )}
+        {/* Tickets by Initiators - Open & Resolved */}
+        <ChartCard title="Tickets by Initiators (Open & Resolved)">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
-      {/* ── Row 2: Assignees + Status Breakdown (2-col) ────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Assignment Distribution */}
-        {data.assignmentDistribution?.length > 0 && (
-          <ChartCard title="Tickets By Assignee">
-            <div className="overflow-x-auto">
-              <div style={{ minWidth: Math.max(600, data.assignmentDistribution.length * 80) }}>
-                <ResponsiveContainer width="100%" height={230}>
-                  <BarChart data={data.assignmentDistribution} barSize={24}>
-                    <CartesianGrid {...GRID} />
-                    <XAxis dataKey="assignee" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(59,130,246,0.06)" }} />
-                    <Bar dataKey="ticket_count" fill={CHART_COLORS.accent} radius={[4, 4, 0, 0]} name="Tickets Assigned" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </ChartCard>
-        )}
+      {/* ── Row 2: Category (full width) ────────────── */}
+      <ChartCard title="Tickets by Initiator Category">
+        <div className="overflow-x-auto">
+          <div style={{ minWidth: Math.max(600, data.ticketsByCategory.length * 80) }}>
+            <ResponsiveContainer width="100%" height={230}>
+              <BarChart data={data.ticketsByCategory} barSize={28}>
+                <defs>
+                  <linearGradient id="catGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.9} />
+                    <stop offset="100%" stopColor={CHART_COLORS.secondary} stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid {...GRID} />
+                <XAxis dataKey="category" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(168,85,247,0.06)" }} />
+                <Bar dataKey="ticket_count" fill="url(#catGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </ChartCard>
 
-        {/* Tickets by SPOC */}
-        {data.ticketsBySpoc?.length > 0 && (
-          <ChartCard title="Tickets by SPOC">
-            <div className="overflow-x-auto">
-              <div style={{ minWidth: Math.max(600, data.ticketsBySpoc.length * 80) }}>
-                <ResponsiveContainer width="100%" height={230}>
-                  <BarChart data={data.ticketsBySpoc} barSize={28}>
-                    <defs>
-                      <linearGradient id="spocGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={CHART_COLORS.pink} stopOpacity={0.9} />
-                        <stop offset="100%" stopColor={CHART_COLORS.pink} stopOpacity={0.5} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid {...GRID} />
-                    <XAxis dataKey="spoc_name" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(236,72,153,0.06)" }} />
-                    <Bar dataKey="ticket_count" fill="url(#spocGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </ChartCard>
-        )}
-      </div>
 
       {/* ── Charts (vertical stack) ────────────────────────────── */}
       <div className="space-y-4">
@@ -519,50 +483,8 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
       </div>
 
-      {/* NEW: Detailed User & SPOC Analytics */}
+      {/* Detailed SPOC & Assignee Analytics */}
       <div className="grid grid-cols-1 gap-4 mt-4">
-        {/* Tickets by Initiators */}
-        <ChartCard title="Tickets by Initiators">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
-              <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Tickets by Initiators - Open Status */}
-        <ChartCard title="Tickets by Initiators (Open)">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
-              <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Tickets by Initiators - Resolved Status */}
-        <ChartCard title="Tickets by Initiators (Resolved)">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByInitiators?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
-              <CartesianGrid {...GRID} />
-              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis dataKey="initiator" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
         {/* Tickets by SPOC */}
         <ChartCard title="Tickets by SPOC">
           <ResponsiveContainer width="100%" height={300}>

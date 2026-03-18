@@ -13,14 +13,19 @@ The Analytics feature provides comprehensive ticket insights through a dual-tab 
 - Has access to all charts including "Tickets by Business Unit"
 - Can switch between any business group to view their analytics
 
-### 2. **SPOC Manager** (e.g., Dev Group SPOC)
+### 2. **SPOC Manager & Regular User** (Same View)
+Both have **identical analytics views** - the only difference is scope:
+
+**SPOC Manager** (e.g., Dev Group SPOC):
 - Views analytics for **all groups they manage**
 - If managing multiple groups, sees combined data from all managed groups
-- Same two-tab interface as regular users
+- Example: SPOC for Dev + QA groups sees tickets from both groups combined
 
-### 3. **Regular User**
+**Regular User**:
 - Views analytics for **their assigned business group only**
-- Same two-tab interface with group-specific data
+- Example: User in Dev group sees only Dev group tickets
+
+**Important:** Both use the same filtering logic and see the same two-tab interface. The difference is only in how many groups are included in the filter.
 
 ---
 
@@ -395,11 +400,11 @@ The system uses `ticket_classification_mapping` table to define:
 
 ---
 
-## Example Scenario
+## Example Scenarios
 
-**User:** John (SPOC Manager for Dev Group)
+### **Scenario 1: John (SPOC Manager for Dev Group)**
 
-### **Tab 1 - Tickets By Initiator Group**
+#### **Tab 1 - Tickets By Initiator Group**
 Shows tickets where:
 - Creator belongs to Dev group
 - John can see: All tickets created by Dev team members
@@ -410,9 +415,7 @@ Shows tickets where:
 - Ticket #002: Created by Dev member → Raised to QA group ✅
 - Ticket #003: Created by QA member → Raised to Dev group ❌
 
----
-
-### **Tab 2 - Tickets By Target Group**
+#### **Tab 2 - Tickets By Target Group**
 Shows tickets where:
 - Target group is Dev
 - John can see: All tickets raised to Dev group
@@ -423,6 +426,17 @@ Shows tickets where:
 - Ticket #002: Created by Dev member → Raised to QA group ❌
 - Ticket #003: Created by QA member → Raised to Dev group ✅
 - Ticket #004: Created by CS member → Raised to Dev group ✅
+
+---
+
+### **Scenario 2: Sarah (Regular User in Dev Group)**
+
+Sarah sees **exactly the same data** as John (the SPOC Manager) because they both belong to Dev group.
+
+- **Tab 1:** All tickets created by Dev group members
+- **Tab 2:** All tickets raised to Dev group
+
+**Key Point:** Manager and User roles have identical analytics views when they're in the same group. The role only affects permissions for other features (ticket assignment, user management, etc.), not analytics visibility.
 
 ---
 
