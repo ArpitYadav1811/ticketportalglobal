@@ -627,12 +627,12 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                           <h3 className="font-semibold text-foreground">{bg.name}</h3>
                           {bg.spoc_name && (
                             <span className="text-sm text-primary">
-                              <span className="text-foreground-secondary">Primary:</span> {bg.spoc_name}
+                              <span className="text-foreground-secondary">Primary SPOC:</span> {bg.spoc_name}
                             </span>
                           )}
                           {bg.secondary_spoc_name && (
                             <span className="text-sm text-blue-600 dark:text-blue-400">
-                              <span className="text-foreground-secondary">Secondary:</span> {bg.secondary_spoc_name}
+                              <span className="text-foreground-secondary">Secondary SPOC:</span> {bg.secondary_spoc_name}
                             </span>
                           )}
                         </div>
@@ -763,116 +763,39 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                     {expandedCategories.has(category.id) && (
                       <div className="p-3 space-y-2">
                         {subcats.length > 0 ? (
-                          subcats.map((subcat) => {
-                            const subcatMappings = getMappingsForSubcategory(subcat.id)
-
-                            return (
-                              <div
-                                key={subcat.id}
-                                className="border border-border rounded-lg p-2 ml-6 bg-white dark:bg-slate-800"
-                              >
-                                <div className="flex justify-between items-center mb-2">
-                                  <div className="flex items-center gap-3 flex-1 flex-wrap">
-                                    <h4 className="font-medium text-sm">{subcat.name}</h4>
-                                    {subcat.description && (
-                                      <span className="text-xs text-foreground-secondary">
-                                        - {subcat.description}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 ml-4">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        setEditMapping({
-                                          id: null,
-                                          target_business_group_id: "",
-                                          category_id: category.id,
-                                          subcategory_id: subcat.id,
-                                          estimated_duration: "",
-                                          spoc_user_id: "",
-                                          auto_title_template: "",
-                                          description: "",
-                                        })
-                                      }
-                                      disabled={!isAdmin && spocBusinessGroups.length === 0}
-                                      title={!isAdmin && spocBusinessGroups.length === 0 ? "You need to be assigned to a business group to create mappings" : "Add Classification Mapping"}
-                                      className="text-xs h-7"
-                                    >
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Add Mapping
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      title={!permissions?.subcategories.edit ? "You don't have permission to edit subcategories" : "Edit Subcategory"}
-                                      onClick={() => setEditSubcategory({ ...subcat, category_name: category.name })}
-                                      disabled={!permissions?.subcategories.edit}
-                                    >
-                                      <Edit className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      title={!permissions?.subcategories.delete ? "You don't have permission to delete subcategories" : "Delete Subcategory"}
-                                      onClick={() => handleDeleteSubcategory(subcat.id)}
-                                      disabled={!permissions?.subcategories.delete}
-                                    >
-                                      <Trash2 className="w-3 h-3 text-red-500" />
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                {/* Show all mappings for this subcategory */}
-                                {subcatMappings.length > 0 && (
-                                  <div className="space-y-1 mt-2">
-                                    {subcatMappings.map((mapping) => (
-                                      <div
-                                        key={mapping.id}
-                                        className="flex items-center justify-between text-xs bg-blue-50 dark:bg-blue-900/20 p-2 rounded"
-                                      >
-                                        <div className="flex items-center gap-4 flex-wrap flex-1">
-                                          <span>
-                                            <span className="text-foreground-secondary">BG:</span>{" "}
-                                            <span className="font-medium">{mapping.business_unit_group_name}</span>
-                                          </span>
-                                          <span>
-                                            <span className="text-foreground-secondary">Duration:</span>{" "}
-                                            <span className="font-medium">{mapping.estimated_duration} min</span>
-                                          </span>
-                                          <span>
-                                            <span className="text-foreground-secondary">SPOC:</span>{" "}
-                                            <span className="font-medium">{mapping.spoc_name || "Not set"}</span>
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setEditMapping(mapping)}
-                                            disabled={!spocHasAccessToMapping(mapping)}
-                                            title={!spocHasAccessToMapping(mapping) ? "You can only edit mappings for your assigned business groups" : "Edit Mapping"}
-                                          >
-                                            <Edit className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleDeleteMapping(mapping.id)}
-                                            disabled={!spocHasAccessToMapping(mapping)}
-                                            title={!spocHasAccessToMapping(mapping) ? "You can only delete mappings for your assigned business groups" : "Delete Mapping"}
-                                          >
-                                            <Trash2 className="w-3 h-3 text-red-500" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
+                          subcats.map((subcat) => (
+                            <div
+                              key={subcat.id}
+                              className="flex justify-between items-center p-2 ml-6 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all bg-white dark:bg-slate-800"
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                <span className="font-medium text-sm">{subcat.name}</span>
+                                {subcat.description && (
+                                  <span className="text-xs text-foreground-secondary">- {subcat.description}</span>
                                 )}
                               </div>
-                            )
-                          })
+                              <div className="flex gap-1 ml-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title={!permissions?.subcategories.edit ? "You don't have permission to edit subcategories" : "Edit Subcategory"}
+                                  onClick={() => setEditSubcategory({ ...subcat, category_name: category.name })}
+                                  disabled={!permissions?.subcategories.edit}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title={!permissions?.subcategories.delete ? "You don't have permission to delete subcategories" : "Delete Subcategory"}
+                                  onClick={() => handleDeleteSubcategory(subcat.id)}
+                                  disabled={!permissions?.subcategories.delete}
+                                >
+                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))
                         ) : null}
 
                         {/* Add Subcategory Button */}
