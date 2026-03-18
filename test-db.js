@@ -1,18 +1,15 @@
-require("dotenv").config({ path: ".env.local" });
+const { neon } = require('@neondatabase/serverless')
+require('dotenv').config({ path: '.env.local' })
 
-const { Client } = require("pg");
+const sql = neon(process.env.DATABASE_URL)
 
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-});
+async function test() {
+  console.log('Testing Neon connection...')
+  const result = await sql`SELECT version()`
+  console.log('✅ Connected to:', result[0].version.substring(0, 50))
+  
+  const tables = await sql`SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public'`
+  console.log('✅ Found', tables[0].count, 'tables')
+}
 
-console.log("===== 1. DATABASE_URL:", process.env.DATABASE_URL);
-
-client.connect()
-  .then(() => {
-    console.log("DB Connected Successfully");
-    return client.end();
-  })
-  .catch(err => {
-    console.error("Connection Error:", err);
-  });
+test().catch(console.error)

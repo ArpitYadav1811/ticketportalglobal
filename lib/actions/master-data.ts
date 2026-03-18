@@ -176,6 +176,80 @@ export async function isUserPrimarySpoc(userId: number, businessGroupId: number)
 }
 
 /**
+ * Check if a user is the Secondary SPOC for a business group
+ */
+export async function isUserSecondarySpoc(userId: number, businessGroupId: number): Promise<boolean> {
+  try {
+    const user = await sql`SELECT full_name FROM users WHERE id = ${userId}`
+    if (user.length === 0) return false
+    
+    const userName = user[0].full_name
+    if (!userName) return false
+    
+    const bg = await sql`
+      SELECT secondary_spoc_name
+      FROM business_unit_groups
+      WHERE id = ${businessGroupId}
+    `
+    if (bg.length === 0) return false
+    
+    const secondarySpocName = bg[0].secondary_spoc_name
+    if (!secondarySpocName) return false
+    
+    // Compare names (case-insensitive, trimmed)
+    return userName.trim().toLowerCase() === secondarySpocName.trim().toLowerCase()
+  } catch (error) {
+    console.error("Error checking if user is Secondary SPOC:", error)
+    return false
+  }
+}
+
+/**
+ * Check if a user is any SPOC (Primary or Secondary) for a business group
+ */
+export async function isUserAnySpoc(userId: number, businessGroupId: number): Promise<boolean> {
+  const isPrimary = await isUserPrimarySpoc(userId, businessGroupId)
+  if (isPrimary) return true
+  
+  const isSecondary = await isUserSecondarySpoc(userId, businessGroupId)
+  return isSecondary
+}
+
+/**
+ * Check if user can update the Primary SPOC field
+ * Rules:
+ * - Super Admin: Yes
+ * - Admin: Yes
+ * - Primary SPOC: Yes
+ * - Secondary SPOC: No
+ * - Regular User: No
+ */
+export async function canUpdatePrimarySpoc(userId: number, businessGroupId: number): Promise<boolean> {
+  try {
+    const user = await sql`SELECT role FROM users WHERE id = ${userId}`
+    if (user.length === 0) return false
+    
+    const role = user[0].role?.toLowerCase()
+    
+    // Super Admin and Admin can always update
+    if (role === "superadmin" || role === "admin") return true
+    
+    // Check if user is Primary SPOC
+    const isPrimary = await isUserPrimarySpoc(userId, businessGroupId)
+    if (isPrimary) return true
+    
+    // Secondary SPOC cannot update Primary SPOC
+    const isSecondary = await isUserSecondarySpoc(userId, businessGroupId)
+    if (isSecondary) return false
+    
+    return false
+  } catch (error) {
+    console.error("Error checking if user can update Primary SPOC:", error)
+    return false
+  }
+}
+
+/**
  * Get business groups where user is Primary SPOC
  */
 export async function getBusinessGroupsForPrimarySpoc(userId: number) {

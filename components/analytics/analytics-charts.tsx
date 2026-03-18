@@ -315,25 +315,22 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Tickets by Initiator Category */}
         <ChartCard title="Tickets by Initiator Category">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, data.ticketsByCategory.length * 80) }}>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={data.ticketsByCategory} barSize={28}>
-                  <defs>
-                    <linearGradient id="catGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.9} />
-                      <stop offset="100%" stopColor={CHART_COLORS.secondary} stopOpacity={0.5} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid {...GRID} />
-                  <XAxis dataKey="category" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(168,85,247,0.06)" }} />
-                  <Bar dataKey="ticket_count" fill="url(#catGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data.ticketsByCategory?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <defs>
+                <linearGradient id="catGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.9} />
+                  <stop offset="100%" stopColor={CHART_COLORS.secondary} stopOpacity={0.5} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="category" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="ticket_count" fill="url(#catGrad)" radius={[0, 4, 4, 0]} name="Tickets" />
+            </BarChart>
+          </ResponsiveContainer>
         </ChartCard>
 
         {/* Tickets by Initiators */}
@@ -360,25 +357,22 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         {/* Tickets by Business Unit — admin only */}
         {isAdmin && (
           <ChartCard title="Tickets by Business Unit">
-            <div className="overflow-x-auto">
-              <div style={{ minWidth: Math.max(600, data.ticketsByBU.length * 80) }}>
-                <ResponsiveContainer width="100%" height={230}>
-                  <BarChart data={data.ticketsByBU} barSize={28}>
-                    <defs>
-                      <linearGradient id="buGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
-                        <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0.5} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid {...GRID} />
-                    <XAxis dataKey="business_unit" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
-                    <Bar dataKey="ticket_count" fill="url(#buGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+                <defs>
+                  <linearGradient id="buGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
+                    <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid {...GRID} />
+                <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <YAxis dataKey="business_unit" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend />} />
+                <Bar dataKey="ticket_count" fill="url(#buGrad)" radius={[0, 4, 4, 0]} name="Tickets" />
+              </BarChart>
+            </ResponsiveContainer>
           </ChartCard>
         )}
 
@@ -387,25 +381,22 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       {/* ── Tickets by Target Group Category ────────────────────── */}
       {data.ticketsByInitiatorGroup?.length > 0 && (
         <ChartCard title="Tickets by Target Group Category">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, data.ticketsByInitiatorGroup.length * 80) }}>
-              <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={data.ticketsByInitiatorGroup} barSize={28}>
-                  <defs>
-                    <linearGradient id="initiatorGroupGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.9} />
-                      <stop offset="100%" stopColor={CHART_COLORS.teal} stopOpacity={0.5} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid {...GRID} />
-                  <XAxis dataKey="initiator_group" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(20,184,166,0.06)" }} />
-                  <Bar dataKey="ticket_count" fill="url(#initiatorGroupGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data.ticketsByInitiatorGroup?.slice(0, 10) || []} layout="vertical" margin={{ left: 100, right: 20 }}>
+              <defs>
+                <linearGradient id="initiatorGroupGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.9} />
+                  <stop offset="100%" stopColor={CHART_COLORS.teal} stopOpacity={0.5} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid {...GRID} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis dataKey="initiator_group" type="category" width={95} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              <Bar dataKey="ticket_count" fill="url(#initiatorGroupGrad)" radius={[0, 4, 4, 0]} name="Tickets" />
+            </BarChart>
+          </ResponsiveContainer>
         </ChartCard>
       )}
 
