@@ -903,7 +903,12 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
 
         {/* Project Names Tab */}
         <TabsContent value="project-names" className="mt-6">
-          <ProjectNamesTab />
+          <ProjectNamesTab 
+            selectedGroupId={selectedGroupId}
+            userRole={userRole}
+            spocBusinessGroups={spocBusinessGroups}
+            userBusinessGroupId={userBusinessGroupId}
+          />
         </TabsContent>
       </Tabs>
 
