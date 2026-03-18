@@ -38,17 +38,18 @@ interface UnifiedMasterDataV2Props {
   userId?: number
   userRole?: string
   hideCardWrapper?: boolean
+  selectedGroupId?: number | "all" | null
 }
 
-export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper = false }: UnifiedMasterDataV2Props) {
+export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper = false, selectedGroupId }: UnifiedMasterDataV2Props) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("business-groups")
   const [spocBusinessGroups, setSpocBusinessGroups] = useState<number[]>([])
-  const [selectedBusinessGroupFilter, setSelectedBusinessGroupFilter] = useState<string>("")
   const [userBusinessGroupId, setUserBusinessGroupId] = useState<number | null>(null)
   const [primarySpocBusinessGroups, setPrimarySpocBusinessGroups] = useState<number[]>([])
   const [isPrimarySpoc, setIsPrimarySpoc] = useState(false)
   const isAdmin = userRole === "admin" || userRole === "superadmin"
+  const isSuperAdmin = userRole === "superadmin"
   
   // Master data permissions
   const [permissions, setPermissions] = useState<{
@@ -183,19 +184,9 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
     return mappings.filter((m) => m.subcategory_id === subcategoryId)
   }
 
-  // Filter categories based on SPOC permissions and business group filter
+  // Filter categories based on SPOC permissions and top-level business group filter
   const getFilteredCategories = () => {
     let filtered = categories
-
-    // Debug logging
-    if (selectedBusinessGroupFilter) {
-      console.log('Filtering categories:', {
-        totalCategories: categories.length,
-        selectedFilter: selectedBusinessGroupFilter,
-        filterScope: permissions?.businessGroups.filterScope,
-        sampleCategory: categories[0]
-      })
-    }
 
     // If filter scope is "own", only show categories for user's business group
     if (permissions?.businessGroups.filterScope === "own" && userBusinessGroupId) {
@@ -210,15 +201,40 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
       )
     }
 
-    // Apply business group filter if selected (only when filter scope is "all")
-    if (selectedBusinessGroupFilter && permissions?.businessGroups.filterScope === "all") {
-      const filterGroupId = Number(selectedBusinessGroupFilter)
-      filtered = filtered.filter((cat) => cat.business_unit_group_id === filterGroupId)
-      console.log('After filtering:', {
-        filterGroupId,
-        filteredCount: filtered.length,
-        filteredCategories: filtered.map(c => ({ name: c.name, bgId: c.business_unit_group_id }))
-      })
+    // Apply top-level business group filter from header (for Super Admin)
+    if (isSuperAdmin && selectedGroupId && selectedGroupId !== "all") {
+      filtered = filtered.filter((cat) => cat.business_unit_group_id === selectedGroupId)
+    }
+
+    return filtered
+  }
+
+  // Filter business groups based on selected group and permissions
+  const getFilteredBusinessGroups = () => {
+    let filtered = businessGroups
+
+    // For Super Admin with specific group selected, filter to that group
+    if (isSuperAdmin && selectedGroupId && selectedGroupId !== "all") {
+      filtered = filtered.filter((bg) => bg.id === selectedGroupId)
+      return filtered
+    }
+
+    // For Primary SPOC, show only their assigned groups
+    if (isPrimarySpoc) {
+      filtered = filtered.filter((bg) => primarySpocBusinessGroups.includes(bg.id))
+      return filtered
+    }
+
+    // For regular SPOC (not admin), show only their assigned groups
+    if (!isAdmin && spocBusinessGroups.length > 0) {
+      filtered = filtered.filter((bg) => spocBusinessGroups.includes(bg.id))
+      return filtered
+    }
+
+    // For users with specific group assignment
+    if (!isAdmin && userBusinessGroupId) {
+      filtered = filtered.filter((bg) => bg.id === userBusinessGroupId)
+      return filtered
     }
 
     return filtered
@@ -590,16 +606,18 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               </div>
 
               <div className="space-y-2">
-                {(isPrimarySpoc ? businessGroups.filter((bg) => primarySpocBusinessGroups.includes(bg.id)) : businessGroups).length === 0 ? (
+                {getFilteredBusinessGroups().length === 0 ? (
                   <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
                     <p className="text-foreground-secondary">
                       {isPrimarySpoc 
                         ? "You are not assigned as Primary SPOC for any business group." 
-                        : "No business groups yet. Click \"Add Business Group\" to create one."}
+                        : isSuperAdmin && selectedGroupId && selectedGroupId !== "all"
+                          ? "No business groups found for the selected filter."
+                          : "No business groups yet. Click \"Add Business Group\" to create one."}
                     </p>
                   </div>
                 ) : (
-                  (isPrimarySpoc ? businessGroups.filter((bg) => primarySpocBusinessGroups.includes(bg.id)) : businessGroups).map((bg) => (
+                  getFilteredBusinessGroups().map((bg) => (
                     <div
                       key={bg.id}
                       className="flex justify-between items-center p-4 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
@@ -677,44 +695,6 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                   Add Category
                 </Button>
               </div>
-
-          {/* Business Group Filter */}
-          {permissions?.businessGroups.filterScope === "all" && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Filter by Business Group</label>
-              <select
-                value={selectedBusinessGroupFilter}
-                onChange={(e) => setSelectedBusinessGroupFilter(e.target.value)}
-                className="w-full md:w-64 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">All Business Groups</option>
-                {targetBusinessGroups.map((tbg) => (
-                  <option key={tbg.id} value={tbg.id}>
-                    {tbg.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {permissions?.businessGroups.filterScope === "own" && userBusinessGroupId && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Filter by Business Group</label>
-              <select
-                value={userBusinessGroupId.toString()}
-                disabled
-                className="w-full md:w-64 px-4 py-2 border border-border rounded-lg bg-background text-foreground opacity-70 cursor-not-allowed"
-              >
-                {targetBusinessGroups
-                  .filter((tbg) => tbg.id === userBusinessGroupId)
-                  .map((tbg) => (
-                    <option key={tbg.id} value={tbg.id}>
-                      {tbg.name}
-                    </option>
-                  ))}
-              </select>
-              <p className="text-xs text-muted-foreground mt-1">You can only view your assigned business group</p>
-            </div>
-          )}
 
           <div className="space-y-2">
             {getFilteredCategories().length === 0 ? (
