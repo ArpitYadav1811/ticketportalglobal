@@ -185,22 +185,20 @@ export default function ProjectNamesTab({
           filteredProjects.map((item) => (
             <div
               key={item.id}
-              className="flex justify-between items-center p-4 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
+              className="flex justify-between items-center p-3 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
             >
-              <div>
+              <div className="flex items-center gap-4 flex-wrap flex-1">
                 <h3 className="font-semibold text-foreground">{item.name}</h3>
-                <div className="flex gap-4 mt-1">
-                  <p className="text-sm text-foreground-secondary">
-                    <span className="font-medium">Group:</span> {item.business_group_name || "Not mapped"}
-                  </p>
-                  {item.estimated_release_date && (
-                    <p className="text-sm text-foreground-secondary">
-                      <span className="font-medium">Release:</span> {formatDateForDisplay(item.estimated_release_date)}
-                    </p>
-                  )}
-                </div>
+                <span className="text-sm text-foreground-secondary">
+                  <span className="text-foreground-secondary">Group:</span> <span className="font-medium">{item.business_group_name || "Not mapped"}</span>
+                </span>
+                {item.estimated_release_date && (
+                  <span className="text-sm text-foreground-secondary">
+                    <span className="text-foreground-secondary">Release:</span> <span className="font-medium">{formatDateForDisplay(item.estimated_release_date)}</span>
+                  </span>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 ml-4">
                 <Button 
                   variant="ghost" 
                   size="sm" 

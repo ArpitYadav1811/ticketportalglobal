@@ -620,15 +620,25 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                   getFilteredBusinessGroups().map((bg) => (
                     <div
                       key={bg.id}
-                      className="flex justify-between items-center p-4 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
+                      className="flex justify-between items-center p-3 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all"
                     >
-                      <div>
-                        <h3 className="font-semibold text-foreground">{bg.name}</h3>
-                        {bg.description && <p className="text-sm text-foreground-secondary">{bg.description}</p>}
-                        {bg.spoc_name && <p className="text-sm text-primary">Primary SPOC: {bg.spoc_name}</p>}
-                        {bg.secondary_spoc_name && <p className="text-sm text-blue-600 dark:text-blue-400">Secondary SPOC: {bg.secondary_spoc_name}</p>}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <h3 className="font-semibold text-foreground">{bg.name}</h3>
+                          {bg.spoc_name && (
+                            <span className="text-sm text-primary">
+                              <span className="text-foreground-secondary">Primary:</span> {bg.spoc_name}
+                            </span>
+                          )}
+                          {bg.secondary_spoc_name && (
+                            <span className="text-sm text-blue-600 dark:text-blue-400">
+                              <span className="text-foreground-secondary">Secondary:</span> {bg.secondary_spoc_name}
+                            </span>
+                          )}
+                        </div>
+                        {bg.description && <p className="text-xs text-foreground-secondary mt-1">{bg.description}</p>}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 ml-4">
                         {isPrimarySpoc ? (
                           <Button 
                             variant="ghost" 
@@ -708,26 +718,26 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                 return (
                   <div key={category.id} className="border border-border rounded-lg">
                     {/* Category Header */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50">
                       <div className="flex items-center gap-2 flex-1">
                         <button
                           onClick={() => toggleCategory(category.id)}
                           className="hover:bg-white dark:hover:bg-slate-600 rounded p-1"
                         >
                           {expandedCategories.has(category.id) ? (
-                            <ChevronDown className="w-5 h-5" />
+                            <ChevronDown className="w-4 h-4" />
                           ) : (
-                            <ChevronRight className="w-5 h-5" />
+                            <ChevronRight className="w-4 h-4" />
                           )}
                         </button>
-                        <div className="flex-1">
+                        <div className="flex items-center gap-3 flex-1 flex-wrap">
                           <h3 className="font-semibold text-foreground">{category.name}</h3>
                           {category.description && (
-                            <p className="text-sm text-foreground-secondary">{category.description}</p>
+                            <span className="text-xs text-foreground-secondary">- {category.description}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 ml-4">
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -751,7 +761,7 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
 
                     {/* Subcategories */}
                     {expandedCategories.has(category.id) && (
-                      <div className="p-4 space-y-2">
+                      <div className="p-3 space-y-2">
                         {subcats.length > 0 ? (
                           subcats.map((subcat) => {
                             const subcatMappings = getMappingsForSubcategory(subcat.id)
@@ -759,91 +769,40 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                             return (
                               <div
                                 key={subcat.id}
-                                className="border border-border rounded-lg p-3 ml-6 bg-white dark:bg-slate-800"
+                                className="border border-border rounded-lg p-2 ml-6 bg-white dark:bg-slate-800"
                               >
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <h4 className="font-medium">{subcat.name}</h4>
-                                      {subcat.description && (
-                                        <span className="text-xs text-foreground-secondary">
-                                          - {subcat.description}
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    {/* Add Mapping Button */}
-                                    <div className="mb-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                          setEditMapping({
-                                            id: null,
-                                            target_business_group_id: "",
-                                            category_id: category.id,
-                                            subcategory_id: subcat.id,
-                                            estimated_duration: "",
-                                            spoc_user_id: "",
-                                            auto_title_template: "",
-                                            description: "",
-                                          })
-                                        }
-                                        disabled={!isAdmin && spocBusinessGroups.length === 0}
-                                        title={!isAdmin && spocBusinessGroups.length === 0 ? "You need to be assigned to a business group to create mappings" : "Add Classification Mapping"}
-                                      >
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Add Mapping
-                                      </Button>
-                                    </div>
-
-                                    {/* Show all mappings for this subcategory */}
-                                    {subcatMappings.length > 0 && (
-                                      <div className="space-y-1">
-                                        {subcatMappings.map((mapping) => (
-                                          <div
-                                            key={mapping.id}
-                                            className="grid grid-cols-4 gap-4 text-xs bg-blue-50 dark:bg-blue-900/20 p-2 rounded"
-                                          >
-                                            <div>
-                                              <span className="text-foreground-secondary">BG:</span>{" "}
-                                              <span className="font-medium">{mapping.business_unit_group_name}</span>
-                                            </div>
-                                            <div>
-                                              <span className="text-foreground-secondary">Duration:</span>{" "}
-                                              <span className="font-medium">{mapping.estimated_duration} min</span>
-                                            </div>
-                                            <div>
-                                              <span className="text-foreground-secondary">SPOC:</span>{" "}
-                                              <span className="font-medium">{mapping.spoc_name || "Not set"}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1 justify-end">
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditMapping(mapping)}
-                                                disabled={!spocHasAccessToMapping(mapping)}
-                                                title={!spocHasAccessToMapping(mapping) ? "You can only edit mappings for your assigned business groups" : "Edit Mapping"}
-                                              >
-                                                <Edit className="w-3 h-3" />
-                                              </Button>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeleteMapping(mapping.id)}
-                                                disabled={!spocHasAccessToMapping(mapping)}
-                                                title={!spocHasAccessToMapping(mapping) ? "You can only delete mappings for your assigned business groups" : "Delete Mapping"}
-                                              >
-                                                <Trash2 className="w-3 h-3 text-red-500" />
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="flex items-center gap-3 flex-1 flex-wrap">
+                                    <h4 className="font-medium text-sm">{subcat.name}</h4>
+                                    {subcat.description && (
+                                      <span className="text-xs text-foreground-secondary">
+                                        - {subcat.description}
+                                      </span>
                                     )}
                                   </div>
-
-                                  <div className="flex gap-1 ml-4">
+                                  <div className="flex items-center gap-2 ml-4">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setEditMapping({
+                                          id: null,
+                                          target_business_group_id: "",
+                                          category_id: category.id,
+                                          subcategory_id: subcat.id,
+                                          estimated_duration: "",
+                                          spoc_user_id: "",
+                                          auto_title_template: "",
+                                          description: "",
+                                        })
+                                      }
+                                      disabled={!isAdmin && spocBusinessGroups.length === 0}
+                                      title={!isAdmin && spocBusinessGroups.length === 0 ? "You need to be assigned to a business group to create mappings" : "Add Classification Mapping"}
+                                      className="text-xs h-7"
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Add Mapping
+                                    </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -864,6 +823,53 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                                     </Button>
                                   </div>
                                 </div>
+
+                                {/* Show all mappings for this subcategory */}
+                                {subcatMappings.length > 0 && (
+                                  <div className="space-y-1 mt-2">
+                                    {subcatMappings.map((mapping) => (
+                                      <div
+                                        key={mapping.id}
+                                        className="flex items-center justify-between text-xs bg-blue-50 dark:bg-blue-900/20 p-2 rounded"
+                                      >
+                                        <div className="flex items-center gap-4 flex-wrap flex-1">
+                                          <span>
+                                            <span className="text-foreground-secondary">BG:</span>{" "}
+                                            <span className="font-medium">{mapping.business_unit_group_name}</span>
+                                          </span>
+                                          <span>
+                                            <span className="text-foreground-secondary">Duration:</span>{" "}
+                                            <span className="font-medium">{mapping.estimated_duration} min</span>
+                                          </span>
+                                          <span>
+                                            <span className="text-foreground-secondary">SPOC:</span>{" "}
+                                            <span className="font-medium">{mapping.spoc_name || "Not set"}</span>
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setEditMapping(mapping)}
+                                            disabled={!spocHasAccessToMapping(mapping)}
+                                            title={!spocHasAccessToMapping(mapping) ? "You can only edit mappings for your assigned business groups" : "Edit Mapping"}
+                                          >
+                                            <Edit className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDeleteMapping(mapping.id)}
+                                            disabled={!spocHasAccessToMapping(mapping)}
+                                            title={!spocHasAccessToMapping(mapping) ? "You can only delete mappings for your assigned business groups" : "Delete Mapping"}
+                                          >
+                                            <Trash2 className="w-3 h-3 text-red-500" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )
                           })
@@ -885,6 +891,7 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                             }
                             disabled={!permissions?.subcategories.create}
                             title={!permissions?.subcategories.create ? "You don't have permission to create subcategories" : "Add Subcategory"}
+                            className="text-xs h-7"
                           >
                             <Plus className="w-3 h-3 mr-1" />
                             Add Subcategory
