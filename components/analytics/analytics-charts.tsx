@@ -400,66 +400,25 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         </ChartCard>
       )}
 
-      {/* ── Full Width Charts ──────────────────────────────── */}
-      <div className="space-y-4">
-
-        {/* Ticket Trend */}
-        <ChartCard title={`Ticket Trend (${durationLabel})`}>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={data.ticketTrend}>
-              <defs>
-                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.15} />
-                  <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="date" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke={CHART_COLORS.primary}
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: CHART_COLORS.primary, strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: CHART_COLORS.primary, stroke: "#fff", strokeWidth: 2 }}
-                name="Tickets Created"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-
-        {/* Monthly Trend */}
-        <ChartCard title="Monthly Ticket Trend (Last 12 Months)">
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={data.ticketsByMonth}>
-              <defs>
-                <linearGradient id="monthFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.secondary} stopOpacity={0.15} />
-                  <stop offset="100%" stopColor={CHART_COLORS.secondary} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="month" textAnchor="end" height={60} tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke={CHART_COLORS.secondary}
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: CHART_COLORS.secondary, strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: CHART_COLORS.secondary, stroke: "#fff", strokeWidth: 2 }}
-                name="Tickets"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+      {/* ── Ticket Trend Chart (responds to Duration filter) ──────────────────────────────── */}
+      <ChartCard title={`Ticket Trend (${durationLabel})`}>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data.ticketTrend || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
+            <defs>
+              <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
+                <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0.5} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid {...GRID} />
+            <XAxis dataKey="date" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend content={<CustomLegend />} />
+            <Bar dataKey="count" fill="url(#trendGrad)" radius={[4, 4, 0, 0]} name="Tickets Created" />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* Detailed SPOC & Assignee Analytics */}
       <div className="grid grid-cols-1 gap-4 mt-4">
@@ -480,77 +439,20 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* Tickets by Assignee */}
+        {/* Tickets by Assignee - All Status */}
         <ChartCard title="Tickets by Assignee">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={25}>
               <CartesianGrid {...GRID} />
               <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
               <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Tickets by Assignee - Open Status */}
-        <ChartCard title="Tickets by Assignee (Open)">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
               <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Tickets by Assignee - On-Hold Status */}
-        <ChartCard title="Tickets by Assignee (On-Hold)">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
               <Bar dataKey="on_hold" fill={STATUS_COLORS.on_hold} name="On-Hold" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Tickets by Assignee - Resolved Status */}
-        <ChartCard title="Tickets by Assignee (Resolved)">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.ticketsByAssignee?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="assignee" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
               <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Annual Ticket Trend (Last 12 Months) */}
-        <ChartCard title="Annual Ticket Trend (Last 12 Months)">
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={data.annualTrend || []} margin={{ left: 10, right: 10, top: 10, bottom: 20 }}>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="month" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} angle={-45} textAnchor="end" height={80} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Line type="monotone" dataKey="total" stroke={STATUS_COLORS.total} strokeWidth={2} dot={{ r: 3 }} name="Total" />
-              <Line type="monotone" dataKey="open" stroke={STATUS_COLORS.open} strokeWidth={2} dot={{ r: 3 }} name="Open" />
-              <Line type="monotone" dataKey="resolved" stroke={STATUS_COLORS.resolved} strokeWidth={2} dot={{ r: 3 }} name="Resolved" />
-              <Line type="monotone" dataKey="on_hold" stroke={STATUS_COLORS.on_hold} strokeWidth={2} dot={{ r: 3 }} name="On-Hold" />
-              <Line type="monotone" dataKey="closed" stroke={STATUS_COLORS.closed} strokeWidth={2} dot={{ r: 3 }} name="Closed" />
-            </LineChart>
           </ResponsiveContainer>
         </ChartCard>
       </div>
