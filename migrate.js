@@ -41,7 +41,8 @@ const scripts = [
   '011-migrate-ticket-hierarchy-data.sql',
   '012-migrate-business-group-spocs-data.sql',
   '013-migrate-master-data-references.sql',
-  '014-helper-functions.sql'
+  '014-helper-functions.sql',
+  '015-add-estimated-hours-to-subcategories.sql'
 ]
 
 async function run() {

@@ -411,8 +411,8 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
   }
 
   // Subcategory handlers
-  const handleCreateSubcategory = async (categoryId: number, name: string, description?: string) => {
-    const result = await createSubcategory(categoryId, name, description)
+  const handleCreateSubcategory = async (categoryId: number, name: string, description?: string, estimatedHours?: number) => {
+    const result = await createSubcategory(categoryId, name, description, estimatedHours)
     if (result.success) {
       await loadData()
       setEditSubcategory(null)
@@ -421,8 +421,8 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
     return false
   }
 
-  const handleUpdateSubcategory = async (id: number, name: string, description?: string) => {
-    const result = await updateSubcategory(id, name, description)
+  const handleUpdateSubcategory = async (id: number, name: string, description?: string, estimatedHours?: number) => {
+    const result = await updateSubcategory(id, name, description, estimatedHours)
     if (result.success) {
       await loadData()
       setEditSubcategory(null)
@@ -768,8 +768,13 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
                               key={subcat.id}
                               className="flex justify-between items-center p-2 ml-6 border border-border rounded-lg hover:border-primary/50 dark:hover:border-primary transition-all bg-white dark:bg-slate-800"
                             >
-                              <div className="flex items-center gap-3 flex-1">
+                              <div className="flex items-center gap-3 flex-1 flex-wrap">
                                 <span className="font-medium text-sm">{subcat.name}</span>
+                                {subcat.estimated_hours && (
+                                  <span className="text-xs text-primary font-medium">
+                                    {subcat.estimated_hours}h
+                                  </span>
+                                )}
                                 {subcat.description && (
                                   <span className="text-xs text-foreground-secondary">- {subcat.description}</span>
                                 )}
@@ -912,13 +917,14 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               disabled: true,
             },
             { name: "name", label: "Sub category", type: "text", required: true },
+            { name: "estimated_hours", label: "Estimated Hours", type: "number", required: true },
             { name: "description", label: "Description", type: "textarea" },
           ]}
           initialData={editSubcategory}
           onSave={(data) =>
             editSubcategory.id
-              ? handleUpdateSubcategory(editSubcategory.id, data.name, data.description)
-              : handleCreateSubcategory(Number(editSubcategory.category_id), data.name, data.description)
+              ? handleUpdateSubcategory(editSubcategory.id, data.name, data.description, data.estimated_hours ? Number(data.estimated_hours) : undefined)
+              : handleCreateSubcategory(Number(editSubcategory.category_id), data.name, data.description, data.estimated_hours ? Number(data.estimated_hours) : undefined)
           }
           onClose={() => setEditSubcategory(null)}
         />

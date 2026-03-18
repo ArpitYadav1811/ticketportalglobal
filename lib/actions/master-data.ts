@@ -634,7 +634,7 @@ export async function getSubcategoryDetails(subcategoryId: number) {
   }
 }
 
-export async function createSubcategory(categoryId: number, name: string, description?: string) {
+export async function createSubcategory(categoryId: number, name: string, description?: string, estimatedHours?: number) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser) {
@@ -650,8 +650,8 @@ export async function createSubcategory(categoryId: number, name: string, descri
     
     const trimmedName = name.trim()
     const result = await sql`
-      INSERT INTO subcategories (category_id, name, description)
-      VALUES (${categoryId}, ${trimmedName}, ${description || null})
+      INSERT INTO subcategories (category_id, name, description, estimated_hours)
+      VALUES (${categoryId}, ${trimmedName}, ${description || null}, ${estimatedHours || null})
       RETURNING *
     `
     if (!result || result.length === 0) {
@@ -668,7 +668,7 @@ export async function createSubcategory(categoryId: number, name: string, descri
   }
 }
 
-export async function updateSubcategory(id: number, name: string, description?: string) {
+export async function updateSubcategory(id: number, name: string, description?: string, estimatedHours?: number) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser) {
@@ -684,7 +684,7 @@ export async function updateSubcategory(id: number, name: string, description?: 
     
     const result = await sql`
       UPDATE subcategories 
-      SET name = ${name}, description = ${description || null}, updated_at = CURRENT_TIMESTAMP
+      SET name = ${name}, description = ${description || null}, estimated_hours = ${estimatedHours || null}, updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
     `
