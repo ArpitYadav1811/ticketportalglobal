@@ -199,8 +199,6 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
   useEffect(() => {
     if (!filtersReady) return
     loadData()
-    const interval = setInterval(loadData, 60000)
-    return () => clearInterval(interval)
   }, [filtersReady, loadData])
 
   if (loading) {
@@ -351,11 +349,10 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       </div>
 
 
-      {/* ── Charts (vertical stack) ────────────────────────────── */}
-      <div className="space-y-4">
-
-        {/* Tickets by Business Unit — admin only */}
-        {isAdmin && (
+      {/* ── Row 2: Business Unit Charts (2-col) — admin only ────────────── */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Tickets by Business Unit (Total) */}
           <ChartCard title="Tickets by Business Unit">
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
@@ -374,9 +371,27 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
-        )}
 
-      </div>
+          {/* Tickets by Business Unit (Open & Resolved) */}
+          <ChartCard title="Tickets by Business Unit (Open & Resolved)">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={data.ticketsByBUStatus?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={30}>
+                <CartesianGrid {...GRID} />
+                <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend />} />
+                <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+      )}
+
+      {/* ── Charts (vertical stack) ────────────────────────────── */}
+      <div className="space-y-4">
 
       {/* ── Tickets by Target Group Category ────────────────────── */}
       {data.ticketsByInitiatorGroup?.length > 0 && (
@@ -421,7 +436,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       </ChartCard>
 
       {/* Detailed SPOC & Assignee Analytics */}
-      <div className="grid grid-cols-1 gap-4 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         {/* Tickets by SPOC - All Status */}
         <ChartCard title="Tickets by SPOC">
           <ResponsiveContainer width="100%" height={350}>
@@ -455,6 +470,8 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+      </div>
+
       </div>
     </div>
   )

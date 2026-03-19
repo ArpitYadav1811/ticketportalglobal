@@ -121,6 +121,36 @@ export async function getAnalyticsData(
           GROUP BY bu.name ORDER BY ticket_count DESC
         `
 
+    // --- Tickets by Business Unit (Open & Resolved) ---
+    const ticketsByBUStatus = hasGroupFilter
+      ? await sql`
+          SELECT 
+            bu.name as business_unit,
+            COUNT(t.id) as total,
+            COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
+            COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
+          FROM tickets t
+          LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+          WHERE bu.name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND ${groupFilterCondition}
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY bu.name ORDER BY total DESC
+        `
+      : await sql`
+          SELECT 
+            bu.name as business_unit,
+            COUNT(t.id) as total,
+            COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
+            COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
+          FROM tickets t
+          LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+          WHERE bu.name IS NOT NULL
+            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY bu.name ORDER BY total DESC
+        `
+
     // --- Tickets by Initiator Category (Category of the initiator's business group) ---
     // Shows tickets grouped by category, where the category belongs to the creator's business group
     const ticketsByCategory = hasGroupFilter
@@ -595,6 +625,7 @@ export async function getAnalyticsData(
       success: true,
       data: {
         ticketsByBU: ticketsByBU || [],
+        ticketsByBUStatus: ticketsByBUStatus || [],
         ticketsByCategory: ticketsByCategory || [],
         ticketsByStatus: ticketsByStatus || [],
         ticketsByType: ticketsByType || [],
@@ -619,6 +650,7 @@ export async function getAnalyticsData(
       error: "Failed to fetch analytics data",
       data: {
         ticketsByBU: [],
+        ticketsByBUStatus: [],
         ticketsByCategory: [],
         ticketsByStatus: [],
         ticketsByType: [],

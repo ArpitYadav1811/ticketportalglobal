@@ -39,10 +39,10 @@ export default function MasterDataHeader({
     setMounted(true)
   }, [])
 
-  // Load all business groups for Super Admin
+  // Load all business groups for dropdown
   useEffect(() => {
     const loadBusinessGroups = async () => {
-      if (!isSuperAdmin || !mounted) return
+      if (!mounted) return
       setLoading(true)
       try {
         const result = await getBusinessUnitGroups()
@@ -56,26 +56,37 @@ export default function MasterDataHeader({
       }
     }
     loadBusinessGroups()
-  }, [isSuperAdmin, mounted])
+  }, [mounted])
 
-  // Detect SPOC status from DB for non-admin, non-manager users
+  // Load SPOC groups for non-Super Admin users
   useEffect(() => {
-    const checkSpoc = async () => {
-      if (isAdmin || isManagerRole || !userId) return
+    const loadSpocGroups = async () => {
+      if (isSuperAdmin || !userId) return
+      
+      // For managers, always check SPOC status
+      if (isManagerRole) {
+        setIsSpoc(true)
+        const result = await getBusinessGroupsForSpoc(userId)
+        if (result.success && result.data && result.data.length > 0) {
+          const groupIds = result.data.map((bg: any) => bg.id)
+          setSpocGroupIds(groupIds)
+        }
+        return
+      }
+      
+      // For other users, check if they are SPOC
       const spocCheck = await isUserSpoc(userId)
       if (spocCheck) {
         setIsSpoc(true)
         const result = await getBusinessGroupsForSpoc(userId)
         if (result.success && result.data && result.data.length > 0) {
-          const groupNames = result.data.map((bg: any) => bg.name).join(", ")
           const groupIds = result.data.map((bg: any) => bg.id)
-          setSpocGroupName(groupNames)
           setSpocGroupIds(groupIds)
         }
       }
     }
-    checkSpoc()
-  }, [userId, isAdmin, isManagerRole])
+    loadSpocGroups()
+  }, [userId, isSuperAdmin, isManagerRole])
 
   const subtitle = isAdmin
     ? "Manage business groups, categories, subcategories, and ticket classification mappings"
@@ -120,19 +131,21 @@ export default function MasterDataHeader({
             <select
               value={isSuperAdmin 
                 ? (selectedGroupId === "all" || selectedGroupId === null ? "all" : selectedGroupId?.toString() || "all")
-                : (spocGroupIds.length > 0 ? spocGroupIds[0]?.toString() : (userGroupId?.toString() || ""))
+                : (selectedGroupId?.toString() || (spocGroupIds.length > 0 ? spocGroupIds[0]?.toString() : (userGroupId?.toString() || "")))
               }
               onChange={handleGroupChange}
-              disabled={!isSuperAdmin || loading}
+              disabled={loading || (spocGroupIds.length === 0 && !userGroupId && !isSuperAdmin)}
               className={`
                 appearance-none bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 
                 rounded-lg px-4 py-2 pr-10 text-sm font-medium min-w-[180px]
                 text-slate-900 dark:text-white
                 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
                 transition-all duration-200
-                ${isSuperAdmin && !loading
+                ${!loading && (isSuperAdmin || spocGroupIds.length > 1)
                   ? "cursor-pointer hover:border-primary/50 shadow-sm hover:shadow-md"
-                  : "cursor-not-allowed opacity-70"
+                  : spocGroupIds.length === 1 || userGroupId
+                    ? "cursor-default"
+                    : "cursor-not-allowed opacity-70"
                 }
               `}
               style={{
@@ -151,27 +164,21 @@ export default function MasterDataHeader({
                     </option>
                   ))}
                 </>
-              ) : (
+              ) : spocGroupIds.length > 0 ? (
                 <>
-                  {spocGroupIds.length > 0 ? (
-                    spocGroupIds.map((id, idx) => {
-                      const groupNames = spocGroupName.split(", ")
-                      const displayName = groupNames[idx] || groupName || "N/A"
-                      return (
-                        <option key={id} value={id}>
-                          {displayName}
-                        </option>
-                      )
-                    })
-                  ) : (
-                    <option value={userGroupId?.toString() || ""}>{groupName || "N/A"}</option>
-                  )}
+                  {spocGroupIds.map((id) => {
+                    const group = allBusinessGroups.find(bg => bg.id === id)
+                    return (
+                      <option key={id} value={id}>
+                        {group?.name || `Group ${id}`}
+                      </option>
+                    )
+                  })}
                 </>
+              ) : (
+                <option value={userGroupId?.toString() || ""}>{groupName || "N/A"}</option>
               )}
             </select>
-            {!isSuperAdmin && (
-              <div className="absolute inset-0 bg-transparent cursor-not-allowed pointer-events-none" />
-            )}
           </div>
         </div>
       )}
