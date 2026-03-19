@@ -192,7 +192,12 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         ? { businessGroupIds, filterType }
         : { filterType }
     const result = await getAnalyticsData(daysFilter, options)
-    if (result.success) setData(result.data)
+    if (result.success) {
+      setData(result.data)
+    } else {
+      // Keep rendering with empty datasets instead of hiding whole page
+      setData(result.data || {})
+    }
     setLoading(false)
   }, [daysFilter, isAdmin, isSuperAdmin, businessGroupIds, selectedGroupId, filterType])
 

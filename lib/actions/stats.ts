@@ -103,60 +103,110 @@ export async function getAnalyticsData(
     // Which business group name to group by depends on tab:
     // - initiator tab: creator's BU (t.business_unit_group_id)
     // - target tab: target BU (t.target_business_group_id)
-    const buJoin = filterType === 'initiator'
-      ? sql`LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id`
-      : sql`LEFT JOIN business_unit_groups bu ON t.target_business_group_id = bu.id`
+    //
+    // IMPORTANT: avoid injecting SQL fragments into the template (Neon can be picky).
+    // We'll branch the full query per tab instead.
     
-    const ticketsByBU = hasGroupFilter
-      ? await sql`
-          SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
-          FROM tickets t
-          ${buJoin}
-          WHERE bu.name IS NOT NULL
-            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-            AND ${groupFilterCondition}
-            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY bu.name ORDER BY ticket_count DESC
-        `
-      : await sql`
-          SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
-          FROM tickets t
-          ${buJoin}
-          WHERE bu.name IS NOT NULL
-            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY bu.name ORDER BY ticket_count DESC
-        `
+    const ticketsByBU = filterType === 'initiator'
+      ? (hasGroupFilter
+          ? await sql`
+              SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND ${groupFilterCondition}
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY ticket_count DESC
+            `
+          : await sql`
+              SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY ticket_count DESC
+            `)
+      : (hasGroupFilter
+          ? await sql`
+              SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.target_business_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND ${groupFilterCondition}
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY ticket_count DESC
+            `
+          : await sql`
+              SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.target_business_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY ticket_count DESC
+            `)
 
     // --- Tickets by Business Unit (Open & Resolved) ---
-    const ticketsByBUStatus = hasGroupFilter
-      ? await sql`
-          SELECT 
-            bu.name as business_unit,
-            COUNT(t.id) as total,
-            COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
-            COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
-          FROM tickets t
-          ${buJoin}
-          WHERE bu.name IS NOT NULL
-            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-            AND ${groupFilterCondition}
-            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY bu.name ORDER BY total DESC
-        `
-      : await sql`
-          SELECT 
-            bu.name as business_unit,
-            COUNT(t.id) as total,
-            COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
-            COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
-          FROM tickets t
-          ${buJoin}
-          WHERE bu.name IS NOT NULL
-            AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
-            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY bu.name ORDER BY total DESC
-        `
+    const ticketsByBUStatus = filterType === 'initiator'
+      ? (hasGroupFilter
+          ? await sql`
+              SELECT 
+                bu.name as business_unit,
+                COUNT(t.id) as total,
+                COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
+                COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND ${groupFilterCondition}
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY total DESC
+            `
+          : await sql`
+              SELECT 
+                bu.name as business_unit,
+                COUNT(t.id) as total,
+                COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
+                COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY total DESC
+            `)
+      : (hasGroupFilter
+          ? await sql`
+              SELECT 
+                bu.name as business_unit,
+                COUNT(t.id) as total,
+                COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
+                COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.target_business_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND ${groupFilterCondition}
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY total DESC
+            `
+          : await sql`
+              SELECT 
+                bu.name as business_unit,
+                COUNT(t.id) as total,
+                COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
+                COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
+              FROM tickets t
+              LEFT JOIN business_unit_groups bu ON t.target_business_group_id = bu.id
+              WHERE bu.name IS NOT NULL
+                AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+                AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+              GROUP BY bu.name ORDER BY total DESC
+            `)
 
     // --- Tickets by Initiator Category (Category of the initiator's business group) ---
     // Shows tickets grouped by category, where the category belongs to the creator's business group
