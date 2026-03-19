@@ -94,24 +94,24 @@ export async function getAnalyticsData(
 
     // --- Tickets by Business Unit ---
     // Helper: Build group filter condition based on filterType
-    // 'initiator' tab: Filter tickets created by my group(s) (business_unit_group_id)
-    // 'target' tab: Filter tickets assigned to my group(s) (target_business_group_id)
+    // 'initiator' tab: Filter by creator's group (business_unit_group_id)
+    // 'target' tab: Filter by target group (target_business_group_id)
     const groupFilterCondition = filterType === 'initiator' 
       ? sql`t.business_unit_group_id = ANY(${businessGroupIds})`
       : sql`t.target_business_group_id = ANY(${businessGroupIds})`
 
-    // For BU charts we want to show "the other side":
-    // - In Initiator tab: where my group(s) raised tickets TO (target group)
-    // - In Target tab: where tickets are coming FROM (initiator group)
-    const buIdColumn = filterType === 'initiator'
-      ? sql`t.target_business_group_id`
-      : sql`t.business_unit_group_id`
+    // Which business group name to group by depends on tab:
+    // - initiator tab: creator's BU (t.business_unit_group_id)
+    // - target tab: target BU (t.target_business_group_id)
+    const buJoin = filterType === 'initiator'
+      ? sql`LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id`
+      : sql`LEFT JOIN business_unit_groups bu ON t.target_business_group_id = bu.id`
     
     const ticketsByBU = hasGroupFilter
       ? await sql`
           SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
           FROM tickets t
-          LEFT JOIN business_unit_groups bu ON ${buIdColumn} = bu.id
+          ${buJoin}
           WHERE bu.name IS NOT NULL
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
@@ -121,7 +121,7 @@ export async function getAnalyticsData(
       : await sql`
           SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
           FROM tickets t
-          LEFT JOIN business_unit_groups bu ON ${buIdColumn} = bu.id
+          ${buJoin}
           WHERE bu.name IS NOT NULL
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
@@ -137,7 +137,7 @@ export async function getAnalyticsData(
             COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
             COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
           FROM tickets t
-          LEFT JOIN business_unit_groups bu ON ${buIdColumn} = bu.id
+          ${buJoin}
           WHERE bu.name IS NOT NULL
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
@@ -151,7 +151,7 @@ export async function getAnalyticsData(
             COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
             COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
           FROM tickets t
-          LEFT JOIN business_unit_groups bu ON ${buIdColumn} = bu.id
+          ${buJoin}
           WHERE bu.name IS NOT NULL
             AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
