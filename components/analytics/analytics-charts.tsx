@@ -232,6 +232,10 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
   ]
 
   const durationLabel = daysFilter === 0 ? "All Time" : (DURATION_OPTIONS.find(o => o.value === daysFilter)?.label || `${daysFilter}d`)
+  const buTitle = filterType === "initiator" ? "Tickets Raised To Business Units" : "Tickets Raised From Business Units"
+  const buStatusTitle = filterType === "initiator"
+    ? "Tickets Raised To Business Units (Open & Resolved)"
+    : "Tickets Raised From Business Units (Open & Resolved)"
 
   return (
     <div className="space-y-4">
@@ -378,9 +382,8 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           <div />
         )}
 
-        {/* Tickets by Business Unit (Total) — admin only */}
-        {isAdmin ? (
-          <ChartCard title="Tickets by Business Unit">
+        {/* Tickets by Business Unit (Total) */}
+        <ChartCard title={buTitle}>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
                 <defs>
@@ -398,28 +401,23 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
-        ) : (
-          <div />
-        )}
       </div>
 
-      {/* Tickets by Business Unit (Open & Resolved) — admin only */}
-      {isAdmin && (
-        <ChartCard title="Tickets by Business Unit (Open & Resolved)">
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data.ticketsByBUStatus?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={30}>
-              <CartesianGrid {...GRID} />
-              <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      )}
+      {/* Tickets by Business Unit (Open & Resolved) */}
+      <ChartCard title={buStatusTitle}>
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={data.ticketsByBUStatus?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={30}>
+            <CartesianGrid {...GRID} />
+            <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend content={<CustomLegend />} />
+            <Bar dataKey="total" fill={STATUS_COLORS.total} name="Total" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="open" fill={STATUS_COLORS.open} name="Open" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="resolved" fill={STATUS_COLORS.resolved} name="Resolved" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* Detailed SPOC & Assignee Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
