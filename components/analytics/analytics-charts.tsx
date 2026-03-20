@@ -383,29 +383,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           <div />
         )}
 
-        {/* Tickets by Business Unit (Total) */}
-        {data.ticketsByBU?.length ? (
-          <ChartCard title="Tickets by Business Unit">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
-                <defs>
-                  <linearGradient id="buGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
-                    <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0.5} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid {...GRID} />
-                <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
-                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend content={<CustomLegend />} />
-                <Bar dataKey="ticket_count" fill="url(#buGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        ) : (
-          <div />
-        )}
+
       </div>
 
       {/* Tickets by Business Unit (Open & Resolved) */}
