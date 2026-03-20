@@ -188,6 +188,12 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
   const getFilteredCategories = () => {
     let filtered = categories
 
+    // Apply explicit top-level business group filter for all roles when provided
+    if (selectedGroupId && selectedGroupId !== "all") {
+      filtered = filtered.filter((cat) => cat.business_unit_group_id === selectedGroupId)
+      return filtered
+    }
+
     // If filter scope is "own", only show categories for user's business group
     if (permissions?.businessGroups.filterScope === "own" && userBusinessGroupId) {
       filtered = filtered.filter((cat) => cat.business_unit_group_id === userBusinessGroupId)
@@ -201,11 +207,6 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
       )
     }
 
-    // Apply top-level business group filter from header (for Super Admin)
-    if (isSuperAdmin && selectedGroupId && selectedGroupId !== "all") {
-      filtered = filtered.filter((cat) => cat.business_unit_group_id === selectedGroupId)
-    }
-
     return filtered
   }
 
@@ -213,8 +214,8 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
   const getFilteredBusinessGroups = () => {
     let filtered = businessGroups
 
-    // For Super Admin with specific group selected, filter to that group
-    if (isSuperAdmin && selectedGroupId && selectedGroupId !== "all") {
+    // Apply explicit top-level business group filter for all roles when provided
+    if (selectedGroupId && selectedGroupId !== "all") {
       filtered = filtered.filter((bg) => bg.id === selectedGroupId)
       return filtered
     }

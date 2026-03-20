@@ -112,8 +112,8 @@ export default function ProjectNamesTab({
   const getFilteredProjects = () => {
     let filtered = data
 
-    // For Super Admin with specific group selected, filter to that group
-    if (isSuperAdmin && selectedGroupId && selectedGroupId !== "all") {
+    // Apply explicit top-level business group filter for all roles when provided
+    if (selectedGroupId && selectedGroupId !== "all") {
       filtered = filtered.filter((project) => project.business_unit_group_id === selectedGroupId)
       return filtered
     }

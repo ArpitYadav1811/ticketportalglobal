@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Building2, ChevronDown } from "lucide-react"
+import { Building2 } from "lucide-react"
 import { isUserSpoc, getBusinessGroupsForSpoc } from "@/lib/actions/master-data"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 
@@ -28,7 +28,6 @@ export default function AnalyticsHeader({
   const isAdmin = userRole === "admin" || isSuperAdmin
   const isManagerRole = userRole === "manager"
   const [isSpoc, setIsSpoc] = useState(isManagerRole)
-  const [spocGroupName, setSpocGroupName] = useState(groupName || "")
   const [spocGroupIds, setSpocGroupIds] = useState<number[]>([])
   const [allBusinessGroups, setAllBusinessGroups] = useState<{ id: number; name: string }[]>([])
   const [loading, setLoading] = useState(false)
@@ -39,10 +38,10 @@ export default function AnalyticsHeader({
     setMounted(true)
   }, [])
 
-  // Load all business groups for Super Admin
+  // Load all business groups for dropdown labels
   useEffect(() => {
     const loadBusinessGroups = async () => {
-      if (!isSuperAdmin || !mounted) return
+      if (!mounted) return
       setLoading(true)
       try {
         const result = await getBusinessUnitGroups()
@@ -56,43 +55,48 @@ export default function AnalyticsHeader({
       }
     }
     loadBusinessGroups()
-  }, [isSuperAdmin, mounted])
+  }, [mounted])
 
-  // Detect SPOC status from DB for non-admin, non-manager users
+  // Load SPOC groups for non-Super Admin users
   useEffect(() => {
-    const checkSpoc = async () => {
-      if (isAdmin || isManagerRole || !userId) return
+    const loadSpocGroups = async () => {
+      if (isSuperAdmin || !userId) return
+
+      if (isManagerRole) {
+        setIsSpoc(true)
+        const result = await getBusinessGroupsForSpoc(userId)
+        if (result.success && result.data && result.data.length > 0) {
+          const groupIds = result.data.map((bg: any) => bg.id)
+          setSpocGroupIds(groupIds)
+        }
+        return
+      }
+
       const spocCheck = await isUserSpoc(userId)
       if (spocCheck) {
         setIsSpoc(true)
         const result = await getBusinessGroupsForSpoc(userId)
         if (result.success && result.data && result.data.length > 0) {
-          const groupNames = result.data.map((bg: any) => bg.name).join(", ")
           const groupIds = result.data.map((bg: any) => bg.id)
-          setSpocGroupName(groupNames)
           setSpocGroupIds(groupIds)
         }
       }
     }
-    checkSpoc()
-  }, [userId, isAdmin, isManagerRole])
+    loadSpocGroups()
+  }, [userId, isSuperAdmin, isManagerRole])
+
+  // Ensure non-superadmin selection defaults to an allowed SPOC group
+  useEffect(() => {
+    if (isSuperAdmin) return
+    if (!spocGroupIds.length) return
+    if (!selectedGroupId || selectedGroupId === "all" || !spocGroupIds.includes(Number(selectedGroupId))) {
+      onGroupChange?.(spocGroupIds[0])
+    }
+  }, [isSuperAdmin, spocGroupIds, selectedGroupId, onGroupChange])
 
   const subtitle = isAdmin
     ? "All tickets across all Business Groups"
     : "Analytics for your Business Group"
-
-  // Get display value for dropdown
-  const getDisplayValue = () => {
-    if (isSuperAdmin) {
-      if (selectedGroupId === "all" || selectedGroupId === null) {
-        return "All Groups"
-      }
-      const selectedGroup = allBusinessGroups.find(bg => bg.id === selectedGroupId)
-      return selectedGroup?.name || "All Groups"
-    } else {
-      return spocGroupName || groupName || "N/A"
-    }
-  }
 
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
@@ -120,19 +124,21 @@ export default function AnalyticsHeader({
             <select
               value={isSuperAdmin 
                 ? (selectedGroupId === "all" || selectedGroupId === null ? "all" : selectedGroupId?.toString() || "all")
-                : (spocGroupIds.length > 0 ? spocGroupIds[0]?.toString() : (userGroupId?.toString() || ""))
+                : (selectedGroupId?.toString() || (spocGroupIds.length > 0 ? spocGroupIds[0]?.toString() : (userGroupId?.toString() || "")))
               }
               onChange={handleGroupChange}
-              disabled={!isSuperAdmin || loading}
+              disabled={loading || (spocGroupIds.length === 0 && !userGroupId && !isSuperAdmin)}
               className={`
                 appearance-none bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 
                 rounded-lg px-4 py-2 pr-10 text-sm font-medium min-w-[180px]
                 text-slate-900 dark:text-white
                 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
                 transition-all duration-200
-                ${isSuperAdmin && !loading
+                ${!loading && (isSuperAdmin || spocGroupIds.length > 1)
                   ? "cursor-pointer hover:border-primary/50 shadow-sm hover:shadow-md"
-                  : "cursor-not-allowed opacity-70"
+                  : spocGroupIds.length === 1 || userGroupId
+                    ? "cursor-default"
+                    : "cursor-not-allowed opacity-70"
                 }
               `}
               style={{
@@ -151,27 +157,21 @@ export default function AnalyticsHeader({
                     </option>
                   ))}
                 </>
-              ) : (
+              ) : spocGroupIds.length > 0 ? (
                 <>
-                  {spocGroupIds.length > 0 ? (
-                    spocGroupIds.map((id, idx) => {
-                      const groupNames = spocGroupName.split(", ")
-                      const displayName = groupNames[idx] || groupName || "N/A"
-                      return (
-                        <option key={id} value={id}>
-                          {displayName}
-                        </option>
-                      )
-                    })
-                  ) : (
-                    <option value={userGroupId?.toString() || ""}>{groupName || "N/A"}</option>
-                  )}
+                  {spocGroupIds.map((id) => {
+                    const group = allBusinessGroups.find(bg => bg.id === id)
+                    return (
+                      <option key={id} value={id}>
+                        {group?.name || `Group ${id}`}
+                      </option>
+                    )
+                  })}
                 </>
+              ) : (
+                <option value={userGroupId?.toString() || ""}>{groupName || "N/A"}</option>
               )}
             </select>
-            {!isSuperAdmin && (
-              <div className="absolute inset-0 bg-transparent cursor-not-allowed pointer-events-none" />
-            )}
           </div>
         </div>
       )}

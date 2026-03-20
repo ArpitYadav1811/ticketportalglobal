@@ -383,9 +383,34 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           <div />
         )}
 
-        {/* Tickets by Business Unit (Open & Resolved) */}
-        {!!data.ticketsByBUStatus?.length && (
-          <ChartCard title="Tickets by Business Unit (Open & Resolved)">
+        {/* Tickets by Business Unit (Total) */}
+        {data.ticketsByBU?.length ? (
+          <ChartCard title="Tickets by Business Unit">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={data.ticketsByBU?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
+                <defs>
+                  <linearGradient id="buGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
+                    <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid {...GRID} />
+                <XAxis dataKey="business_unit" tick={AXIS_TICK_SM} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend />} />
+                <Bar dataKey="ticket_count" fill="url(#buGrad)" radius={[4, 4, 0, 0]} name="Tickets" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        ) : (
+          <div />
+        )}
+      </div>
+
+      {/* Tickets by Business Unit (Open & Resolved) */}
+      {!!data.ticketsByBUStatus?.length && (
+        <ChartCard title="Tickets by Business Unit (Open & Resolved)">
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={data.ticketsByBUStatus?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={30}>
               <CartesianGrid {...GRID} />
@@ -400,7 +425,6 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           </ResponsiveContainer>
         </ChartCard>
       )}
-      </div>
 
       {/* Detailed SPOC & Assignee Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
@@ -442,7 +466,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
       {/* ── Ticket Trend Chart (responds to Duration filter) — last row ──────────────────────────────── */}
       <ChartCard title={`Ticket Trend (${durationLabel})`}>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data.ticketTrend || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={40}>
+          <LineChart data={data.ticketTrend || []} margin={{ left: 20, right: 20, bottom: 20 }}>
             <defs>
               <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.9} />
@@ -454,8 +478,16 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
             <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             <Legend content={<CustomLegend />} />
-            <Bar dataKey="count" fill="url(#trendGrad)" radius={[4, 4, 0, 0]} name="Tickets Created" />
-          </BarChart>
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke={CHART_COLORS.primary}
+              strokeWidth={3}
+              dot={{ r: 4, fill: CHART_COLORS.primary }}
+              activeDot={{ r: 6 }}
+              name="Tickets Created"
+            />
+          </LineChart>
         </ResponsiveContainer>
       </ChartCard>
 

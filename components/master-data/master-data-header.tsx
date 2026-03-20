@@ -28,7 +28,6 @@ export default function MasterDataHeader({
   const isAdmin = userRole === "admin" || isSuperAdmin
   const isManagerRole = userRole === "manager"
   const [isSpoc, setIsSpoc] = useState(isManagerRole)
-  const [spocGroupName, setSpocGroupName] = useState(groupName || "")
   const [spocGroupIds, setSpocGroupIds] = useState<number[]>([])
   const [allBusinessGroups, setAllBusinessGroups] = useState<{ id: number; name: string }[]>([])
   const [loading, setLoading] = useState(false)
@@ -88,22 +87,18 @@ export default function MasterDataHeader({
     loadSpocGroups()
   }, [userId, isSuperAdmin, isManagerRole])
 
+  // Ensure non-superadmin selection defaults to an allowed SPOC group
+  useEffect(() => {
+    if (isSuperAdmin) return
+    if (!spocGroupIds.length) return
+    if (!selectedGroupId || selectedGroupId === "all" || !spocGroupIds.includes(Number(selectedGroupId))) {
+      onGroupChange?.(spocGroupIds[0])
+    }
+  }, [isSuperAdmin, spocGroupIds, selectedGroupId, onGroupChange])
+
   const subtitle = isAdmin
     ? "Manage business groups, categories, subcategories, and ticket classification mappings"
     : "Manage master data for your Business Group"
-
-  // Get display value for dropdown
-  const getDisplayValue = () => {
-    if (isSuperAdmin) {
-      if (selectedGroupId === "all" || selectedGroupId === null) {
-        return "All Groups"
-      }
-      const selectedGroup = allBusinessGroups.find(bg => bg.id === selectedGroupId)
-      return selectedGroup?.name || "All Groups"
-    } else {
-      return spocGroupName || groupName || "N/A"
-    }
-  }
 
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
