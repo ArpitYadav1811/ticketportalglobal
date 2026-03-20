@@ -5,7 +5,7 @@ import { format } from "date-fns"
 import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X, Users, Building2 } from "lucide-react"
 import { toast } from "sonner"
 import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles, updateUserPasswordAsAdmin } from "@/lib/actions/users"
-import { updateUserRole, updateUserBusinessGroup } from "@/lib/actions/admin"
+import { updateUserRole, updateUserBusinessGroup, getUserSpocBusinessGroups, updateUserSpocBusinessGroups } from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -30,6 +30,7 @@ interface User {
   team_count: number
   business_unit_group_id: number | null
   business_group_name: string | null
+  spoc_group_names?: string | null
   team_names: string | null
 }
 
@@ -54,6 +55,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
   const [confirmPassword, setConfirmPassword] = useState("")
   const [passwordError, setPasswordError] = useState("")
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  const [spocDialogOpen, setSpocDialogOpen] = useState(false)
+  const [spocUser, setSpocUser] = useState<User | null>(null)
+  const [selectedSpocGroupIds, setSelectedSpocGroupIds] = useState<number[]>([])
+  const [isUpdatingSpocGroups, setIsUpdatingSpocGroups] = useState(false)
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -212,6 +217,39 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
     setBgChangingId(null)
   }
 
+  const openSpocGroupsDialog = async (user: User) => {
+    setSpocUser(user)
+    setSpocDialogOpen(true)
+    const result = await getUserSpocBusinessGroups(user.id)
+    if (result.success && result.data) {
+      setSelectedSpocGroupIds(result.data)
+    } else {
+      setSelectedSpocGroupIds([])
+    }
+  }
+
+  const toggleSpocGroup = (groupId: number) => {
+    setSelectedSpocGroupIds((prev) =>
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    )
+  }
+
+  const handleSaveSpocGroups = async () => {
+    if (!spocUser) return
+    setIsUpdatingSpocGroups(true)
+    const result = await updateUserSpocBusinessGroups(spocUser.id, selectedSpocGroupIds)
+    if (result.success) {
+      toast.success(`Updated SPOC groups for ${spocUser.full_name}`)
+      setSpocDialogOpen(false)
+      setSpocUser(null)
+      setSelectedSpocGroupIds([])
+      onRefresh()
+    } else {
+      toast.error(result.error || "Failed to update SPOC groups")
+    }
+    setIsUpdatingSpocGroups(false)
+  }
+
   const getRoleBadgeColor = (role: string) => {
     const roleColors: Record<string, string> = {
       superadmin: "bg-amber-100 text-amber-800",
@@ -361,48 +399,71 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                 </td>
                 <td className="px-3 py-2">
                   {isSuperAdmin ? (
-                    <div className="flex items-center gap-1 max-w-[180px]">
+                    <div className="flex items-center gap-1 max-w-[220px]">
                       {bgChangingId === user.id ? (
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Select
-                          value={user.business_unit_group_id?.toString() ?? "none"}
-                          onValueChange={(value) =>
-                            handleInlineBusinessGroupChange(
-                              user.id,
-                              value && value !== "none" ? Number(value) : null,
-                              user.full_name,
-                            )
-                          }
-                        >
-                          <SelectTrigger className="w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:ring-2 focus:ring-primary/60 focus:border-primary/60">
-                            <SelectValue placeholder="No Group" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
-                            <SelectItem 
-                              value="none"
-                              className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
-                            >
-                              No Group
-                            </SelectItem>
-                            {businessGroups.map((bg) => (
+                        <>
+                          <Select
+                            value={user.business_unit_group_id?.toString() ?? "none"}
+                            onValueChange={(value) =>
+                              handleInlineBusinessGroupChange(
+                                user.id,
+                                value && value !== "none" ? Number(value) : null,
+                                user.full_name,
+                              )
+                            }
+                          >
+                            <SelectTrigger className="w-full pl-3 pr-7 py-1.5 rounded-full text-[11px] font-medium border border-border bg-white dark:bg-slate-800 text-foreground cursor-pointer shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 focus:ring-2 focus:ring-primary/60 focus:border-primary/60">
+                              <SelectValue placeholder="No Group" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-primary/30 rounded-xl shadow-2xl">
                               <SelectItem 
-                                key={bg.id} 
-                                value={bg.id.toString()}
+                                value="none"
                                 className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
                               >
-                                {bg.name}
+                                No Group
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              {businessGroups.map((bg) => (
+                                <SelectItem 
+                                  key={bg.id} 
+                                  value={bg.id.toString()}
+                                  className="text-xs font-semibold cursor-pointer hover:bg-primary/20 focus:bg-primary/20 rounded-lg my-1"
+                                >
+                                  {bg.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {user.role === "manager" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-[10px] px-2 py-1 h-7 whitespace-nowrap"
+                              onClick={() => openSpocGroupsDialog(user)}
+                              title="Assign multiple SPOC business groups"
+                            >
+                              SPOC Groups
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
-                  ) : user.business_group_name ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold shadow-sm border border-blue-200 dark:border-blue-800">
-                      <Building2 className="w-2.5 h-2.5" />
-                      {user.business_group_name}
-                    </span>
+                  ) : (user.spoc_group_names || user.business_group_name) ? (
+                    <div className="flex flex-wrap gap-1">
+                      {(user.spoc_group_names || user.business_group_name || "")
+                        .split(", ")
+                        .filter(Boolean)
+                        .map((group, i) => (
+                          <span
+                            key={`${user.id}-${group}-${i}`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold shadow-sm border border-blue-200 dark:border-blue-800"
+                          >
+                            <Building2 className="w-2.5 h-2.5" />
+                            {group}
+                          </span>
+                        ))}
+                    </div>
                   ) : (
                     <span className="text-[11px] text-muted-foreground font-medium">—</span>
                   )}
@@ -715,6 +776,58 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
               ) : (
                 "Update Password"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={spocDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSpocDialogOpen(false)
+          setSpocUser(null)
+          setSelectedSpocGroupIds([])
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign SPOC Business Groups</DialogTitle>
+            <DialogDescription>
+              Super Admin can assign multiple business groups for SPOC users only.
+              {spocUser ? ` Managing: ${spocUser.full_name}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-72 overflow-y-auto border rounded-lg p-3 space-y-2">
+            {businessGroups.map((bg) => (
+              <label key={bg.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSpocGroupIds.includes(bg.id)}
+                  onChange={() => toggleSpocGroup(bg.id)}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                <span>{bg.name}</span>
+              </label>
+            ))}
+            {businessGroups.length === 0 && (
+              <p className="text-sm text-muted-foreground">No business groups available.</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSpocDialogOpen(false)
+                setSpocUser(null)
+                setSelectedSpocGroupIds([])
+              }}
+              disabled={isUpdatingSpocGroups}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSpocGroups} disabled={isUpdatingSpocGroups}>
+              {isUpdatingSpocGroups ? "Saving..." : "Save SPOC Groups"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -526,6 +526,103 @@ export async function updateUserBusinessGroup(userId: number, businessGroupId: n
   }
 }
 
+export async function getUserSpocBusinessGroups(userId: number) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "Not authenticated", data: [] as number[] }
+    }
+
+    const role = currentUser.role?.toLowerCase()
+    if (role !== "superadmin" && role !== "admin") {
+      return { success: false, error: "Only Admin or Super Admin can view SPOC groups", data: [] as number[] }
+    }
+
+    const rows = await sql`
+      SELECT business_group_id
+      FROM business_group_spocs
+      WHERE user_id = ${userId}
+        AND is_active = true
+      ORDER BY business_group_id
+    `
+
+    return { success: true, data: rows.map((r: any) => Number(r.business_group_id)) }
+  } catch (error) {
+    console.error("Error fetching user SPOC groups:", error)
+    return { success: false, error: "Failed to fetch user SPOC groups", data: [] as number[] }
+  }
+}
+
+export async function updateUserSpocBusinessGroups(userId: number, businessGroupIds: number[]) {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role?.toLowerCase() !== "superadmin") {
+      return { success: false, error: "Only Super Admin can update SPOC business groups" }
+    }
+
+    const targetUser = await sql`
+      SELECT id, full_name, role
+      FROM users
+      WHERE id = ${userId}
+    `
+    if (targetUser.length === 0) {
+      return { success: false, error: "User not found" }
+    }
+
+    const targetRole = String(targetUser[0].role || "").toLowerCase()
+    if (targetRole !== "manager") {
+      return { success: false, error: "Multiple business groups can be assigned only for SPOC users" }
+    }
+
+    // Validate all incoming group IDs
+    const uniqueGroupIds = Array.from(new Set((businessGroupIds || []).filter((id) => Number.isInteger(id) && id > 0)))
+    if (uniqueGroupIds.length > 0) {
+      const validGroups = await sql`
+        SELECT id
+        FROM business_unit_groups
+        WHERE id = ANY(${uniqueGroupIds})
+      `
+      const validIdSet = new Set(validGroups.map((g: any) => Number(g.id)))
+      const invalid = uniqueGroupIds.filter((id) => !validIdSet.has(id))
+      if (invalid.length > 0) {
+        return { success: false, error: `Invalid business group IDs: ${invalid.join(", ")}` }
+      }
+    }
+
+    // Deactivate existing SPOC assignments for this user, then re-activate selected ones.
+    await sql`
+      UPDATE business_group_spocs
+      SET is_active = false
+      WHERE user_id = ${userId}
+    `
+
+    for (const groupId of uniqueGroupIds) {
+      await sql`
+        INSERT INTO business_group_spocs (business_group_id, user_id, spoc_type, assigned_by, is_active)
+        VALUES (${groupId}, ${userId}, 'secondary', ${currentUser.id}, true)
+        ON CONFLICT (business_group_id, user_id, spoc_type)
+        DO UPDATE SET is_active = true, assigned_by = ${currentUser.id}
+      `
+    }
+
+    await addSystemAuditLog({
+      actionType: "update",
+      entityType: "spoc_business_groups",
+      entityId: userId,
+      oldValue: "Updated",
+      newValue: uniqueGroupIds.join(", "),
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email,
+      notes: `Updated SPOC business groups for ${targetUser[0].full_name}`,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating user SPOC business groups:", error)
+    return { success: false, error: "Failed to update SPOC business groups" }
+  }
+}
+
 // ==================== BUSINESS GROUP SPOC MANAGEMENT ====================
 
 export async function updateBusinessGroupSpoc(

@@ -813,10 +813,18 @@ export async function getTicketClassificationMappings() {
 export async function getBusinessGroupsForSpoc(userId: number) {
   try {
     const result = await sql`
-      SELECT DISTINCT bug.id, bug.name 
-      FROM ticket_classification_mapping tcm
-      JOIN business_unit_groups bug ON tcm.target_business_group_id = bug.id
-      WHERE tcm.spoc_user_id = ${userId}
+      SELECT DISTINCT bug.id, bug.name
+      FROM (
+        SELECT tcm.target_business_group_id AS business_group_id
+        FROM ticket_classification_mapping tcm
+        WHERE tcm.spoc_user_id = ${userId}
+        UNION
+        SELECT bgs.business_group_id
+        FROM business_group_spocs bgs
+        WHERE bgs.user_id = ${userId}
+          AND bgs.is_active = true
+      ) src
+      JOIN business_unit_groups bug ON src.business_group_id = bug.id
     `
     return { success: true, data: result || [] }
   } catch (error) {
@@ -831,9 +839,10 @@ export async function getBusinessGroupsForSpoc(userId: number) {
 export async function isUserSpoc(userId: number) {
   try {
     const result = await sql`
-      SELECT COUNT(*) as count
-      FROM ticket_classification_mapping
-      WHERE spoc_user_id = ${userId}
+      SELECT (
+        (SELECT COUNT(*) FROM ticket_classification_mapping WHERE spoc_user_id = ${userId}) +
+        (SELECT COUNT(*) FROM business_group_spocs WHERE user_id = ${userId} AND is_active = true)
+      ) as count
     `
     return (result[0]?.count || 0) > 0
   } catch (error) {
