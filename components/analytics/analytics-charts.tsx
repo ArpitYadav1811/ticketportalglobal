@@ -383,12 +383,9 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           <div />
         )}
 
-
-      </div>
-
-      {/* Tickets by Business Unit (Open & Resolved) */}
-      {!!data.ticketsByBUStatus?.length && (
-        <ChartCard title="Tickets by Business Unit (Open & Resolved)">
+        {/* Tickets by Business Unit (Open & Resolved) */}
+        {!!data.ticketsByBUStatus?.length && (
+          <ChartCard title="Tickets by Business Unit (Open & Resolved)">
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={data.ticketsByBUStatus?.slice(0, 10) || []} margin={{ left: 20, right: 20, bottom: 20 }} barSize={30}>
               <CartesianGrid {...GRID} />
@@ -403,6 +400,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
           </ResponsiveContainer>
         </ChartCard>
       )}
+      </div>
 
       {/* Detailed SPOC & Assignee Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
