@@ -232,6 +232,21 @@ export default function TicketsFilter({ onFilterChange, onExport, onRefresh, isI
  filters.project,
  ].filter(Boolean).length
 
+const handleStatusShortcutChange = (status: "all" | "open" | "closed" | "deleted") => {
+ const newFilters = { ...filters, status }
+ setFilters(newFilters)
+
+ const teamMemberIds = newFilters.myTeam && teamMembers.length > 0
+ ? teamMembers.map(tm => tm.id)
+ : []
+
+ onFilterChange({
+ ...newFilters,
+ userId: newFilters.myTeam ? userId : undefined,
+ teamMemberIds: teamMemberIds,
+ })
+}
+
  return (
  <div className="space-y-4 w-full">
 {/* Status Shortcuts */}
@@ -535,19 +550,4 @@ filters.status === option.value
  )}
  </div>
  )
-}
-
-const handleStatusShortcutChange = (status: "all" | "open" | "closed" | "deleted") => {
- const newFilters = { ...filters, status }
- setFilters(newFilters)
-
- const teamMemberIds = newFilters.myTeam && teamMembers.length > 0
- ? teamMembers.map(tm => tm.id)
- : []
-
- onFilterChange({
- ...newFilters,
- userId: newFilters.myTeam ? userId : undefined,
- teamMemberIds: teamMemberIds,
- })
 }
