@@ -234,6 +234,29 @@ export default function TicketsFilter({ onFilterChange, onExport, onRefresh, isI
 
  return (
  <div className="space-y-4 w-full">
+{/* Status Shortcuts */}
+<div className="flex flex-wrap items-center gap-2">
+{[
+{ label: "All", value: "all" },
+{ label: "Open", value: "open" },
+{ label: "Closed", value: "closed" },
+{ label: "Delete", value: "deleted" },
+].map((option) => (
+<button
+key={option.value}
+type="button"
+onClick={() => handleStatusShortcutChange(option.value as "all" | "open" | "closed" | "deleted")}
+className={`inline-flex items-center justify-center h-7 px-3 rounded-md border text-xs font-medium transition-all ${
+filters.status === option.value
+? "bg-primary text-white border-primary"
+: "bg-transparent hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
+}`}
+>
+{option.label}
+</button>
+))}
+</div>
+
  {/* Quick Actions Bar */}
  <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
  {/* Universal Search */}
@@ -348,21 +371,6 @@ export default function TicketsFilter({ onFilterChange, onExport, onRefresh, isI
  {showFilters && (
  <div className="bg-white dark:bg-slate-800 border border-border rounded-xl p-4 space-y-4">
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
- {/* Status */}
- <div>
- <label className="block text-sm font-medium text-foreground mb-2">Status</label>
- <select
- value={filters.status}
- onChange={(e) => setFilters({ ...filters, status: e.target.value })}
- className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
- >
- <option value="all">All Status</option>
- <option value="open">Open</option>
- <option value="closed">Closed</option>
- <option value="hold">On Hold</option>
- </select>
- </div>
-
  {/* Type */}
  <div>
  <label className="block text-sm font-medium text-foreground mb-2">Type</label>
@@ -527,4 +535,19 @@ export default function TicketsFilter({ onFilterChange, onExport, onRefresh, isI
  )}
  </div>
  )
+}
+
+const handleStatusShortcutChange = (status: "all" | "open" | "closed" | "deleted") => {
+ const newFilters = { ...filters, status }
+ setFilters(newFilters)
+
+ const teamMemberIds = newFilters.myTeam && teamMembers.length > 0
+ ? teamMembers.map(tm => tm.id)
+ : []
+
+ onFilterChange({
+ ...newFilters,
+ userId: newFilters.myTeam ? userId : undefined,
+ teamMemberIds: teamMemberIds,
+ })
 }

@@ -31,6 +31,7 @@ export default function MasterDataHeader({
   const [spocGroupIds, setSpocGroupIds] = useState<number[]>([])
   const [allBusinessGroups, setAllBusinessGroups] = useState<{ id: number; name: string }[]>([])
   const [loading, setLoading] = useState(false)
+  const [groupsLoaded, setGroupsLoaded] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   // Track mount state to prevent hydration mismatches
@@ -52,6 +53,7 @@ export default function MasterDataHeader({
         console.error("Error loading business groups:", error)
       } finally {
         setLoading(false)
+        setGroupsLoaded(true)
       }
     }
     loadBusinessGroups()
@@ -165,7 +167,7 @@ export default function MasterDataHeader({
                     const group = allBusinessGroups.find(bg => bg.id === id)
                     return (
                       <option key={id} value={id}>
-                        {group?.name || `Group ${id}`}
+                        {group?.name || (groupsLoaded ? "Unknown Group" : "Loading group...")}
                       </option>
                     )
                   })}
