@@ -305,6 +305,8 @@ export async function getTicketById(id: number) {
         a.business_unit_group_id as assignee_business_unit_group_id,
         spoc.full_name as spoc_name,
         spoc.email as spoc_email,
+        cat.name as category_name,
+        subcat.name as subcategory_name,
         bug.name as group_name,
         tbg.name as target_business_group_name,
         assignee_bug.name as assignee_group_name,
@@ -313,6 +315,8 @@ export async function getTicketById(id: number) {
       LEFT JOIN users u ON t.created_by = u.id
       LEFT JOIN users a ON t.assigned_to = a.id
       LEFT JOIN users spoc ON t.spoc_user_id = spoc.id
+      LEFT JOIN categories cat ON t.category_id = cat.id
+      LEFT JOIN subcategories subcat ON t.subcategory_id = subcat.id
       LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
       LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
       LEFT JOIN business_unit_groups assignee_bug ON t.assignee_group_id = assignee_bug.id

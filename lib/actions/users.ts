@@ -24,13 +24,6 @@ export async function getAllUsers(filters?: {
         u.is_active,
         u.business_unit_group_id,
         bug.name as business_group_name,
-        COALESCE(
-          (SELECT string_agg(DISTINCT bg2.name, ', ' ORDER BY bg2.name)
-           FROM business_group_spocs bgs2
-           JOIN business_unit_groups bg2 ON bgs2.business_group_id = bg2.id
-           WHERE bgs2.user_id = u.id AND bgs2.is_active = true),
-          ''
-        ) as spoc_group_names,
         COUNT(DISTINCT t.id) as ticket_count,
         COUNT(DISTINCT CASE WHEN t.status = 'open' THEN t.id END) as ticket_count_open,
         COUNT(DISTINCT CASE WHEN t.status = 'on-hold' THEN t.id END) as ticket_count_on_hold,

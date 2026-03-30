@@ -8,7 +8,7 @@ import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Trash2, Users, UserPlus } from "lucide-react"
-import { getBusinessUnitGroups, getBusinessGroupsForSpoc, isUserSpoc } from "@/lib/actions/master-data"
+import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { getUsers } from "@/lib/actions/tickets"
 import {
  updateUserBusinessGroup,
@@ -49,8 +49,6 @@ export default function SettingsPage() {
  const [showNewPassword, setShowNewPassword] = useState(false)
  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
- const [spocBusinessGroups, setSpocBusinessGroups] = useState<any[]>([])
- const [canSwitchSpocGroup, setCanSwitchSpocGroup] = useState(false)
 
  // Avoid hydration mismatch for theme
  useEffect(() => {
@@ -125,39 +123,6 @@ export default function SettingsPage() {
  }
  }, [status, session])
 
- // Load SPOC group assignments for context switching
- useEffect(() => {
- if (!currentUser?.id) return
-
- const loadSpocGroups = async () => {
- try {
- const role = currentUser?.role?.toLowerCase()
- const roleIsManager = role === "manager"
- const spocCheck = roleIsManager ? true : await isUserSpoc(currentUser.id)
- if (!spocCheck) {
- setCanSwitchSpocGroup(false)
- setSpocBusinessGroups([])
- return
- }
-
- const result = await getBusinessGroupsForSpoc(currentUser.id)
- if (result.success && result.data && result.data.length > 1) {
- setCanSwitchSpocGroup(true)
- setSpocBusinessGroups(result.data)
- } else {
- setCanSwitchSpocGroup(false)
- setSpocBusinessGroups(result.data || [])
- }
- } catch (error) {
- console.error("Failed to load SPOC business groups:", error)
- setCanSwitchSpocGroup(false)
- setSpocBusinessGroups([])
- }
- }
-
- loadSpocGroups()
- }, [currentUser?.id, currentUser?.role])
-
  useEffect(() => {
  if (activeTab === "my-team" && currentUser?.id) {
  loadTeamMembers()
@@ -212,29 +177,14 @@ export default function SettingsPage() {
  }
 
  const handleSaveBusinessGroup = async () => {
+ // Only Super Admin can update business group
+ if (currentUser?.role?.toLowerCase() !== "superadmin") {
+ toast.error("Only Super Admin can update business groups")
+ return
+ }
+
  if (!currentUser?.id || !selectedBusinessGroup) {
  toast.error("Please select a business group")
- return
- }
-
- const isSuperAdmin = currentUser?.role?.toLowerCase() === "superadmin"
-
- // SPOC users with multiple groups can switch active group context
- if (!isSuperAdmin && canSwitchSpocGroup) {
- const selectedGroup = spocBusinessGroups.find((bg: any) => bg.id === Number(selectedBusinessGroup))
- const updatedUser = {
- ...currentUser,
- business_unit_group_id: Number(selectedBusinessGroup),
- group_name: selectedGroup?.name || currentUser.group_name,
- }
- localStorage.setItem("user", JSON.stringify(updatedUser))
- setCurrentUser(updatedUser)
- toast.success("Active business group switched successfully!")
- return
- }
-
- if (!isSuperAdmin) {
- toast.error("Only Super Admin can update business groups")
  return
  }
 
@@ -508,27 +458,22 @@ export default function SettingsPage() {
  value={selectedBusinessGroup}
  onChange={(e) => setSelectedBusinessGroup(e.target.value)}
  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-sm disabled:opacity-70 disabled:cursor-not-allowed"
- disabled={loadingBusinessGroups || saving || (currentUser?.role?.toLowerCase() !== "superadmin" && !canSwitchSpocGroup)}
+ disabled={loadingBusinessGroups || saving || currentUser?.role?.toLowerCase() !== "superadmin"}
  >
  <option value="">Select a business group</option>
- {(canSwitchSpocGroup ? spocBusinessGroups : businessGroups).length === 0 ? (
+ {businessGroups.length === 0 ? (
  <option value="" disabled>No business groups available</option>
  ) : (
- (canSwitchSpocGroup ? spocBusinessGroups : businessGroups).map((group) => (
+ businessGroups.map((group) => (
  <option key={group.id} value={group.id}>
  {group.name}
  </option>
  ))
  )}
  </select>
- {currentUser?.role?.toLowerCase() !== "superadmin" && !canSwitchSpocGroup && (
+ {currentUser?.role?.toLowerCase() !== "superadmin" && (
  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
  Only Super Admin can change business group assignments.
- </p>
- )}
- {canSwitchSpocGroup && (
- <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
- You are SPOC for multiple groups. Selecting a group switches your active working context.
  </p>
  )}
  </>
@@ -551,7 +496,7 @@ export default function SettingsPage() {
  </div>
  )}
 
- {(currentUser?.role?.toLowerCase() === "superadmin" || canSwitchSpocGroup) && (
+ {currentUser?.role?.toLowerCase() === "superadmin" && (
  <div className="flex justify-end pt-2">
  <button
  onClick={handleSaveBusinessGroup}

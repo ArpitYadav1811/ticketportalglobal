@@ -30,7 +30,6 @@ interface User {
   team_count: number
   business_unit_group_id: number | null
   business_group_name: string | null
-  spoc_group_names?: string | null
   team_names: string | null
 }
 
@@ -449,21 +448,11 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                         </>
                       )}
                     </div>
-                  ) : (user.spoc_group_names || user.business_group_name) ? (
-                    <div className="flex flex-wrap gap-1">
-                      {(user.spoc_group_names || user.business_group_name || "")
-                        .split(", ")
-                        .filter(Boolean)
-                        .map((group, i) => (
-                          <span
-                            key={`${user.id}-${group}-${i}`}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold shadow-sm border border-blue-200 dark:border-blue-800"
-                          >
-                            <Building2 className="w-2.5 h-2.5" />
-                            {group}
-                          </span>
-                        ))}
-                    </div>
+                  ) : user.business_group_name ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold shadow-sm border border-blue-200 dark:border-blue-800">
+                      <Building2 className="w-2.5 h-2.5" />
+                      {user.business_group_name}
+                    </span>
                   ) : (
                     <span className="text-[11px] text-muted-foreground font-medium">—</span>
                   )}

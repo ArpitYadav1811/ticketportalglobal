@@ -210,13 +210,13 @@ export default function TicketsTableBody({
        {/* Assignee */}
        <td className="px-2 py-2">
         {ticket.assignee_name ? (
-         <div>
+         <div className="min-w-0">
           <span
-           className={`text-xs font-medium text-foreground truncate ${canEditAssignee(ticket) ? "cursor-pointer hover:text-primary" : ""}`}
+           className={`inline-flex max-w-full items-center gap-1 text-xs font-medium text-foreground ${canEditAssignee(ticket) ? "cursor-pointer hover:text-primary" : ""}`}
            onClick={() => canEditAssignee(ticket) && onOpenAssigneeModal(ticket)}
           >
-           {ticket.assignee_name}
-           {canEditAssignee(ticket) && <Edit className="w-3 h-3 inline ml-1 opacity-50" />}
+           <span className="truncate">{ticket.assignee_name}</span>
+           {canEditAssignee(ticket) && <Edit className="w-3 h-3 shrink-0 opacity-50" />}
           </span>
           {ticket.assignee_group_name && (
            <div className="text-[11px] text-foreground-secondary truncate">{ticket.assignee_group_name}</div>
@@ -247,7 +247,7 @@ export default function TicketsTableBody({
              onOpenStatusChangeModal(ticket, newStatus)
             }
            }}
-           className={`px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${getStatusColorWithDark(ticket.status)}`}
+           className={`w-full max-w-full px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${getStatusColorWithDark(ticket.status)}`}
            disabled={ticket.is_deleted}
           >
            {getAvailableStatusOptions(ticket).map((status) => (
