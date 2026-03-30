@@ -84,8 +84,8 @@ export default function MasterDataPage() {
           />
         </div>
         <div className="border-b border-slate-200 dark:border-slate-700 mb-4" />
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4">
-          <UnifiedMasterDataV2 userId={user.id} userRole={userRole} selectedGroupId={selectedGroupId} />
+        <div>
+          <UnifiedMasterDataV2 userId={user.id} userRole={userRole} selectedGroupId={selectedGroupId} hideCardWrapper={true} />
         </div>
       </div>
     </DashboardLayout>

@@ -288,6 +288,19 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
     }
   }
 
+  const getSecondarySpocConflictGroupName = (secondarySpocName: string, currentBusinessGroupId: number) => {
+    const normalizedName = (secondarySpocName || "").trim().toLowerCase()
+    if (!normalizedName) return null
+
+    const conflictGroup = businessGroups.find((bg) =>
+      bg.id !== currentBusinessGroupId &&
+      bg.secondary_spoc_name &&
+      String(bg.secondary_spoc_name).trim().toLowerCase() === normalizedName
+    )
+
+    return conflictGroup?.name || null
+  }
+
   const handleDeleteBG = async (id: number) => {
     const bg = businessGroups.find(b => b.id === id)
     if (!bg) return
@@ -857,7 +870,16 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               name: "secondary_spoc_name",
               label: "Secondary SPOC Name",
               type: "select",
-              options: [{ value: "", label: "None" }, ...users.map(user => ({ value: user.full_name, label: user.full_name }))]
+              options: [
+                { value: "", label: "None" },
+                ...users.map((user) => {
+                  const conflictGroupName = getSecondarySpocConflictGroupName(user.full_name, editBG.id)
+                  return {
+                    value: user.full_name,
+                    label: conflictGroupName ? `${user.full_name} (already in ${conflictGroupName})` : user.full_name,
+                  }
+                }),
+              ]
             },
           ] : [
             { name: "name", label: "Name", type: "text", required: true, disabled: editBG.isSpocEdit },
@@ -877,8 +899,13 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
             },
           ]}
           initialData={editBG.isSpocEdit ? { secondary_spoc_name: editBG.secondary_spoc_name || "" } : editBG}
-          onSave={(data) => {
+          onSave={async (data) => {
             if (editBG.isSpocEdit) {
+              const conflictGroupName = getSecondarySpocConflictGroupName(data.secondary_spoc_name || "", editBG.id)
+              if (conflictGroupName) {
+                toast.error(`This user is already Secondary SPOC for ${conflictGroupName}. One user can be Secondary SPOC for only one group.`)
+                return false
+              }
               return handleUpdateSecondarySpoc(editBG.id, data.secondary_spoc_name || "")
             } else {
               return editBG.id 

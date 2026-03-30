@@ -657,27 +657,40 @@ export async function updateBusinessGroupSpoc(
         return { success: false, error: "Only Admin or Super Admin can update Primary SPOC" }
       }
     } else if (spocType === "secondary") {
-      // Secondary SPOC can be updated by:
-      // 1. Super Admin
-      // 2. Admin
-      // 3. Primary SPOC (if current user is the primary SPOC)
-      
-      if (!isSuperAdmin && !isAdmin) {
-        // Check if current user is the Primary SPOC
-        const primarySpocName = bg.primary_spoc_name || bg.spoc_name
-        if (!primarySpocName) {
-          return { success: false, error: "No Primary SPOC assigned. Cannot update Secondary SPOC." }
-        }
-        
-        // Check if current user matches primary SPOC
-        const userMatchesPrimary = await sql`
-          SELECT id FROM users
-          WHERE id = ${currentUser.id}
+      // Secondary SPOC can be updated ONLY by the group's Primary SPOC.
+      // Admin/Super Admin are not allowed unless they are also the Primary SPOC of this group.
+      const primarySpocName = bg.primary_spoc_name || bg.spoc_name
+      if (!primarySpocName) {
+        return { success: false, error: "No Primary SPOC assigned. Cannot update Secondary SPOC." }
+      }
+
+      const userMatchesPrimary = await sql`
+        SELECT id FROM users
+        WHERE id = ${currentUser.id}
           AND LOWER(TRIM(full_name)) = LOWER(TRIM(${primarySpocName}))
+      `
+
+      if (userMatchesPrimary.length === 0) {
+        return { success: false, error: "Only Primary SPOC can update Secondary SPOC" }
+      }
+
+      // A user can be Secondary SPOC for only one group at a time.
+      const trimmedSpocName = (spocName || "").trim()
+      if (trimmedSpocName) {
+        const existingSecondary = await sql`
+          SELECT id, name
+          FROM business_unit_groups
+          WHERE id <> ${businessGroupId}
+            AND secondary_spoc_name IS NOT NULL
+            AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${trimmedSpocName}))
+          LIMIT 1
         `
-        
-        if (userMatchesPrimary.length === 0) {
-          return { success: false, error: "Only Primary SPOC can update Secondary SPOC" }
+
+        if (existingSecondary.length > 0) {
+          return {
+            success: false,
+            error: `This user is already assigned as Secondary SPOC for ${existingSecondary[0].name}. A user can be Secondary SPOC for only one group.`,
+          }
         }
       }
     }

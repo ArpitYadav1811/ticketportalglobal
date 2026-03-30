@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, Users, X, FileDown, RefreshCw } from "lucide-react"
+import { Search, Filter, Users, X, FileDown, RefreshCw, List, Circle, CheckCircle2, Trash2 } from "lucide-react"
 import { getUsers } from "@/lib/actions/tickets"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { getMyTeamMembers } from "@/lib/actions/my-team"
@@ -252,10 +252,10 @@ const handleStatusShortcutChange = (status: "all" | "open" | "closed" | "deleted
 {/* Status Shortcuts */}
 <div className="flex flex-wrap items-center gap-2">
 {[
-{ label: "All", value: "all" },
-{ label: "Open", value: "open" },
-{ label: "Closed", value: "closed" },
-{ label: "Delete", value: "deleted" },
+{ label: "All", value: "all", icon: List },
+{ label: "Open", value: "open", icon: Circle },
+{ label: "Closed", value: "closed", icon: CheckCircle2 },
+{ label: "Delete", value: "deleted", icon: Trash2 },
 ].map((option) => (
 <button
 key={option.value}
@@ -267,6 +267,7 @@ filters.status === option.value
 : "bg-transparent hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
 }`}
 >
+<option.icon className="w-3.5 h-3.5 mr-1.5" />
 {option.label}
 </button>
 ))}
