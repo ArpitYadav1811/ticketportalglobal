@@ -79,11 +79,15 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await response.json()
+      let data: any = {}
+      try {
+        data = await response.json()
+      } catch {
+        data = {}
+      }
 
       if (!response.ok) {
         const errorMsg = data.error || data.details || "Invalid email or password"
-        console.error("[LoginForm] Login failed:", errorMsg)
         setError(errorMsg)
         return
       }

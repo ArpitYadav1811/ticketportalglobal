@@ -96,8 +96,14 @@ export async function getAnalyticsData(
     // Helper: Build group filter condition based on filterType
     // 'initiator' tab: Filter by creator's group (business_unit_group_id)
     // 'target' tab: Filter by target group (target_business_group_id)
-    const groupFilterCondition = filterType === 'initiator' 
-      ? sql`t.business_unit_group_id = ANY(${businessGroupIds})`
+    const groupFilterCondition = filterType === "initiator"
+      ? sql`(
+          t.business_unit_group_id = ANY(${businessGroupIds})
+          OR (
+            t.business_unit_group_id IS NULL
+            AND t.target_business_group_id = ANY(${businessGroupIds})
+          )
+        )`
       : sql`t.target_business_group_id = ANY(${businessGroupIds})`
 
     // Which business group name to group by depends on tab:

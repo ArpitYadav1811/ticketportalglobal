@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, Users, X, FileDown, RefreshCw, List, Circle, CheckCircle2, Trash2 } from "lucide-react"
+import { Search, Filter, Users, X, FileDown, RefreshCw, List, Circle, CheckCircle2, Trash2, PauseCircle } from "lucide-react"
 import { getUsers } from "@/lib/actions/tickets"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { getMyTeamMembers } from "@/lib/actions/my-team"
@@ -232,7 +232,7 @@ export default function TicketsFilter({ onFilterChange, onExport, onRefresh, isI
  filters.project,
  ].filter(Boolean).length
 
-const handleStatusShortcutChange = (status: "all" | "open" | "closed" | "deleted") => {
+const handleStatusShortcutChange = (status: "all" | "open" | "resolved" | "on-hold" | "closed" | "deleted") => {
  const newFilters = { ...filters, status }
  setFilters(newFilters)
 
@@ -254,13 +254,15 @@ const handleStatusShortcutChange = (status: "all" | "open" | "closed" | "deleted
 {[
 { label: "All", value: "all", icon: List },
 { label: "Open", value: "open", icon: Circle },
+{ label: "Resolved", value: "resolved", icon: CheckCircle2 },
+{ label: "On-Hold", value: "on-hold", icon: PauseCircle },
 { label: "Closed", value: "closed", icon: CheckCircle2 },
 { label: "Delete", value: "deleted", icon: Trash2 },
 ].map((option) => (
 <button
 key={option.value}
 type="button"
-onClick={() => handleStatusShortcutChange(option.value as "all" | "open" | "closed" | "deleted")}
+onClick={() => handleStatusShortcutChange(option.value as "all" | "open" | "resolved" | "on-hold" | "closed" | "deleted")}
 className={`inline-flex items-center justify-center h-7 px-3 rounded-md border text-xs font-medium transition-all ${
 filters.status === option.value
 ? "bg-primary text-white border-primary"
