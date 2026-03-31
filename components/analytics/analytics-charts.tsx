@@ -124,7 +124,7 @@ interface AnalyticsChartsProps {
 export default function AnalyticsCharts({ userId, userRole, userGroupId, selectedGroupId, filterType = "target" }: AnalyticsChartsProps) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [daysFilter, setDaysFilter] = useState(30)
+  const [daysFilter, setDaysFilter] = useState(0)
   const [businessGroupIds, setBusinessGroupIds] = useState<number[] | undefined>(undefined)
   const [filtersReady, setFiltersReady] = useState(false)
 
@@ -134,6 +134,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
   // Load business groups for filtering
   useEffect(() => {
     const loadBusinessGroups = async () => {
+      // If a specific group is selected in header, always use it for analytics filtering.
+      if (selectedGroupId && selectedGroupId !== "all") {
+        setBusinessGroupIds([selectedGroupId as number])
+        setFiltersReady(true)
+        return
+      }
+
       // For Super Admin, use selectedGroupId from dropdown
       if (isSuperAdmin) {
         if (selectedGroupId === "all" || selectedGroupId === null) {
