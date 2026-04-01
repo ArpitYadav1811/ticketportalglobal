@@ -96,15 +96,19 @@ export async function getAnalyticsData(
     // Helper: Build group filter condition based on filterType
     // 'initiator' tab: Filter by creator's group (business_unit_group_id)
     // 'target' tab: Filter by target group (target_business_group_id)
-    const groupFilterCondition = filterType === "initiator"
-      ? sql`(
-          t.business_unit_group_id = ANY(${businessGroupIds})
-          OR (
-            t.business_unit_group_id IS NULL
-            AND t.target_business_group_id = ANY(${businessGroupIds})
-          )
-        )`
-      : sql`t.target_business_group_id = ANY(${businessGroupIds})`
+    // Initiator tab: match tickets where the creator's group is selected (same as list UI),
+    // OR legacy rows where tickets.business_unit_group_id was set at creation time.
+    const groupFilterCondition =
+      filterType === "initiator"
+        ? sql`(
+            EXISTS (
+              SELECT 1 FROM users creator_u
+              WHERE creator_u.id = t.created_by
+                AND creator_u.business_unit_group_id = ANY(${businessGroupIds})
+            )
+            OR t.business_unit_group_id = ANY(${businessGroupIds})
+          )`
+        : sql`t.target_business_group_id = ANY(${businessGroupIds})`
 
     // Which business group name to group by depends on tab:
     // - initiator tab: creator's BU (t.business_unit_group_id)
@@ -282,11 +286,11 @@ export async function getAnalyticsData(
     // --- Tickets by Status ---
     const ticketsByStatus = hasGroupFilter
       ? await sql`
-          SELECT status, COUNT(*) as count FROM tickets
-          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+          SELECT t.status, COUNT(*) as count FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
-            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY status ORDER BY count DESC
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY t.status ORDER BY count DESC
         `
       : await sql`
           SELECT status, COUNT(*) as count FROM tickets
@@ -300,14 +304,14 @@ export async function getAnalyticsData(
       ? await sql`
           SELECT
             COUNT(*) as total,
-            COUNT(*) FILTER (WHERE status = 'open') as open,
-            COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
-            COUNT(*) FILTER (WHERE status = 'closed') as closed,
-            COUNT(*) FILTER (WHERE status = 'hold' OR status = 'on-hold') as on_hold
-          FROM tickets
-          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+            COUNT(*) FILTER (WHERE t.status = 'open') as open,
+            COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved,
+            COUNT(*) FILTER (WHERE t.status = 'closed') as closed,
+            COUNT(*) FILTER (WHERE t.status = 'hold' OR t.status = 'on-hold') as on_hold
+          FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
-            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
         `
       : await sql`
           SELECT
@@ -324,11 +328,11 @@ export async function getAnalyticsData(
     // --- Tickets by Type ---
     const ticketsByType = hasGroupFilter
       ? await sql`
-          SELECT ticket_type, COUNT(*) as count FROM tickets
-          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+          SELECT t.ticket_type, COUNT(*) as count FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
-            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY ticket_type ORDER BY count DESC
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY t.ticket_type ORDER BY count DESC
         `
       : await sql`
           SELECT ticket_type, COUNT(*) as count FROM tickets
@@ -340,11 +344,11 @@ export async function getAnalyticsData(
     // --- Tickets by Priority ---
     const ticketsByPriority = hasGroupFilter
       ? await sql`
-          SELECT priority, COUNT(*) as count FROM tickets
-          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+          SELECT t.priority, COUNT(*) as count FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
-            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY priority ORDER BY count DESC
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY t.priority ORDER BY count DESC
         `
       : await sql`
           SELECT priority, COUNT(*) as count FROM tickets
@@ -356,11 +360,11 @@ export async function getAnalyticsData(
     // --- Ticket Trend ---
     const ticketTrend = hasGroupFilter
       ? await sql`
-          SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
-          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
+          SELECT TO_CHAR(DATE(t.created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
             AND ${groupFilterCondition}
-            AND created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
-          GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC
+            AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
+          GROUP BY DATE(t.created_at) ORDER BY DATE(t.created_at) ASC
         `
       : await sql`
           SELECT TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date, COUNT(*) as count FROM tickets
@@ -406,9 +410,9 @@ export async function getAnalyticsData(
         `
       : hasGroupFilter
         ? await sql`
-            SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
-            FROM tickets
-            WHERE resolved_at IS NOT NULL AND ${groupFilterCondition}
+            SELECT AVG(EXTRACT(EPOCH FROM (t.resolved_at - t.created_at))/3600) as avg_hours
+            FROM tickets t
+            WHERE t.resolved_at IS NOT NULL AND ${groupFilterCondition}
           `
         : await sql`
             SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
@@ -519,13 +523,13 @@ export async function getAnalyticsData(
     // --- Monthly Trend ---
     const ticketsByMonth = hasGroupFilter
       ? await sql`
-          SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
-          FROM tickets
-          WHERE (is_deleted IS NULL OR is_deleted = FALSE)
-            AND created_at >= CURRENT_DATE - INTERVAL '12 months'
+          SELECT TO_CHAR(t.created_at, 'Mon YYYY') as month, COUNT(*) as count
+          FROM tickets t
+          WHERE (t.is_deleted IS NULL OR t.is_deleted = FALSE)
+            AND t.created_at >= CURRENT_DATE - INTERVAL '12 months'
             AND ${groupFilterCondition}
-          GROUP BY TO_CHAR(created_at, 'Mon YYYY'), DATE_TRUNC('month', created_at)
-          ORDER BY DATE_TRUNC('month', created_at) ASC
+          GROUP BY TO_CHAR(t.created_at, 'Mon YYYY'), DATE_TRUNC('month', t.created_at)
+          ORDER BY DATE_TRUNC('month', t.created_at) ASC
         `
       : await sql`
           SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count
