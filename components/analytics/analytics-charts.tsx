@@ -94,6 +94,10 @@ const GRID = { strokeDasharray: "3 3", stroke: "#e2e8f0", strokeOpacity: 0.6 }
 const AXIS_TICK = { fontSize: 11, fill: "#94a3b8" }
 const AXIS_TICK_SM = { fontSize: 10, fill: "#94a3b8" }
 
+function toPositiveIntIds(ids: Array<number | string | undefined>) {
+  return ids.map((id) => Number(id)).filter((n) => Number.isFinite(n) && n > 0)
+}
+
 /* ── Card wrapper ──────────────────────────────────────────── */
 const ChartCard = ({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) => (
   <div className={`bg-white dark:bg-slate-800 border border-border rounded-xl p-4 ${className}`}>
@@ -136,7 +140,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
     const loadBusinessGroups = async () => {
       // If a specific group is selected in header, always use it for analytics filtering.
       if (selectedGroupId && selectedGroupId !== "all") {
-        setBusinessGroupIds([selectedGroupId as number])
+        setBusinessGroupIds(toPositiveIntIds([selectedGroupId]))
         setFiltersReady(true)
         return
       }
@@ -146,7 +150,7 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         if (selectedGroupId === "all" || selectedGroupId === null) {
           setBusinessGroupIds(undefined) // Show all tickets
         } else {
-          setBusinessGroupIds([selectedGroupId as number]) // Filter by selected group
+          setBusinessGroupIds(toPositiveIntIds([selectedGroupId]))
         }
         setFiltersReady(true)
         return
@@ -171,14 +175,14 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
         // SPOC: Get all groups they manage
         const result = await getBusinessGroupsForSpoc(userId)
         if (result.success && result.data && result.data.length > 0) {
-          setBusinessGroupIds(result.data.map((bg: any) => bg.id))
+          setBusinessGroupIds(toPositiveIntIds(result.data.map((bg: any) => bg.id)))
         } else {
           setBusinessGroupIds([])
         }
         setFiltersReady(true)
       } else if (userGroupId) {
         // Regular User: Use their assigned business group
-        setBusinessGroupIds([userGroupId])
+        setBusinessGroupIds(toPositiveIntIds([userGroupId]))
         setFiltersReady(true)
       } else {
         setBusinessGroupIds([])
@@ -193,10 +197,13 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
     // For Super Admin with selected group, filter by that group
     // For regular users and SPOC (not admin), pass businessGroupIds
     // filterType determines whether to filter by initiator group or target group
+    const normalizedForRequest = businessGroupIds?.length
+      ? businessGroupIds.map((id) => Number(id)).filter((n) => Number.isFinite(n) && n > 0)
+      : []
     const options = (isSuperAdmin && selectedGroupId !== "all" && selectedGroupId !== null)
-      ? { businessGroupIds: [selectedGroupId as number], filterType }
-      : (!isAdmin && businessGroupIds && businessGroupIds.length > 0)
-        ? { businessGroupIds, filterType }
+      ? { businessGroupIds: toPositiveIntIds([selectedGroupId]), filterType }
+      : (!isAdmin && normalizedForRequest.length > 0)
+        ? { businessGroupIds: normalizedForRequest, filterType }
         : { filterType }
     const result = await getAnalyticsData(daysFilter, options)
     if (result.success) {

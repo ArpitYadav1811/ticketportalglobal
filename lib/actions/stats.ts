@@ -82,11 +82,14 @@ export async function getAnalyticsData(
     // Use a large interval for "all time" so we always have a valid WHERE clause
     // (avoids nested sql`` template fragments which Neon doesn't support)
     const daysInterval = daysFilter > 0 ? daysFilter : 36500 // 100 years ≈ all time
-    const businessGroupIds = options?.businessGroupIds
+    // Coerce to positive ints — client/localStorage often passes string IDs; ANY() must match column types
+    const businessGroupIds = (options?.businessGroupIds ?? [])
+      .map((id) => Number(id))
+      .filter((n) => Number.isFinite(n) && n > 0)
     const userId = options?.userId
     const teamMemberIds = options?.teamMemberIds || []
     const filterType = options?.filterType || 'target' // Default to 'target' for backward compatibility
-    const hasGroupFilter = businessGroupIds && businessGroupIds.length > 0
+    const hasGroupFilter = businessGroupIds.length > 0
     const hasUserFilter = !!userId
     const hasTeamMembers = teamMemberIds.length > 0
     // Combined filter: when user has both group and user context (regular user scenario)
@@ -122,7 +125,8 @@ export async function getAnalyticsData(
           ? await sql`
               SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
               FROM tickets t
-              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              LEFT JOIN users creator ON t.created_by = creator.id
+              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
               WHERE bu.name IS NOT NULL
                 AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND ${groupFilterCondition}
@@ -132,7 +136,8 @@ export async function getAnalyticsData(
           : await sql`
               SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
               FROM tickets t
-              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              LEFT JOIN users creator ON t.created_by = creator.id
+              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
               WHERE bu.name IS NOT NULL
                 AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
@@ -169,7 +174,8 @@ export async function getAnalyticsData(
                 COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
                 COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
               FROM tickets t
-              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              LEFT JOIN users creator ON t.created_by = creator.id
+              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
               WHERE bu.name IS NOT NULL
                 AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND ${groupFilterCondition}
@@ -183,7 +189,8 @@ export async function getAnalyticsData(
                 COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
                 COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
               FROM tickets t
-              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
+              LEFT JOIN users creator ON t.created_by = creator.id
+              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
               WHERE bu.name IS NOT NULL
                 AND (t.is_deleted IS NULL OR t.is_deleted = FALSE)
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
