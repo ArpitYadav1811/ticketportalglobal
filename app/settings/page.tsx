@@ -8,7 +8,13 @@ import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Trash2, Users, UserPlus } from "lucide-react"
-import { getBusinessUnitGroups } from "@/lib/actions/master-data"
+import { getBusinessUnitGroups, getBusinessGroupsForSpoc, isUserSpoc } from "@/lib/actions/master-data"
+import {
+  ensurePrimaryGroupFields,
+  mergeUserWithSpocPreference,
+  setSpocPreferredInStorage,
+  dispatchSpocGroupChanged,
+} from "@/lib/utils/spoc-preferred-group"
 import { getUsers } from "@/lib/actions/tickets"
 import {
  updateUserBusinessGroup,
@@ -49,6 +55,9 @@ export default function SettingsPage() {
  const [showNewPassword, setShowNewPassword] = useState(false)
  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+
+ const [spocManagedGroups, setSpocManagedGroups] = useState<{ id: number; name: string }[]>([])
+ const [loadingSpocGroups, setLoadingSpocGroups] = useState(false)
 
  // Avoid hydration mismatch for theme
  useEffect(() => {
@@ -92,7 +101,7 @@ export default function SettingsPage() {
  }
 
  if (status === "authenticated" && session?.user) {
- const userFromSession = {
+ const userFromSession = ensurePrimaryGroupFields({
  id: parseInt(session.user.id || "0"),
  email: session.user.email || "",
  full_name: session.user.name || "",
@@ -100,21 +109,25 @@ export default function SettingsPage() {
  business_unit_group_id: session.user.business_unit_group_id || null,
  group_name: session.user.group_name || "",
  auth_provider: session.user.auth_provider || "email",
- }
- setCurrentUser(userFromSession)
- setFullName(userFromSession.full_name || "")
- setSelectedBusinessGroup(userFromSession.business_unit_group_id?.toString() || "")
- localStorage.setItem("user", JSON.stringify(userFromSession))
+ }) as any
+ const mergedSession = mergeUserWithSpocPreference(userFromSession) || userFromSession
+ setCurrentUser(mergedSession)
+ setFullName(mergedSession.full_name || "")
+ setSelectedBusinessGroup(mergedSession.business_unit_group_id?.toString() || "")
+ localStorage.setItem("user", JSON.stringify(mergedSession))
  setLoading(false)
  } else if (status === "unauthenticated") {
  // Fallback to localStorage for email/password users
  const userData = localStorage.getItem("user")
  if (userData) {
  try {
- const user = JSON.parse(userData)
+ let user = JSON.parse(userData)
+ user = ensurePrimaryGroupFields(user) || user
+ user = mergeUserWithSpocPreference(user) || user
  setCurrentUser(user)
  setFullName(user.full_name || "")
  setSelectedBusinessGroup(user.business_unit_group_id || "")
+ localStorage.setItem("user", JSON.stringify(user))
  } catch (error) {
  console.error("Failed to parse user data:", error)
  }
@@ -128,6 +141,36 @@ export default function SettingsPage() {
  loadTeamMembers()
  }
  }, [activeTab, currentUser])
+
+ useEffect(() => {
+ if (!currentUser?.id) return
+ let cancelled = false
+ ;(async () => {
+ setLoadingSpocGroups(true)
+ try {
+ const role = currentUser.role?.toLowerCase()
+ let eligible = role === "manager"
+ if (!eligible) eligible = await isUserSpoc(currentUser.id)
+ if (!eligible || cancelled) {
+ setSpocManagedGroups([])
+ return
+ }
+ const result = await getBusinessGroupsForSpoc(currentUser.id)
+ if (cancelled || !result.success || !result.data?.length) {
+ setSpocManagedGroups([])
+ return
+ }
+ const rows = result.data as { id: number; name: string }[]
+ setSpocManagedGroups(rows)
+ const ids = rows.map((r) => r.id)
+ } finally {
+ if (!cancelled) setLoadingSpocGroups(false)
+ }
+ })()
+ return () => {
+ cancelled = true
+ }
+ }, [currentUser?.id, currentUser?.role, currentUser?.business_unit_group_id])
 
  const loadTeamMembers = async () => {
  if (!currentUser?.id) return
@@ -177,47 +220,73 @@ export default function SettingsPage() {
  }
 
  const handleSaveBusinessGroup = async () => {
- // Only Super Admin can update business group
- if (currentUser?.role?.toLowerCase() !== "superadmin") {
- toast.error("Only Super Admin can update business groups")
- return
- }
-
  if (!currentUser?.id || !selectedBusinessGroup) {
  toast.error("Please select a business group")
  return
  }
 
+ const role = currentUser?.role?.toLowerCase()
+ const isSuperAdmin = role === "superadmin"
+ const canSwitchSpocContext = !isSuperAdmin && spocManagedGroups.length > 0
+
+ if (!isSuperAdmin && !canSwitchSpocContext) {
+ toast.error("Only Super Admin or SPOC users can change group")
+ return
+ }
+
  setSaving(true)
  try {
+ if (isSuperAdmin) {
  const result = await updateUserBusinessGroup(currentUser.id, Number(selectedBusinessGroup))
 
  if (result.success) {
- // Update localStorage with new data
+ const gn = businessGroups.find((bg) => bg.id === Number(selectedBusinessGroup))?.name
  const updatedUser = {
  ...currentUser,
  business_unit_group_id: Number(selectedBusinessGroup),
- group_name: businessGroups.find(bg => bg.id === Number(selectedBusinessGroup))?.name
+ group_name: gn,
+ primary_business_unit_group_id: Number(selectedBusinessGroup),
+ primary_group_name: gn ?? "",
  }
  localStorage.setItem("user", JSON.stringify(updatedUser))
  setCurrentUser(updatedUser)
-
- // Refresh NextAuth session to sync changes
  if (status === "authenticated") {
  update().catch(console.error)
  }
-
  toast.success("Business group updated successfully!")
  } else {
  toast.error(result.error || "Failed to update business group")
  }
+ return
+ }
+
+ const selected = spocManagedGroups.find((g) => g.id === Number(selectedBusinessGroup))
+ if (!selected) {
+ toast.error("Please select one of your SPOC groups")
+ return
+ }
+
+ setSpocPreferredInStorage(selected.id, selected.name)
+ const base = ensurePrimaryGroupFields(currentUser) || currentUser
+ const updatedUser = {
+ ...base,
+ business_unit_group_id: selected.id,
+ group_name: selected.name,
+ }
+ localStorage.setItem("user", JSON.stringify(updatedUser))
+ setCurrentUser(updatedUser)
+ dispatchSpocGroupChanged()
+ if (status === "authenticated") {
+ update().catch(console.error)
+ }
+ toast.success("Active SPOC group switched successfully")
  } catch (error) {
  console.error("Error updating business group:", error)
  toast.error("Failed to update business group")
  } finally {
  setSaving(false)
  }
- }
+}
 
  const handleSaveAccountInfo = async (e: React.FormEvent) => {
  e.preventDefault()
@@ -243,14 +312,20 @@ export default function SettingsPage() {
  })
 
  if (result.success) {
- // Update localStorage with new data
+ const gn = isSuperAdmin
+ ? businessGroups.find((bg) => bg.id === Number(selectedBusinessGroup))?.name
+ : currentUser.group_name
  const updatedUser = {
  ...currentUser,
  full_name: fullName,
  business_unit_group_id: isSuperAdmin ? Number(selectedBusinessGroup) : currentUser.business_unit_group_id,
- group_name: isSuperAdmin 
-   ? businessGroups.find(bg => bg.id === Number(selectedBusinessGroup))?.name
-   : currentUser.group_name
+ group_name: gn,
+ ...(isSuperAdmin
+ ? {
+ primary_business_unit_group_id: Number(selectedBusinessGroup),
+ primary_group_name: gn ?? "",
+ }
+ : {}),
  }
  localStorage.setItem("user", JSON.stringify(updatedUser))
  setCurrentUser(updatedUser)
@@ -357,7 +432,7 @@ export default function SettingsPage() {
  User Settings
  </h1>
  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
- Manage your team and groups for collaboration
+ Manage your team and business group context
  </p>
  </div>
 
@@ -439,7 +514,7 @@ export default function SettingsPage() {
  <div className="mb-6">
  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Business Group</h3>
  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
- Select a group to display in your profile. This will appear next to your name and department.
+ Super Admin can change account assignment. SPOC users can switch active group context from this same dropdown.
  </p>
  </div>
 
@@ -458,20 +533,25 @@ export default function SettingsPage() {
  value={selectedBusinessGroup}
  onChange={(e) => setSelectedBusinessGroup(e.target.value)}
  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-sm disabled:opacity-70 disabled:cursor-not-allowed"
- disabled={loadingBusinessGroups || saving || currentUser?.role?.toLowerCase() !== "superadmin"}
+ disabled={loadingBusinessGroups || saving || (currentUser?.role?.toLowerCase() !== "superadmin" && spocManagedGroups.length === 0)}
  >
  <option value="">Select a business group</option>
- {businessGroups.length === 0 ? (
+{(currentUser?.role?.toLowerCase() === "superadmin" ? businessGroups : spocManagedGroups).length === 0 ? (
  <option value="" disabled>No business groups available</option>
  ) : (
- businessGroups.map((group) => (
+(currentUser?.role?.toLowerCase() === "superadmin" ? businessGroups : spocManagedGroups).map((group) => (
  <option key={group.id} value={group.id}>
  {group.name}
  </option>
  ))
  )}
  </select>
- {currentUser?.role?.toLowerCase() !== "superadmin" && (
+{currentUser?.role?.toLowerCase() !== "superadmin" && spocManagedGroups.length > 0 && (
+<p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+Switching here changes your active SPOC group context across the app.
+</p>
+)}
+{currentUser?.role?.toLowerCase() !== "superadmin" && spocManagedGroups.length === 0 && (
  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
  Only Super Admin can change business group assignments.
  </p>
@@ -496,7 +576,7 @@ export default function SettingsPage() {
  </div>
  )}
 
- {currentUser?.role?.toLowerCase() === "superadmin" && (
+{(currentUser?.role?.toLowerCase() === "superadmin" || spocManagedGroups.length > 0) && (
  <div className="flex justify-end pt-2">
  <button
  onClick={handleSaveBusinessGroup}

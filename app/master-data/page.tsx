@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import UnifiedMasterDataV2 from "@/components/master-data/unified-master-data-v2"
 import MasterDataHeader from "@/components/master-data/master-data-header"
+import { subscribeSpocGroupChanged } from "@/lib/utils/spoc-preferred-group"
 
 export default function MasterDataPage() {
   const router = useRouter()
@@ -60,6 +61,23 @@ export default function MasterDataPage() {
       setSelectedGroupId(userGroupId)
     }
   }, [user, isLoading])
+
+  useEffect(() => {
+    return subscribeSpocGroupChanged(() => {
+      const raw = localStorage.getItem("user")
+      if (!raw) return
+      try {
+        const u = JSON.parse(raw)
+        setUser(u)
+        const role = u.role?.toLowerCase()
+        if (role !== "superadmin" && u.business_unit_group_id) {
+          setSelectedGroupId(u.business_unit_group_id)
+        }
+      } catch {
+        /* ignore */
+      }
+    })
+  }, [])
 
   // Show loading or nothing while checking permissions
   if (isLoading || !user) {

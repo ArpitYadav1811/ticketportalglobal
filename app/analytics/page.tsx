@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/dashboard-layout"
 import AnalyticsHeader from "@/components/analytics/analytics-header"
 import AnalyticsCharts from "@/components/analytics/analytics-charts"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { subscribeSpocGroupChanged } from "@/lib/utils/spoc-preferred-group"
 
 export default function AnalyticsPage() {
   const router = useRouter()
@@ -39,6 +40,23 @@ export default function AnalyticsPage() {
       setSelectedGroupId(userGroupId)
     }
   }, [user, isLoading])
+
+  useEffect(() => {
+    return subscribeSpocGroupChanged(() => {
+      const raw = localStorage.getItem("user")
+      if (!raw) return
+      try {
+        const u = JSON.parse(raw)
+        setUser(u)
+        const role = u.role?.toLowerCase()
+        if (role !== "superadmin" && u.business_unit_group_id) {
+          setSelectedGroupId(u.business_unit_group_id)
+        }
+      } catch {
+        /* ignore */
+      }
+    })
+  }, [])
 
   // Show loading or nothing while checking auth
   if (isLoading || !user) {

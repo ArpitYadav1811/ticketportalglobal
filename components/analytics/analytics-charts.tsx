@@ -238,16 +238,19 @@ export default function AnalyticsCharts({ userId, userRole, userGroupId, selecte
   const resolved = Number(data.summaryStats?.resolved || 0)
   const closed = Number(data.summaryStats?.closed || 0)
   const onHold = Number(data.summaryStats?.on_hold || 0)
+  const deleted = Number(data.summaryStats?.deleted ?? 0)
   const pctOpen = total > 0 ? (open / total) * 100 : 0
   const pctResolved = total > 0 ? (resolved / total) * 100 : 0
   const pctClosed = total > 0 ? (closed / total) * 100 : 0
   const pctHold = total > 0 ? (onHold / total) * 100 : 0
+  const pctDeleted = total > 0 ? (deleted / total) * 100 : 0
 
   const statItems = [
     { label: "Open", value: open, pct: pctOpen, color: "bg-blue-500", text: "text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
     { label: "Resolved", value: resolved, pct: pctResolved, color: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
     { label: "Closed", value: closed, pct: pctClosed, color: "bg-slate-400 dark:bg-slate-500", text: "text-slate-600 dark:text-slate-400", dot: "bg-slate-400 dark:bg-slate-500" },
     { label: "On-Hold", value: onHold, pct: pctHold, color: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
+    { label: "Deleted", value: deleted, pct: pctDeleted, color: "bg-rose-500", text: "text-rose-600 dark:text-rose-400", dot: "bg-rose-500" },
   ]
 
   const durationLabel = daysFilter === 0 ? "All Time" : (DURATION_OPTIONS.find(o => o.value === daysFilter)?.label || `${daysFilter}d`)

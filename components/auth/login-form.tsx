@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react"
 import Image from "next/image"
 import { AlertCircle, LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { useTheme } from "next-themes"
+import { ensurePrimaryGroupFields, mergeUserWithSpocPreference } from "@/lib/utils/spoc-preferred-group"
 
 interface User {
   id: string
@@ -92,9 +93,11 @@ export function LoginForm() {
         return
       }
 
-      localStorage.setItem("user", JSON.stringify(data.user))
+      const withPrimary = ensurePrimaryGroupFields(data.user)
+      const userForStorage = mergeUserWithSpocPreference(withPrimary) || withPrimary
+      localStorage.setItem("user", JSON.stringify(userForStorage))
       localStorage.setItem("isLoggedIn", "true")
-      document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400`
+      document.cookie = `user=${JSON.stringify(userForStorage)}; path=/; max-age=86400`
 
       router.push("/dashboard")
       router.refresh()

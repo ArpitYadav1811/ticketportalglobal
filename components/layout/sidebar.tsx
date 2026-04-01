@@ -64,6 +64,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     // Clear localStorage (for email/password users)
     localStorage.removeItem("user")
     localStorage.removeItem("isLoggedIn")
+    localStorage.removeItem("spocPreferredGroupId")
+    localStorage.removeItem("spocPreferredGroupName")
 
     // Clear the authentication cookie
     document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"

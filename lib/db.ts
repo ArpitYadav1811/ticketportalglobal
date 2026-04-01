@@ -222,6 +222,15 @@ export const sql = ((strings: TemplateStringsArray, ...values: any[]) => {
   return withRetry(() => neonClient(strings, ...values))
 }) as NeonQueryFunction<false, false>
 
+/**
+ * Raw Neon `sql` tag for **composable fragments** (e.g. WHERE clauses embedded in `sql`...`).
+ * The main `sql` export wraps execution in `withRetry()` and returns a Promise, so pre-building
+ * `const fragment = sql`...`` produces a Promise — interpolating `${fragment}` into another query
+ * breaks parameter binding (e.g. `invalid input syntax for type boolean: "{}"`).
+ * Use `sqlTpl` only for nested fragments; always execute the outer query with `sql`...``.
+ */
+export const sqlTpl = neonClient
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type User = {

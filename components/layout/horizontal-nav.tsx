@@ -21,6 +21,11 @@ import {
 import NotificationsDropdown from "./notifications-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserAvatar } from "@/components/ui/user-avatar"
+import {
+  ensurePrimaryGroupFields,
+  mergeUserWithSpocPreference,
+  subscribeSpocGroupChanged,
+} from "@/lib/utils/spoc-preferred-group"
 
 interface UserData {
   id: number
@@ -39,29 +44,38 @@ export default function HorizontalNav() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // Load user data from session or localStorage
+  // Load user data from session or localStorage; apply SPOC workspace preference from Settings
   useEffect(() => {
-    try {
-      // Prioritize NextAuth session data (for SSO users)
-      if (status === "authenticated" && session?.user) {
-        setUser({
-          id: parseInt(session.user.id || "0"),
-          email: session.user.email || "",
-          full_name: session.user.name || "",
-          role: session.user.role || "user",
-          business_unit_group_id: session.user.business_unit_group_id || undefined,
-          group_name: session.user.group_name || undefined,
-        })
-      } else {
-        // Fallback to localStorage for email/password users
-        const userData = localStorage.getItem("user")
-        if (userData) {
-          setUser(JSON.parse(userData))
+    const loadUser = () => {
+      try {
+        if (status === "authenticated" && session?.user) {
+          let u: UserData & Record<string, unknown> = {
+            id: parseInt(session.user.id || "0"),
+            email: session.user.email || "",
+            full_name: session.user.name || "",
+            role: session.user.role || "user",
+            business_unit_group_id: session.user.business_unit_group_id || undefined,
+            group_name: session.user.group_name || undefined,
+          }
+          u = ensurePrimaryGroupFields(u) || u
+          u = mergeUserWithSpocPreference(u) || u
+          setUser(u)
+          localStorage.setItem("user", JSON.stringify(u))
+        } else {
+          const userData = localStorage.getItem("user")
+          if (userData) {
+            let u = JSON.parse(userData) as UserData & Record<string, unknown>
+            u = ensurePrimaryGroupFields(u) || u
+            u = mergeUserWithSpocPreference(u) || u
+            setUser(u)
+          }
         }
+      } catch (error) {
+        console.error("Failed to parse user data:", error)
       }
-    } catch (error) {
-      console.error("Failed to parse user data:", error)
     }
+    loadUser()
+    return subscribeSpocGroupChanged(loadUser)
   }, [status, session])
 
   const userRole = user?.role?.toLowerCase()
@@ -96,6 +110,8 @@ export default function HorizontalNav() {
     // Clear localStorage (for email/password users)
     localStorage.removeItem("user")
     localStorage.removeItem("isLoggedIn")
+    localStorage.removeItem("spocPreferredGroupId")
+    localStorage.removeItem("spocPreferredGroupName")
 
     // Clear the authentication cookie
     document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
