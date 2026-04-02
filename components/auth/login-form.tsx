@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { signIn } from "next-auth/react"
 import Image from "next/image"
 import { AlertCircle } from "lucide-react"
 import { useTheme } from "next-themes"
@@ -51,10 +50,9 @@ export function LoginForm() {
     setError("")
     setIsSSOLoading(true)
     try {
-      await signIn("azure-ad", {
-        redirect: true,
-        callbackUrl: "/dashboard",
-      })
+      // Use direct NextAuth OAuth entrypoint for a reliable first-click redirect.
+      const callbackUrl = encodeURIComponent("/dashboard")
+      window.location.href = `/api/auth/signin/azure-ad?callbackUrl=${callbackUrl}`
     } catch (err) {
       console.error("Microsoft sign-in error:", err)
       setError("Microsoft sign-in failed. Please try again.")
@@ -78,7 +76,7 @@ export function LoginForm() {
               />
             </div>
             <p className="text-sm text-slate-500 text-center mt-2 pb-12">
-            Welcome!  Ticket Interaction Logs Portal
+            Welcome!  Ticket  Portal
             </p>
           </div>
 
