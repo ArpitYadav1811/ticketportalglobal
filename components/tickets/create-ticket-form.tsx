@@ -279,6 +279,23 @@ const handleTargetBusinessGroupChange = async (value: string) => {
     subcategoryId: "",
     spocId,
   }))
+
+  setFieldErrors((prev) => {
+    if (
+      !prev.targetBusinessGroupId &&
+      !prev.categoryId &&
+      !prev.subcategoryId &&
+      !prev.spocId
+    )
+      return prev
+    const next = { ...prev }
+    delete next.targetBusinessGroupId
+    delete next.categoryId
+    delete next.subcategoryId
+    // SPOC may still be empty if group has no configured SPOC
+    delete next.spocId
+    return next
+  })
 }
 
  const handleInternalToggle = async (isInternal: boolean) => {
@@ -341,6 +358,24 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  spocId: "",
  }))
 
+ setFieldErrors((prev) => {
+  if (
+    !prev.organizationId &&
+    !prev.targetBusinessGroupId &&
+    !prev.categoryId &&
+    !prev.subcategoryId &&
+    !prev.spocId
+  )
+    return prev
+  const next = { ...prev }
+  delete next.organizationId
+  delete next.targetBusinessGroupId
+  delete next.categoryId
+  delete next.subcategoryId
+  delete next.spocId
+  return next
+ })
+
  // Load target business groups for the selected functional area
  if (value) {
  const result = await getTargetBusinessGroupsByOrganization(Number(value))
@@ -375,6 +410,14 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  categoryId: value,
  subcategoryId: "",
  }))
+
+ setFieldErrors((prev) => {
+  if (!prev.categoryId && !prev.subcategoryId) return prev
+  const next = { ...prev }
+  delete next.categoryId
+  delete next.subcategoryId
+  return next
+ })
  }
 
  const handleSubcategoryChange = async (value: string) => {
@@ -534,6 +577,16 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  estimatedDuration: durationText,
  spocId: spocId,
  }))
+
+ setFieldErrors((prev) => {
+  if (!prev.subcategoryId && !prev.description && !prev.estimatedDuration && !prev.spocId) return prev
+  const next = { ...prev }
+  delete next.subcategoryId
+  delete next.description
+  delete next.estimatedDuration
+  delete next.spocId
+  return next
+ })
  }
 
  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -939,6 +992,12 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  onChange={(value) => {
  console.log("[v0] SPOC manually changed to:", value)
  setFormData((prev) => ({ ...prev, spocId: value }))
+ setFieldErrors((prev) => {
+  if (!prev.spocId) return prev
+  const next = { ...prev }
+  delete next.spocId
+  return next
+ })
  }}
  placeholder={
  formData.targetBusinessGroupId
