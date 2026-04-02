@@ -14,6 +14,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([])
   const [roles, setRoles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState<{ id?: number; role?: string } | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
@@ -43,6 +44,18 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadRoles()
+  }, [])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user")
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setCurrentUser({ id: parsed?.id, role: parsed?.role })
+      }
+    } catch {
+      setCurrentUser(null)
+    }
   }, [])
 
   useEffect(() => {
@@ -158,7 +171,14 @@ export default function UsersPage() {
         </div>
 
         {/* Users Table */}
-        <UsersTable users={users} loading={loading} onEditUser={handleEditUser} onRefresh={loadUsers} />
+        <UsersTable
+          users={users}
+          loading={loading}
+          onEditUser={handleEditUser}
+          onRefresh={loadUsers}
+          isSuperAdmin={String(currentUser?.role || "").toLowerCase() === "superadmin"}
+          currentUserId={currentUser?.id}
+        />
       </div>
 
       {/* Create User Modal */}

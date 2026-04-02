@@ -623,6 +623,163 @@ export async function updateUserSpocBusinessGroups(userId: number, businessGroup
   }
 }
 
+/**
+ * Enforce strict rule globally:
+ * one user name can be Secondary SPOC for only one business group.
+ * Keeps the most recently updated row; clears older duplicates.
+ */
+async function cleanupDuplicateSecondarySpocs() {
+  try {
+    const result = await sql`
+      WITH ranked AS (
+        SELECT
+          id,
+          ROW_NUMBER() OVER (
+            PARTITION BY LOWER(TRIM(secondary_spoc_name))
+            ORDER BY updated_at DESC NULLS LAST, id DESC
+          ) AS rn
+        FROM business_unit_groups
+        WHERE secondary_spoc_name IS NOT NULL
+          AND TRIM(secondary_spoc_name) <> ''
+      ),
+      cleared AS (
+        UPDATE business_unit_groups bug
+        SET secondary_spoc_name = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        FROM ranked r
+        WHERE bug.id = r.id
+          AND r.rn > 1
+        RETURNING bug.id
+      )
+      SELECT COUNT(*)::int AS cleared_count FROM cleared
+    `
+    return Number(result[0]?.cleared_count || 0)
+  } catch (error) {
+    console.error("Error cleaning duplicate Secondary SPOC assignments:", error)
+    return 0
+  }
+}
+
+export async function getUserSecondarySpocGroup(userId: number) {
+  try {
+    await cleanupDuplicateSecondarySpocs()
+
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "Not authenticated", data: null as { id: number; name: string } | null }
+    }
+
+    const role = currentUser.role?.toLowerCase()
+    if (role !== "superadmin" && role !== "admin") {
+      return { success: false, error: "Only Admin or Super Admin can view Secondary SPOC config", data: null as { id: number; name: string } | null }
+    }
+
+    const targetUser = await sql`
+      SELECT id, full_name
+      FROM users
+      WHERE id = ${userId}
+      LIMIT 1
+    `
+    if (targetUser.length === 0) {
+      return { success: false, error: "User not found", data: null as { id: number; name: string } | null }
+    }
+
+    const userName = String(targetUser[0].full_name || "").trim()
+    if (!userName) {
+      return { success: true, data: null as { id: number; name: string } | null }
+    }
+
+    const existing = await sql`
+      SELECT id, name
+      FROM business_unit_groups
+      WHERE secondary_spoc_name IS NOT NULL
+        AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${userName}))
+      ORDER BY id ASC
+      LIMIT 1
+    `
+
+    return { success: true, data: existing[0] ? { id: Number(existing[0].id), name: String(existing[0].name) } : null }
+  } catch (error) {
+    console.error("Error fetching user Secondary SPOC group:", error)
+    return { success: false, error: "Failed to fetch Secondary SPOC group", data: null as { id: number; name: string } | null }
+  }
+}
+
+export async function updateUserSecondarySpocGroup(userId: number, businessGroupId: number | null) {
+  try {
+    await cleanupDuplicateSecondarySpocs()
+
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const role = currentUser.role?.toLowerCase()
+    if (role !== "superadmin" && role !== "admin") {
+      return { success: false, error: "Only Admin or Super Admin can update Secondary SPOC config" }
+    }
+
+    const targetUser = await sql`
+      SELECT id, full_name
+      FROM users
+      WHERE id = ${userId}
+      LIMIT 1
+    `
+    if (targetUser.length === 0) {
+      return { success: false, error: "User not found" }
+    }
+
+    const userName = String(targetUser[0].full_name || "").trim()
+    if (!userName) {
+      return { success: false, error: "User full name is required to assign Secondary SPOC" }
+    }
+
+    // Clear existing Secondary assignments for this user first (ensures one-group-only strictly).
+    await sql`
+      UPDATE business_unit_groups
+      SET secondary_spoc_name = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE secondary_spoc_name IS NOT NULL
+        AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${userName}))
+    `
+
+    if (businessGroupId != null) {
+      const bg = await sql`
+        SELECT id, name
+        FROM business_unit_groups
+        WHERE id = ${businessGroupId}
+        LIMIT 1
+      `
+      if (bg.length === 0) {
+        return { success: false, error: "Business group not found" }
+      }
+
+      await sql`
+        UPDATE business_unit_groups
+        SET secondary_spoc_name = ${userName},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${businessGroupId}
+      `
+    }
+
+    await addSystemAuditLog({
+      actionType: "spoc_update",
+      entityType: "user_secondary_spoc_config",
+      entityId: userId,
+      oldValue: "Updated",
+      newValue: businessGroupId == null ? "None" : String(businessGroupId),
+      performedBy: currentUser.id,
+      performedByName: currentUser.full_name || currentUser.email,
+      notes: `Updated Secondary SPOC configuration for ${userName}`,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating user Secondary SPOC group:", error)
+    return { success: false, error: "Failed to update Secondary SPOC configuration" }
+  }
+}
+
 // ==================== BUSINESS GROUP SPOC MANAGEMENT ====================
 
 export async function updateBusinessGroupSpoc(
@@ -657,6 +814,8 @@ export async function updateBusinessGroupSpoc(
         return { success: false, error: "Only Admin or Super Admin can update Primary SPOC" }
       }
     } else if (spocType === "secondary") {
+      await cleanupDuplicateSecondarySpocs()
+
       // Secondary SPOC can be updated by:
       // - Super Admin / Admin, OR
       // - the group's Primary SPOC.

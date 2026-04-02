@@ -5,7 +5,14 @@ import { format } from "date-fns"
 import { Edit, Trash2, Key, CheckCircle, XCircle, AlertTriangle, Circle, X, Users, Building2 } from "lucide-react"
 import { toast } from "sonner"
 import { deactivateUser, activateUser, deleteUser, resetUserPassword, getUserRoles, updateUserPasswordAsAdmin } from "@/lib/actions/users"
-import { updateUserRole, updateUserBusinessGroup, getUserSpocBusinessGroups, updateUserSpocBusinessGroups } from "@/lib/actions/admin"
+import {
+  updateUserRole,
+  updateUserBusinessGroup,
+  getUserSpocBusinessGroups,
+  updateUserSpocBusinessGroups,
+  getUserSecondarySpocGroup,
+  updateUserSecondarySpocGroup,
+} from "@/lib/actions/admin"
 import { getBusinessUnitGroups } from "@/lib/actions/master-data"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -58,6 +65,10 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
   const [spocUser, setSpocUser] = useState<User | null>(null)
   const [selectedSpocGroupIds, setSelectedSpocGroupIds] = useState<number[]>([])
   const [isUpdatingSpocGroups, setIsUpdatingSpocGroups] = useState(false)
+  const [secondaryDialogOpen, setSecondaryDialogOpen] = useState(false)
+  const [secondaryUser, setSecondaryUser] = useState<User | null>(null)
+  const [selectedSecondaryGroupId, setSelectedSecondaryGroupId] = useState<string>("none")
+  const [isUpdatingSecondaryConfig, setIsUpdatingSecondaryConfig] = useState(false)
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -247,6 +258,33 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
       toast.error(result.error || "Failed to update SPOC groups")
     }
     setIsUpdatingSpocGroups(false)
+  }
+
+  const openSecondaryConfigDialog = async (user: User) => {
+    setSecondaryUser(user)
+    setSecondaryDialogOpen(true)
+    setSelectedSecondaryGroupId("none")
+    const result = await getUserSecondarySpocGroup(user.id)
+    if (result.success && result.data?.id) {
+      setSelectedSecondaryGroupId(String(result.data.id))
+    }
+  }
+
+  const handleSaveSecondaryConfig = async () => {
+    if (!secondaryUser) return
+    setIsUpdatingSecondaryConfig(true)
+    const nextGroupId = selectedSecondaryGroupId !== "none" ? Number(selectedSecondaryGroupId) : null
+    const result = await updateUserSecondarySpocGroup(secondaryUser.id, nextGroupId)
+    if (result.success) {
+      toast.success(`Updated Secondary SPOC configuration for ${secondaryUser.full_name}`)
+      setSecondaryDialogOpen(false)
+      setSecondaryUser(null)
+      setSelectedSecondaryGroupId("none")
+      onRefresh()
+    } else {
+      toast.error(result.error || "Failed to update Secondary SPOC configuration")
+    }
+    setIsUpdatingSecondaryConfig(false)
   }
 
   const getRoleBadgeColor = (role: string) => {
@@ -661,6 +699,22 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       </TooltipTrigger>
                       <TooltipContent>Delete User</TooltipContent>
                     </Tooltip>
+                    {isSuperAdmin && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="p-1.5 hover:bg-purple-500/10 rounded-md transition-all duration-300 hover:scale-110 hover:shadow-md group/btn"
+                            title="Configure Secondary SPOC"
+                            onClick={() => openSecondaryConfigDialog(user)}
+                            disabled={processingId === user.id}
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-purple-600 group-hover/btn:scale-110 transition-transform" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Secondary SPOC Config</TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -817,6 +871,64 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
             </Button>
             <Button onClick={handleSaveSpocGroups} disabled={isUpdatingSpocGroups}>
               {isUpdatingSpocGroups ? "Saving..." : "Save SPOC Groups"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={secondaryDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSecondaryDialogOpen(false)
+            setSecondaryUser(null)
+            setSelectedSecondaryGroupId("none")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Secondary SPOC Configuration</DialogTitle>
+            <DialogDescription>
+              Assign one business group where this user is Secondary SPOC, or set to None.
+              {secondaryUser ? ` Managing: ${secondaryUser.full_name}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <label className="text-sm font-medium text-foreground">Business Group</label>
+            <Select value={selectedSecondaryGroupId} onValueChange={setSelectedSecondaryGroupId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select business group" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {businessGroups.map((bg) => (
+                  <SelectItem key={bg.id} value={String(bg.id)}>
+                    {bg.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Rule: one user can be Secondary SPOC for only one group at a time.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSecondaryDialogOpen(false)
+                setSecondaryUser(null)
+                setSelectedSecondaryGroupId("none")
+              }}
+              disabled={isUpdatingSecondaryConfig}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSecondaryConfig} disabled={isUpdatingSecondaryConfig}>
+              {isUpdatingSecondaryConfig ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
