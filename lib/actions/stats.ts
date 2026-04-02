@@ -97,25 +97,18 @@ export async function getAnalyticsData(
 
     // --- Tickets by Business Unit ---
     // Helper: Build group filter condition based on filterType
-    // 'initiator' tab: Filter by creator's group (business_unit_group_id)
+    // 'initiator' tab: Filter by ticket's stored initiator group snapshot (business_unit_group_id)
     // 'target' tab: Filter by target group (target_business_group_id)
-    // Initiator tab: match tickets where the creator's group is selected (same as list UI),
-    // OR legacy rows where tickets.business_unit_group_id was set at creation time.
+    // Initiator tab uses the snapshot stored on ticket creation so historical
+    // analytics do not change when a user's current business group changes.
     // Use sqlTpl (not sql): the wrapped `sql` export returns a Promise and cannot be composed.
     const groupFilterCondition =
       filterType === "initiator"
-        ? sqlTpl`(
-            EXISTS (
-              SELECT 1 FROM users creator_u
-              WHERE creator_u.id = t.created_by
-                AND creator_u.business_unit_group_id = ANY(${businessGroupIds})
-            )
-            OR t.business_unit_group_id = ANY(${businessGroupIds})
-          )`
+        ? sqlTpl`t.business_unit_group_id = ANY(${businessGroupIds})`
         : sqlTpl`t.target_business_group_id = ANY(${businessGroupIds})`
 
     // Which business group name to group by depends on tab:
-    // - initiator tab: creator's BU (t.business_unit_group_id)
+    // - initiator tab: ticket's stored initiator BU (t.business_unit_group_id)
     // - target tab: target BU (t.target_business_group_id)
     
     const ticketsByBU = filterType === 'initiator'
@@ -123,8 +116,7 @@ export async function getAnalyticsData(
           ? await sql`
               SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
               FROM tickets t
-              LEFT JOIN users creator ON t.created_by = creator.id
-              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
               WHERE bu.name IS NOT NULL
                 AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
@@ -133,8 +125,7 @@ export async function getAnalyticsData(
           : await sql`
               SELECT bu.name as business_unit, COUNT(t.id) as ticket_count
               FROM tickets t
-              LEFT JOIN users creator ON t.created_by = creator.id
-              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
               WHERE bu.name IS NOT NULL
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY bu.name ORDER BY ticket_count DESC
@@ -168,8 +159,7 @@ export async function getAnalyticsData(
                 COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
                 COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
               FROM tickets t
-              LEFT JOIN users creator ON t.created_by = creator.id
-              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
               WHERE bu.name IS NOT NULL
                 AND ${groupFilterCondition}
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
@@ -182,8 +172,7 @@ export async function getAnalyticsData(
                 COUNT(CASE WHEN LOWER(t.status) IN ('open', 'in progress', 'pending') THEN 1 END) as open,
                 COUNT(CASE WHEN LOWER(t.status) = 'resolved' THEN 1 END) as resolved
               FROM tickets t
-              LEFT JOIN users creator ON t.created_by = creator.id
-              LEFT JOIN business_unit_groups bu ON COALESCE(creator.business_unit_group_id, t.business_unit_group_id) = bu.id
+              LEFT JOIN business_unit_groups bu ON t.business_unit_group_id = bu.id
               WHERE bu.name IS NOT NULL
                 AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
               GROUP BY bu.name ORDER BY total DESC
@@ -224,8 +213,7 @@ export async function getAnalyticsData(
             COUNT(t.id) as ticket_count
           FROM tickets t
           LEFT JOIN categories c ON t.category_id = c.id
-          LEFT JOIN users creator ON t.created_by = creator.id
-          LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
+          LEFT JOIN business_unit_groups initiator_bg ON t.business_unit_group_id = initiator_bg.id
           WHERE ${groupFilterCondition}
             AND t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
@@ -237,8 +225,7 @@ export async function getAnalyticsData(
             COUNT(t.id) as ticket_count
           FROM tickets t
           LEFT JOIN categories c ON t.category_id = c.id
-          LEFT JOIN users creator ON t.created_by = creator.id
-          LEFT JOIN business_unit_groups initiator_bg ON creator.business_unit_group_id = initiator_bg.id
+          LEFT JOIN business_unit_groups initiator_bg ON t.business_unit_group_id = initiator_bg.id
           WHERE t.created_at >= CURRENT_DATE - INTERVAL '1 day' * ${daysInterval}
             AND (c.business_unit_group_id = initiator_bg.id OR c.id IS NULL)
           GROUP BY c.name ORDER BY ticket_count DESC
