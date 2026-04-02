@@ -79,7 +79,9 @@ export default function AddTeamMemberModal({
  <div className="flex items-center justify-between p-4 border-b border-border">
  <div>
  <h2 className="text-lg font-semibold text-foreground">Add Team Member</h2>
- <p className="text-sm text-muted-foreground">Select users to add to your team</p>
+ <p className="text-sm text-muted-foreground">
+              Only people in your business group are listed — you can add them to your team.
+            </p>
  </div>
  <button
  onClick={onClose}

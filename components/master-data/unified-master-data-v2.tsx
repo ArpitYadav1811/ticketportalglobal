@@ -288,6 +288,23 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
     }
   }
 
+  /** Users in the same business unit as the Primary SPOC (current user) — only they may be Secondary SPOC. */
+  const usersForSecondarySpocEdit =
+    userBusinessGroupId != null
+      ? users.filter((u) => u.business_unit_group_id === userBusinessGroupId)
+      : []
+
+  const primaryUserForBgEdit = editBG
+    ? users.find(
+        (u) =>
+          u.full_name === (editBG.primary_spoc_name || editBG.spoc_name),
+      )
+    : undefined
+  const usersForSecondaryInFullBgForm =
+    primaryUserForBgEdit?.business_unit_group_id != null
+      ? users.filter((u) => u.business_unit_group_id === primaryUserForBgEdit.business_unit_group_id)
+      : []
+
   const getSecondarySpocConflictGroupName = (secondarySpocName: string, currentBusinessGroupId: number) => {
     const normalizedName = (secondarySpocName || "").trim().toLowerCase()
     if (!normalizedName) return null
@@ -872,7 +889,7 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               type: "select",
               options: [
                 { value: "", label: "None" },
-                ...users.map((user) => {
+                ...usersForSecondarySpocEdit.map((user) => {
                   const conflictGroupName = getSecondarySpocConflictGroupName(user.full_name, editBG.id)
                   return {
                     value: user.full_name,
@@ -895,7 +912,13 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               name: "secondary_spoc_name",
               label: "Secondary SPOC Name",
               type: "select",
-              options: [{ value: "", label: "None" }, ...users.map(user => ({ value: user.full_name, label: user.full_name }))]
+              options: [
+                { value: "", label: "None" },
+                ...usersForSecondaryInFullBgForm.map((user) => ({
+                  value: user.full_name,
+                  label: user.full_name,
+                })),
+              ],
             },
           ]}
           initialData={editBG.isSpocEdit ? { secondary_spoc_name: editBG.secondary_spoc_name || "" } : editBG}

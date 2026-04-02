@@ -823,6 +823,12 @@ export async function getBusinessGroupsForSpoc(userId: number) {
         FROM business_group_spocs bgs
         WHERE bgs.user_id = ${userId}
           AND bgs.is_active = true
+        UNION
+        SELECT bug.id AS business_group_id
+        FROM business_unit_groups bug
+        JOIN users u ON u.id = ${userId}
+        WHERE LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name))) = LOWER(TRIM(u.full_name))
+           OR LOWER(TRIM(COALESCE(bug.secondary_spoc_name, ''))) = LOWER(TRIM(u.full_name))
       ) src
       JOIN business_unit_groups bug ON src.business_group_id = bug.id
     `
@@ -841,7 +847,14 @@ export async function isUserSpoc(userId: number) {
     const result = await sql`
       SELECT (
         (SELECT COUNT(*) FROM ticket_classification_mapping WHERE spoc_user_id = ${userId}) +
-        (SELECT COUNT(*) FROM business_group_spocs WHERE user_id = ${userId} AND is_active = true)
+        (SELECT COUNT(*) FROM business_group_spocs WHERE user_id = ${userId} AND is_active = true) +
+        (
+          SELECT COUNT(*)
+          FROM business_unit_groups bug
+          JOIN users u ON u.id = ${userId}
+          WHERE LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name))) = LOWER(TRIM(u.full_name))
+             OR LOWER(TRIM(COALESCE(bug.secondary_spoc_name, ''))) = LOWER(TRIM(u.full_name))
+        )
       ) as count
     `
     return (result[0]?.count || 0) > 0
@@ -858,8 +871,23 @@ export async function spocHasAccessToBusinessGroup(userId: number, businessGroup
   try {
     const result = await sql`
       SELECT COUNT(*) as count
-      FROM ticket_classification_mapping
-      WHERE spoc_user_id = ${userId} AND target_business_group_id = ${businessGroupId}
+      FROM (
+        SELECT tcm.target_business_group_id as business_group_id
+        FROM ticket_classification_mapping tcm
+        WHERE tcm.spoc_user_id = ${userId}
+        UNION
+        SELECT bgs.business_group_id
+        FROM business_group_spocs bgs
+        WHERE bgs.user_id = ${userId}
+          AND bgs.is_active = true
+        UNION
+        SELECT bug.id AS business_group_id
+        FROM business_unit_groups bug
+        JOIN users u ON u.id = ${userId}
+        WHERE LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name))) = LOWER(TRIM(u.full_name))
+           OR LOWER(TRIM(COALESCE(bug.secondary_spoc_name, ''))) = LOWER(TRIM(u.full_name))
+      ) spoc_groups
+      WHERE spoc_groups.business_group_id = ${businessGroupId}
     `
     return (result[0]?.count || 0) > 0
   } catch (error) {

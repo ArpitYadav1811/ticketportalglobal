@@ -1,12 +1,18 @@
 "use server"
 
 import { sql } from "@/lib/db"
+import { getCurrentUser } from "@/lib/actions/auth"
 
 // Personal team members management - for the "My Team" feature in Settings
 // This allows users to designate other users as "their team" for ticket visibility
 
 export async function getMyTeamMembers(userId: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser?.id || currentUser.id !== userId) {
+      return { success: false, error: "Not authorized", data: [] }
+    }
+
     // Get users that this user has added to their personal team
     const result = await sql`
       SELECT
@@ -46,6 +52,11 @@ export async function getMyTeamMembers(userId: number) {
 
 export async function addMyTeamMember(leadUserId: number, memberUserId: number, role: 'lead' | 'member' = 'member') {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser?.id || currentUser.id !== leadUserId) {
+      return { success: false, error: "Not authorized" }
+    }
+
     // Ensure table exists first
     await sql`
       CREATE TABLE IF NOT EXISTS my_team_members (
@@ -57,6 +68,23 @@ export async function addMyTeamMember(leadUserId: number, memberUserId: number, 
         UNIQUE(lead_user_id, member_user_id)
       )
     `
+
+    const leadRow = await sql`
+      SELECT business_unit_group_id FROM users WHERE id = ${leadUserId}
+    `
+    const memberRow = await sql`
+      SELECT business_unit_group_id FROM users WHERE id = ${memberUserId}
+    `
+    const leadBu = leadRow[0]?.business_unit_group_id
+    const memberBu = memberRow[0]?.business_unit_group_id
+    if (leadBu != null) {
+      if (memberBu == null || Number(memberBu) !== Number(leadBu)) {
+        return {
+          success: false,
+          error: "You can only add users from your business group.",
+        }
+      }
+    }
 
     // Check if already exists
     const existing = await sql`
@@ -86,6 +114,11 @@ export async function addMyTeamMember(leadUserId: number, memberUserId: number, 
 
 export async function removeMyTeamMember(leadUserId: number, teamMemberId: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser?.id || currentUser.id !== leadUserId) {
+      return { success: false, error: "Not authorized" }
+    }
+
     const result = await sql`
       DELETE FROM my_team_members
       WHERE id = ${teamMemberId} AND lead_user_id = ${leadUserId}
@@ -105,6 +138,11 @@ export async function removeMyTeamMember(leadUserId: number, teamMemberId: numbe
 
 export async function getAvailableUsersForMyTeam(userId: number) {
   try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser?.id || currentUser.id !== userId) {
+      return { success: false, error: "Not authorized", data: [] }
+    }
+
     // Ensure table exists first
     await sql`
       CREATE TABLE IF NOT EXISTS my_team_members (
@@ -117,8 +155,7 @@ export async function getAvailableUsersForMyTeam(userId: number) {
       )
     `
 
-    // Get all users except the current user
-    // Include a flag to indicate if they're already in the team
+    // Same business unit as the lead only (SPOC / team lead must pick from their group)
     const result = await sql`
       SELECT
         u.id,
@@ -135,6 +172,10 @@ export async function getAvailableUsersForMyTeam(userId: number) {
       LEFT JOIN business_unit_groups bug ON u.business_unit_group_id = bug.id
       LEFT JOIN my_team_members mtm ON mtm.member_user_id = u.id AND mtm.lead_user_id = ${userId}
       WHERE u.id != ${userId}
+        AND (
+          (SELECT business_unit_group_id FROM users WHERE id = ${userId}) IS NULL
+          OR u.business_unit_group_id = (SELECT business_unit_group_id FROM users WHERE id = ${userId})
+        )
       ORDER BY u.full_name ASC
     `
     return { success: true, data: result }

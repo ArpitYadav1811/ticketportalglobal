@@ -692,6 +692,38 @@ export async function updateBusinessGroupSpoc(
             error: `This user is already assigned as Secondary SPOC for ${existingSecondary[0].name}. A user can be Secondary SPOC for only one group.`,
           }
         }
+
+        // Secondary SPOC must belong to the same business unit as the Primary SPOC (current user).
+        const [primaryBuRow] = await sql`
+          SELECT business_unit_group_id FROM users WHERE id = ${currentUser.id}
+        `
+        const primaryBuId = primaryBuRow?.business_unit_group_id
+        if (primaryBuId == null) {
+          return {
+            success: false,
+            error:
+              "Your account must belong to a business unit before you can assign a Secondary SPOC from the same unit.",
+          }
+        }
+
+        const candidates = await sql`
+          SELECT id, business_unit_group_id FROM users
+          WHERE LOWER(TRIM(full_name)) = LOWER(TRIM(${trimmedSpocName}))
+        `
+        const sameBu = candidates.find(
+          (c: { business_unit_group_id: unknown }) =>
+            c.business_unit_group_id != null &&
+            Number(c.business_unit_group_id) === Number(primaryBuId),
+        )
+        if (!sameBu) {
+          return {
+            success: false,
+            error:
+              candidates.length === 0
+                ? "No user found with that name. Choose someone from your business unit."
+                : "Secondary SPOC must be a user from your same business unit group.",
+          }
+        }
       }
     }
 

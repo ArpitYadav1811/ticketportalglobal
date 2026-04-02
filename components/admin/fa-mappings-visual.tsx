@@ -74,6 +74,12 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
 
   const isSuperAdmin = currentUser?.role?.toLowerCase() === "superadmin"
 
+  const usersSameBuAsCurrent = allUsers.filter(
+    (u: any) =>
+      currentUser?.business_unit_group_id != null &&
+      u.business_unit_group_id === currentUser.business_unit_group_id,
+  )
+
   const loadData = async () => {
     setLoading(true)
     const [faRes, mapRes, bgRes, usersRes] = await Promise.all([
@@ -101,6 +107,12 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
 
   const filteredBGs = businessGroups.filter((bg) =>
     bg.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const usersForSecondarySpoc = allUsers.filter(
+    (u: any) =>
+      currentUser?.business_unit_group_id != null &&
+      u.business_unit_group_id === currentUser.business_unit_group_id,
   )
 
   const filteredMappings = mappings.filter((m) => {
@@ -530,7 +542,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
                             className="px-2 py-0.5 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary bg-background"
                           >
                             <option value="">— None —</option>
-                            {allUsers.map((u: any) => (
+                            {usersSameBuAsCurrent.map((u: any) => (
                               <option key={u.id} value={u.full_name || u.name}>
                                 {u.full_name || u.name}
                               </option>
