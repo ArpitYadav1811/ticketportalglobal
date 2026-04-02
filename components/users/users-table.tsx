@@ -47,9 +47,18 @@ interface UsersTableProps {
   onRefresh: () => void
   isSuperAdmin?: boolean
   currentUserId?: number
+  canManageSecondarySpoc?: boolean
 }
 
-export default function UsersTable({ users, loading, onEditUser, onRefresh, isSuperAdmin = false, currentUserId }: UsersTableProps) {
+export default function UsersTable({
+  users,
+  loading,
+  onEditUser,
+  onRefresh,
+  isSuperAdmin = false,
+  currentUserId,
+  canManageSecondarySpoc = false,
+}: UsersTableProps) {
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [roleChangingId, setRoleChangingId] = useState<number | null>(null)
   const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
@@ -699,7 +708,7 @@ export default function UsersTable({ users, loading, onEditUser, onRefresh, isSu
                       </TooltipTrigger>
                       <TooltipContent>Delete User</TooltipContent>
                     </Tooltip>
-                    {isSuperAdmin && (
+                    {canManageSecondarySpoc && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button

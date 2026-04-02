@@ -23,14 +23,14 @@ export async function getBusinessUnitGroups() {
         bug.id,
         bug.name,
         bug.description,
-        COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
-        COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
-        COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+        pspoc.full_name as spoc_name,
+        pspoc.full_name as primary_spoc_name,
+        sspoc.full_name as secondary_spoc_name,
         bug.created_at,
         bug.updated_at
       FROM business_unit_groups bug
-      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
-      LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+      LEFT JOIN users pspoc ON pspoc.id = bug.primary_spoc_user_id
+      LEFT JOIN users sspoc ON sspoc.id = bug.secondary_spoc_user_id
       ORDER BY bug.name ASC
     `
     return { success: true, data: result }
@@ -51,15 +51,15 @@ export async function getTargetBusinessGroups(organizationId?: number) {
           bug.id,
           bug.name,
           bug.description,
-          COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
-          COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
-          COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+          pspoc.full_name as spoc_name,
+          pspoc.full_name as primary_spoc_name,
+          sspoc.full_name as secondary_spoc_name,
           bug.created_at,
           bug.updated_at
         FROM business_unit_groups bug
         INNER JOIN functional_area_business_group_mapping fabgm ON bug.id = fabgm.target_business_group_id
-        LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
-        LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+        LEFT JOIN users pspoc ON pspoc.id = bug.primary_spoc_user_id
+        LEFT JOIN users sspoc ON sspoc.id = bug.secondary_spoc_user_id
         WHERE fabgm.functional_area_id = ${organizationId}
         ORDER BY bug.name ASC
       `
@@ -70,14 +70,14 @@ export async function getTargetBusinessGroups(organizationId?: number) {
           bug.id,
           bug.name,
           bug.description,
-          COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
-          COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
-          COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+          pspoc.full_name as spoc_name,
+          pspoc.full_name as primary_spoc_name,
+          sspoc.full_name as secondary_spoc_name,
           bug.created_at,
           bug.updated_at
         FROM business_unit_groups bug
-        LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
-        LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+        LEFT JOIN users pspoc ON pspoc.id = bug.primary_spoc_user_id
+        LEFT JOIN users sspoc ON sspoc.id = bug.secondary_spoc_user_id
         ORDER BY bug.name ASC
       `
     }
@@ -127,15 +127,15 @@ try {
         bug.id,
         bug.name,
         bug.description,
-        COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
-        COALESCE(pspoc.full_name, bug.primary_spoc_name, bug.spoc_name) as primary_spoc_name,
-        COALESCE(sspoc.full_name, bug.secondary_spoc_name) as secondary_spoc_name,
+        pspoc.full_name as spoc_name,
+        pspoc.full_name as primary_spoc_name,
+        sspoc.full_name as secondary_spoc_name,
         bug.created_at,
         bug.updated_at
       FROM business_unit_groups bug
       INNER JOIN functional_area_business_group_mapping fabgm ON bug.id = fabgm.target_business_group_id
-      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
-      LEFT JOIN users sspoc ON LOWER(TRIM(sspoc.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+      LEFT JOIN users pspoc ON pspoc.id = bug.primary_spoc_user_id
+      LEFT JOIN users sspoc ON sspoc.id = bug.secondary_spoc_user_id
       WHERE fabgm.functional_area_id = ${organizationId}
       ORDER BY bug.name ASC
     `
@@ -151,24 +151,14 @@ try {
  */
 export async function isUserPrimarySpoc(userId: number, businessGroupId: number): Promise<boolean> {
   try {
-    const user = await sql`SELECT full_name FROM users WHERE id = ${userId}`
-    if (user.length === 0) return false
-    
-    const userName = user[0].full_name
-    if (!userName) return false
-    
     const bg = await sql`
-      SELECT spoc_name, primary_spoc_name
+      SELECT primary_spoc_user_id
       FROM business_unit_groups
       WHERE id = ${businessGroupId}
     `
     if (bg.length === 0) return false
     
-    const primarySpocName = bg[0].primary_spoc_name || bg[0].spoc_name
-    if (!primarySpocName) return false
-    
-    // Compare names (case-insensitive, trimmed)
-    return userName.trim().toLowerCase() === primarySpocName.trim().toLowerCase()
+    return bg[0].primary_spoc_user_id != null && Number(bg[0].primary_spoc_user_id) === Number(userId)
   } catch (error) {
     console.error("Error checking if user is Primary SPOC:", error)
     return false
@@ -180,24 +170,14 @@ export async function isUserPrimarySpoc(userId: number, businessGroupId: number)
  */
 export async function isUserSecondarySpoc(userId: number, businessGroupId: number): Promise<boolean> {
   try {
-    const user = await sql`SELECT full_name FROM users WHERE id = ${userId}`
-    if (user.length === 0) return false
-    
-    const userName = user[0].full_name
-    if (!userName) return false
-    
     const bg = await sql`
-      SELECT secondary_spoc_name
+      SELECT secondary_spoc_user_id
       FROM business_unit_groups
       WHERE id = ${businessGroupId}
     `
     if (bg.length === 0) return false
     
-    const secondarySpocName = bg[0].secondary_spoc_name
-    if (!secondarySpocName) return false
-    
-    // Compare names (case-insensitive, trimmed)
-    return userName.trim().toLowerCase() === secondarySpocName.trim().toLowerCase()
+    return bg[0].secondary_spoc_user_id != null && Number(bg[0].secondary_spoc_user_id) === Number(userId)
   } catch (error) {
     console.error("Error checking if user is Secondary SPOC:", error)
     return false
@@ -254,16 +234,10 @@ export async function canUpdatePrimarySpoc(userId: number, businessGroupId: numb
  */
 export async function getBusinessGroupsForPrimarySpoc(userId: number) {
   try {
-    const user = await sql`SELECT full_name FROM users WHERE id = ${userId}`
-    if (user.length === 0 || !user[0].full_name) {
-      return { success: true, data: [] }
-    }
-    
-    const userName = user[0].full_name
     const result = await sql`
       SELECT *
       FROM business_unit_groups
-      WHERE LOWER(TRIM(COALESCE(primary_spoc_name, spoc_name))) = LOWER(TRIM(${userName}))
+      WHERE primary_spoc_user_id = ${userId}
       ORDER BY name ASC
     `
     return { success: true, data: result }
@@ -826,9 +800,8 @@ export async function getBusinessGroupsForSpoc(userId: number) {
         UNION
         SELECT bug.id AS business_group_id
         FROM business_unit_groups bug
-        JOIN users u ON u.id = ${userId}
-        WHERE LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name))) = LOWER(TRIM(u.full_name))
-           OR LOWER(TRIM(COALESCE(bug.secondary_spoc_name, ''))) = LOWER(TRIM(u.full_name))
+        WHERE bug.primary_spoc_user_id = ${userId}
+           OR bug.secondary_spoc_user_id = ${userId}
       ) src
       JOIN business_unit_groups bug ON src.business_group_id = bug.id
     `
@@ -851,9 +824,8 @@ export async function isUserSpoc(userId: number) {
         (
           SELECT COUNT(*)
           FROM business_unit_groups bug
-          JOIN users u ON u.id = ${userId}
-          WHERE LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name))) = LOWER(TRIM(u.full_name))
-             OR LOWER(TRIM(COALESCE(bug.secondary_spoc_name, ''))) = LOWER(TRIM(u.full_name))
+          WHERE bug.primary_spoc_user_id = ${userId}
+             OR bug.secondary_spoc_user_id = ${userId}
         )
       ) as count
     `
@@ -883,9 +855,8 @@ export async function spocHasAccessToBusinessGroup(userId: number, businessGroup
         UNION
         SELECT bug.id AS business_group_id
         FROM business_unit_groups bug
-        JOIN users u ON u.id = ${userId}
-        WHERE LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name))) = LOWER(TRIM(u.full_name))
-           OR LOWER(TRIM(COALESCE(bug.secondary_spoc_name, ''))) = LOWER(TRIM(u.full_name))
+        WHERE bug.primary_spoc_user_id = ${userId}
+           OR bug.secondary_spoc_user_id = ${userId}
       ) spoc_groups
       WHERE spoc_groups.business_group_id = ${businessGroupId}
     `
@@ -900,12 +871,12 @@ export async function getSpocForTargetBusinessGroup(targetBusinessGroupId: numbe
   try {
     const result = await sql`
       SELECT 
-        COALESCE(pspoc.full_name, bug.spoc_name) as spoc_name,
+        pspoc.full_name as spoc_name,
         pspoc.id,
         pspoc.full_name,
         pspoc.email
       FROM business_unit_groups bug
-      LEFT JOIN users pspoc ON LOWER(TRIM(pspoc.full_name)) = LOWER(TRIM(COALESCE(bug.primary_spoc_name, bug.spoc_name)))
+      LEFT JOIN users pspoc ON pspoc.id = bug.primary_spoc_user_id
       WHERE bug.id = ${targetBusinessGroupId}
       LIMIT 1
     `

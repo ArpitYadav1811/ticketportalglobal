@@ -457,6 +457,7 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
               onRefresh={loadUsers}
               isSuperAdmin={userRole === "superadmin"}
               currentUserId={userId}
+              canManageSecondarySpoc={userRole === "superadmin" || userRole === "admin"}
             />
           </div>
         </div>

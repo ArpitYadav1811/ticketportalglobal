@@ -338,6 +338,16 @@ export async function deleteUser(id: number) {
     }
 
     const isSuperAdmin = currentUser.role?.toLowerCase() === "superadmin"
+    const userToDelete = await sql`
+      SELECT id, email, full_name
+      FROM users
+      WHERE id = ${id}
+      LIMIT 1
+    `
+    if (userToDelete.length === 0) {
+      return { success: false, error: "User not found" }
+    }
+    const deletedUserName = String(userToDelete[0].full_name || "").trim()
 
     // Check if user has assigned tickets
     const ticketCheck = await sql`
@@ -384,20 +394,41 @@ export async function deleteUser(id: number) {
       // Super Admin: Log the permanent deletion
       try {
         const { addSystemAuditLog } = await import("./admin")
-        const userToDelete = await sql`SELECT email, full_name FROM users WHERE id = ${id}`
-        if (userToDelete.length > 0) {
-          await addSystemAuditLog({
-            actionType: "hard_delete",
-            entityType: "user",
-            oldValue: `${userToDelete[0].full_name} (${userToDelete[0].email})`,
-            performedBy: currentUser.id,
-            performedByName: currentUser.full_name || currentUser.email,
-            notes: `User permanently deleted by Super Admin. ${ticketCount} assigned tickets and ${createdCount} created tickets were reassigned/unlinked.`
-          })
-        }
+        await addSystemAuditLog({
+          actionType: "hard_delete",
+          entityType: "user",
+          oldValue: `${userToDelete[0].full_name} (${userToDelete[0].email})`,
+          performedBy: currentUser.id,
+          performedByName: currentUser.full_name || currentUser.email,
+          notes: `User permanently deleted by Super Admin. ${ticketCount} assigned tickets and ${createdCount} created tickets were reassigned/unlinked.`
+        })
       } catch (auditError) {
         console.log("Could not log to system audit:", auditError)
       }
+    }
+
+    // Remove textual SPOC references tied to this user's name.
+    if (deletedUserName) {
+      await sql`
+        UPDATE business_unit_groups
+        SET secondary_spoc_name = NULL,
+            secondary_spoc_user_id = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE secondary_spoc_user_id = ${id}
+           OR (
+             secondary_spoc_name IS NOT NULL
+             AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${deletedUserName}))
+           )
+      `
+      await sql`
+        UPDATE business_unit_groups
+        SET spoc_name = NULL,
+            primary_spoc_name = NULL,
+            primary_spoc_user_id = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE primary_spoc_user_id = ${id}
+           OR LOWER(TRIM(COALESCE(primary_spoc_name, spoc_name))) = LOWER(TRIM(${deletedUserName}))
+      `
     }
 
     // Delete user (cascade handles team_members and other ON DELETE CASCADE relations)

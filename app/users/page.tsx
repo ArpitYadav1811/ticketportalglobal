@@ -88,17 +88,26 @@ export default function UsersPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-sans font-bold text-foreground flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
+          <h1 className="text-3xl font-sans font-bold text-foreground flex items-center gap-3 relative z-10">
             <UsersIcon className="w-8 h-8" />
             User Management
           </h1>
-          <p className="text-muted-foreground mt-2">Manage users, roles, and permissions</p>
+          <p className="text-muted-foreground mt-2 relative z-10">
+            Manage users, roles, SPOC configuration, and account lifecycle.
+          </p>
+          <div className="relative z-10 mt-4 flex flex-wrap gap-3 text-xs">
+            <span className="rounded-full border bg-muted/50 px-3 py-1">Total Users: {users.length}</span>
+            <span className="rounded-full border bg-muted/50 px-3 py-1">
+              Active Filters: {Number(Boolean(filters.search)) + Number(filters.role !== "all") + Number(filters.includeInactive)}
+            </span>
+          </div>
         </div>
 
         {/* Filters and Actions */}
-        <div className="bg-white border border-border rounded-xl p-6 mb-6 shadow-sm">
+        <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
               {/* Search */}
@@ -171,14 +180,17 @@ export default function UsersPage() {
         </div>
 
         {/* Users Table */}
-        <UsersTable
-          users={users}
-          loading={loading}
-          onEditUser={handleEditUser}
-          onRefresh={loadUsers}
-          isSuperAdmin={String(currentUser?.role || "").toLowerCase() === "superadmin"}
-          currentUserId={currentUser?.id}
-        />
+        <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+          <UsersTable
+            users={users}
+            loading={loading}
+            onEditUser={handleEditUser}
+            onRefresh={loadUsers}
+            isSuperAdmin={String(currentUser?.role || "").toLowerCase() === "superadmin"}
+            currentUserId={currentUser?.id}
+            canManageSecondarySpoc={["superadmin", "admin"].includes(String(currentUser?.role || "").toLowerCase())}
+          />
+        </div>
       </div>
 
       {/* Create User Modal */}
