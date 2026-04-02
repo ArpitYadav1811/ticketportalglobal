@@ -256,6 +256,36 @@ export default function CreateTicketForm() {
  })
  }
 
+ const handleTicketTypeSwitch = (ticketType: "support" | "requirement") => {
+  // Reset the form when switching between ticket types.
+  setFormData((prev) => ({
+   ...prev,
+   ticketType,
+   isInternal: false,
+   organizationId: "",
+   targetBusinessGroupId: "",
+   projectId: "",
+   estimatedReleaseDate: "",
+   categoryId: "",
+   subcategoryId: "",
+   title: "",
+   description: "",
+   estimatedDuration: "",
+   spocId: "",
+   productReleaseName: "",
+   attachments: [],
+  }))
+  setTargetBusinessGroups([])
+  setCategories([])
+  setSubcategories([])
+  setFieldErrors({})
+  setReferenceInput("")
+  setReferenceValidation(null)
+  setReferenceTickets([])
+  referenceTicketsRef.current = []
+  referenceValidationRef.current = null
+ }
+
 const handleTargetBusinessGroupChange = async (value: string) => {
   const selectedGroup = targetBusinessGroups.find((tbg) => tbg.id.toString() === value)
   let spocId = ""
@@ -914,7 +944,7 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  name="ticketType"
  value={type}
  checked={formData.ticketType === type}
- onChange={handleInputChange}
+ onChange={() => handleTicketTypeSwitch(type as "support" | "requirement")}
  className="w-3 h-3 text-gray-900 border border-slate-300 focus:ring-2 focus:ring-gray-900/20"
  />
  <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">
