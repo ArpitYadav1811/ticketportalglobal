@@ -700,6 +700,8 @@ const handleTargetBusinessGroupChange = async (value: string) => {
   required("organizationId", "Functional Area is required.")
   required("targetBusinessGroupId", "Business Group is required.")
   required("spocId", "SPOC is required.")
+  required("description", "Description is required.")
+  required("estimatedDuration", "Estimated hours is required.")
 
   if (formData.ticketType === "requirement") {
    required("title", "Title is required for requirements.")
@@ -709,11 +711,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
   }
 
   const duration = String(formData.estimatedDuration || "").trim()
-  if (duration) {
-   const n = Number(duration)
-   if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
-    errors.estimatedDuration = "Estimated hours must be a positive whole number."
-   }
+  const n = Number(duration)
+  if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
+   errors.estimatedDuration = "Estimated hours must be a positive whole number."
   }
 
   return errors
@@ -1060,6 +1060,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
             rows={6}
  className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
+ {fieldErrors.description && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.description}</p>
+ )}
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
@@ -1203,6 +1206,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
             rows={6}
  className="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs resize-none"
  />
+ {fieldErrors.description && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.description}</p>
+ )}
  </div>
 
  {/* Row 5: Estimated Hrs and Attachments (2-column grid) */}
