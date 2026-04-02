@@ -807,6 +807,12 @@ export async function updateBusinessGroupSpoc(
 
     const bg = bgInfo[0]
 
+    const normalizedSpocName = (spocName || "").trim()
+    const isClearSelection =
+      normalizedSpocName.length === 0 ||
+      normalizedSpocName.toLowerCase() === "none" ||
+      normalizedSpocName === "— none —"
+
     // Check permissions
     if (spocType === "primary") {
       // Only Super Admin or Admin can update Primary SPOC
@@ -838,7 +844,7 @@ export async function updateBusinessGroupSpoc(
       }
 
       // A user can be Secondary SPOC for only one group at a time (strict by user identity).
-      const trimmedSpocName = (spocName || "").trim()
+      const trimmedSpocName = isClearSelection ? "" : normalizedSpocName
       if (trimmedSpocName) {
         const candidates = await sql`
           SELECT id, full_name, business_unit_group_id FROM users
@@ -920,8 +926,8 @@ export async function updateBusinessGroupSpoc(
       // Update both spoc_name (for backward compatibility) and primary_spoc_name
       await sql`
         UPDATE business_unit_groups
-        SET spoc_name = ${spocName}, 
-            primary_spoc_name = ${spocName}, 
+        SET spoc_name = ${isClearSelection ? null : normalizedSpocName}, 
+            primary_spoc_name = ${isClearSelection ? null : normalizedSpocName}, 
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${businessGroupId}
       `
@@ -929,7 +935,7 @@ export async function updateBusinessGroupSpoc(
       // Only update secondary_spoc_name
       await sql`
         UPDATE business_unit_groups
-        SET secondary_spoc_name = ${spocName}, 
+        SET secondary_spoc_name = ${isClearSelection ? null : normalizedSpocName}, 
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${businessGroupId}
       `
@@ -944,10 +950,10 @@ export async function updateBusinessGroupSpoc(
       entityType: "business_group",
       entityId: businessGroupId,
       oldValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${oldValue}`,
-      newValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${spocName || "None"}`,
+      newValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${(isClearSelection ? "" : normalizedSpocName) || "None"}`,
       performedBy: currentUser.id,
       performedByName: currentUser.full_name || currentUser.email,
-      notes: `Updated ${spocType === "primary" ? "Primary" : "Secondary"} SPOC for ${bg.name} to ${spocName || "None"}`,
+      notes: `Updated ${spocType === "primary" ? "Primary" : "Secondary"} SPOC for ${bg.name} to ${(isClearSelection ? "" : normalizedSpocName) || "None"}`,
     })
 
     return { success: true }
