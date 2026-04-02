@@ -2,20 +2,31 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import CreateTicketForm from "@/components/tickets/create-ticket-form"
 
 export default function DashboardPage() {
  const router = useRouter()
+ const { status } = useSession()
  const [isLoading, setIsLoading] = useState(true)
 
  useEffect(() => {
- const user = localStorage.getItem("user")
- if (!user) {
- router.push("/login")
- }
- setIsLoading(false)
- }, [router])
+   // Wait for NextAuth to settle first to avoid first-time SSO redirect bounce.
+   if (status === "loading") return
+
+   if (status === "authenticated") {
+     setIsLoading(false)
+     return
+   }
+
+   const user = localStorage.getItem("user")
+   if (!user) {
+     router.push("/login")
+     return
+   }
+   setIsLoading(false)
+ }, [router, status])
 
  if (isLoading) return <div>Loading...</div>
 
