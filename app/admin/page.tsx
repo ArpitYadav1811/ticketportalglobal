@@ -285,10 +285,10 @@ export default function AdminDashboardPage() {
                     </div>
                     <div>
                       <h1 className="text-base font-extrabold text-foreground bg-gradient-to-r from-foreground via-foreground/90 to-foreground/80 bg-clip-text drop-shadow-sm">
-                        Super Admin Dashboard
+                        Admin Control Center
                       </h1>
                       <p className="text-[10px] text-muted-foreground font-medium">
-                        Full access to all system modules and configurations
+                        Users, business setup, ticket catalog, and operations in one place.
                       </p>
                     </div>
                   </div>
@@ -345,7 +345,7 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
 
   return (
     <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Compact User Management - Merged Header, Filters, and Table */}
+      {/* Compact Users & Access - Merged Header, Filters, and Table */}
       <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg overflow-hidden group h-full flex flex-col">
         {/* Animated background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -359,10 +359,10 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
             <div className="flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-between mb-2">
               <div>
                 <h2 className="text-sm font-extrabold text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                  User Management
+                  User Accounts
                 </h2>
                 <p className="text-[9px] text-muted-foreground font-medium">
-                  Manage users, roles, and permissions
+                  Manage users, roles, first-login business group assignment, and account actions.
                 </p>
               </div>
               <Button 
@@ -370,7 +370,7 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
                 size="sm" 
                 className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 h-7 text-[11px] px-2.5"
               >
-                <Plus className="w-3 h-3 mr-1" /> Create User
+                <Plus className="w-3 h-3 mr-1" /> Create Account
               </Button>
             </div>
             
@@ -457,7 +457,7 @@ function UserManagementTab({ userRole, userId }: { userRole: string; userId: num
               onRefresh={loadUsers}
               isSuperAdmin={userRole === "superadmin"}
               currentUserId={userId}
-              canManageSecondarySpoc={userRole === "superadmin" || userRole === "admin"}
+              canManageSecondarySpoc={false}
             />
           </div>
         </div>
@@ -553,11 +553,11 @@ function TeamsTab() {
                 <FolderTree className="w-3.5 h-3.5 text-indigo-600" />
  </div>
               <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                Teams Management
+                Teams
               </span>
             </h3>
             <p className="text-[10px] text-muted-foreground font-medium ml-8">
-              Create and manage teams for organizing users
+              Create and manage teams for business-group users.
         </p>
  </div>
             <Button 
@@ -930,13 +930,13 @@ function SystemManagementTab() {
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-          System Management
+          Operations Center
                 <span className="px-2 py-0.5 bg-gradient-to-r from-red-500/30 to-red-600/30 backdrop-blur-sm border border-red-500/50 text-red-700 dark:text-red-400 text-[9px] font-bold rounded-full shadow-sm animate-pulse">
                   ⚠️ DANGER ZONE
           </span>
         </h2>
               <p className="text-[10px] text-muted-foreground font-medium">
-          Bulk delete operations for system data. These actions are irreversible.
+          Operational maintenance tools and bulk actions. These actions are irreversible.
         </p>
             </div>
           </div>

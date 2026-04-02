@@ -262,9 +262,26 @@ export async function createBusinessUnitGroup(name: string, description?: string
     }
     
     const trimmedName = name.trim()
+    const normalizedSpocName = (spocName || "").trim()
+    let primarySpocUserId: number | null = null
+    if (normalizedSpocName) {
+      const candidates = await sql`
+        SELECT id FROM users
+        WHERE LOWER(TRIM(full_name)) = LOWER(TRIM(${normalizedSpocName}))
+        ORDER BY id ASC
+      `
+      if (candidates.length === 0) {
+        return { success: false, error: "No user found with that Primary SPOC name" }
+      }
+      if (candidates.length > 1) {
+        return { success: false, error: "Multiple users share that Primary SPOC name. Use a unique name." }
+      }
+      primarySpocUserId = Number(candidates[0].id)
+    }
+
     const result = await sql`
-      INSERT INTO business_unit_groups (name, description, spoc_name)
-      VALUES (${trimmedName}, ${description || null}, ${spocName || null})
+      INSERT INTO business_unit_groups (name, description, primary_spoc_user_id)
+      VALUES (${trimmedName}, ${description || null}, ${primarySpocUserId})
       RETURNING *
     `
     if (!result || result.length === 0) {
@@ -296,9 +313,29 @@ export async function updateBusinessUnitGroup(id: number, name: string, descript
     }
     
     const trimmedName = name.trim()
+    const normalizedSpocName = (spocName || "").trim()
+    let primarySpocUserId: number | null = null
+    if (normalizedSpocName) {
+      const candidates = await sql`
+        SELECT id FROM users
+        WHERE LOWER(TRIM(full_name)) = LOWER(TRIM(${normalizedSpocName}))
+        ORDER BY id ASC
+      `
+      if (candidates.length === 0) {
+        return { success: false, error: "No user found with that Primary SPOC name" }
+      }
+      if (candidates.length > 1) {
+        return { success: false, error: "Multiple users share that Primary SPOC name. Use a unique name." }
+      }
+      primarySpocUserId = Number(candidates[0].id)
+    }
+
     const result = await sql`
       UPDATE business_unit_groups
-      SET name = ${trimmedName}, description = ${description || null}, spoc_name = ${spocName || null}, updated_at = CURRENT_TIMESTAMP
+      SET name = ${trimmedName},
+          description = ${description || null},
+          primary_spoc_user_id = ${primarySpocUserId},
+          updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
     `

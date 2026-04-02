@@ -184,30 +184,7 @@ export async function updateUser(
       RETURNING id, email, full_name, role, avatar_url, created_at, updated_at
     `
 
-    // If full_name was updated, sync SPOC names in business_unit_groups
-    if (data.fullName && oldFullName && oldFullName !== data.fullName) {
-      try {
-        // Update primary SPOC name
-        await sql`
-          UPDATE business_unit_groups
-          SET spoc_name = ${data.fullName},
-              primary_spoc_name = ${data.fullName},
-              updated_at = CURRENT_TIMESTAMP
-          WHERE LOWER(TRIM(spoc_name)) = LOWER(TRIM(${oldFullName}))
-             OR LOWER(TRIM(primary_spoc_name)) = LOWER(TRIM(${oldFullName}))
-        `
-        // Update secondary SPOC name
-        await sql`
-          UPDATE business_unit_groups
-          SET secondary_spoc_name = ${data.fullName},
-              updated_at = CURRENT_TIMESTAMP
-          WHERE LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${oldFullName}))
-        `
-      } catch (syncError) {
-        console.error("Error syncing SPOC names in business_unit_groups:", syncError)
-        // Don't fail the user update if SPOC sync fails
-      }
-    }
+    // SPOC is FK-based now; no name-sync required.
 
     if (!result || result.length === 0) {
       return { success: false, error: "Failed to update user" }
@@ -407,29 +384,19 @@ export async function deleteUser(id: number) {
       }
     }
 
-    // Remove textual SPOC references tied to this user's name.
-    if (deletedUserName) {
-      await sql`
-        UPDATE business_unit_groups
-        SET secondary_spoc_name = NULL,
-            secondary_spoc_user_id = NULL,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE secondary_spoc_user_id = ${id}
-           OR (
-             secondary_spoc_name IS NOT NULL
-             AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${deletedUserName}))
-           )
-      `
-      await sql`
-        UPDATE business_unit_groups
-        SET spoc_name = NULL,
-            primary_spoc_name = NULL,
-            primary_spoc_user_id = NULL,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE primary_spoc_user_id = ${id}
-           OR LOWER(TRIM(COALESCE(primary_spoc_name, spoc_name))) = LOWER(TRIM(${deletedUserName}))
-      `
-    }
+    // Remove SPOC FK references.
+    await sql`
+      UPDATE business_unit_groups
+      SET secondary_spoc_user_id = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE secondary_spoc_user_id = ${id}
+    `
+    await sql`
+      UPDATE business_unit_groups
+      SET primary_spoc_user_id = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE primary_spoc_user_id = ${id}
+    `
 
     // Delete user (cascade handles team_members and other ON DELETE CASCADE relations)
     await sql`DELETE FROM users WHERE id = ${id}`

@@ -189,12 +189,14 @@ export async function getFunctionalAreaMappings() {
         fa.name as functional_area_name,
         fabgm.target_business_group_id,
         bug.name as business_group_name,
-        bug.spoc_name,
-        bug.primary_spoc_name,
-        bug.secondary_spoc_name
+        pspoc.full_name as spoc_name,
+        pspoc.full_name as primary_spoc_name,
+        sspoc.full_name as secondary_spoc_name
       FROM functional_area_business_group_mapping fabgm
       JOIN functional_areas fa ON fabgm.functional_area_id = fa.id
       JOIN business_unit_groups bug ON fabgm.target_business_group_id = bug.id
+      LEFT JOIN users pspoc ON pspoc.id = bug.primary_spoc_user_id
+      LEFT JOIN users sspoc ON sspoc.id = bug.secondary_spoc_user_id
       ORDER BY fa.name ASC, bug.name ASC
     `
     return { success: true, data: result }
@@ -626,7 +628,7 @@ export async function updateUserSpocBusinessGroups(userId: number, businessGroup
 /**
  * Enforce strict rule globally:
  * one user can be Secondary SPOC for only one business group.
- * Keeps latest row and clears older duplicates (FK first, then legacy-name fallback).
+ * Keeps latest row and clears older duplicates.
  */
 async function cleanupDuplicateSecondarySpocs() {
   try {
@@ -634,25 +636,17 @@ async function cleanupDuplicateSecondarySpocs() {
       WITH ranked AS (
         SELECT
           id,
-          COALESCE(
-            ('uid:' || secondary_spoc_user_id::text),
-            ('name:' || LOWER(TRIM(secondary_spoc_name)))
-          ) AS dedupe_key,
+          ('uid:' || secondary_spoc_user_id::text) AS dedupe_key,
           ROW_NUMBER() OVER (
-            PARTITION BY COALESCE(
-              ('uid:' || secondary_spoc_user_id::text),
-              ('name:' || LOWER(TRIM(secondary_spoc_name)))
-            )
+            PARTITION BY secondary_spoc_user_id
             ORDER BY updated_at DESC NULLS LAST, id DESC
           ) AS rn
         FROM business_unit_groups
         WHERE secondary_spoc_user_id IS NOT NULL
-           OR (secondary_spoc_name IS NOT NULL AND TRIM(secondary_spoc_name) <> '')
       ),
       cleared AS (
         UPDATE business_unit_groups bug
-        SET secondary_spoc_name = NULL,
-            secondary_spoc_user_id = NULL,
+        SET secondary_spoc_user_id = NULL,
             updated_at = CURRENT_TIMESTAMP
         FROM ranked r
         WHERE bug.id = r.id
@@ -684,7 +678,7 @@ export async function getUserSecondarySpocGroup(userId: number) {
     }
 
     const targetUser = await sql`
-      SELECT id, full_name
+      SELECT id
       FROM users
       WHERE id = ${userId}
       LIMIT 1
@@ -693,20 +687,10 @@ export async function getUserSecondarySpocGroup(userId: number) {
       return { success: false, error: "User not found", data: null as { id: number; name: string } | null }
     }
 
-    const userName = String(targetUser[0].full_name || "").trim()
-    if (!userName) {
-      return { success: true, data: null as { id: number; name: string } | null }
-    }
-
     const existing = await sql`
       SELECT id, name
       FROM business_unit_groups
       WHERE secondary_spoc_user_id = ${userId}
-         OR (
-           secondary_spoc_user_id IS NULL
-           AND secondary_spoc_name IS NOT NULL
-           AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${userName}))
-         )
       ORDER BY id ASC
       LIMIT 1
     `
@@ -742,23 +726,12 @@ export async function updateUserSecondarySpocGroup(userId: number, businessGroup
       return { success: false, error: "User not found" }
     }
 
-    const userName = String(targetUser[0].full_name || "").trim()
-    if (!userName) {
-      return { success: false, error: "User full name is required to assign Secondary SPOC" }
-    }
-
     // Clear existing Secondary assignments for this user first (ensures one-group-only strictly).
     await sql`
       UPDATE business_unit_groups
-      SET secondary_spoc_name = NULL,
-          secondary_spoc_user_id = NULL,
+      SET secondary_spoc_user_id = NULL,
           updated_at = CURRENT_TIMESTAMP
       WHERE secondary_spoc_user_id = ${userId}
-         OR (
-           secondary_spoc_user_id IS NULL
-           AND secondary_spoc_name IS NOT NULL
-           AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${userName}))
-         )
     `
 
     if (businessGroupId != null) {
@@ -774,8 +747,7 @@ export async function updateUserSecondarySpocGroup(userId: number, businessGroup
 
       await sql`
         UPDATE business_unit_groups
-        SET secondary_spoc_name = ${userName},
-            secondary_spoc_user_id = ${userId},
+        SET secondary_spoc_user_id = ${userId},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${businessGroupId}
       `
@@ -789,7 +761,7 @@ export async function updateUserSecondarySpocGroup(userId: number, businessGroup
       newValue: businessGroupId == null ? "None" : String(businessGroupId),
       performedBy: currentUser.id,
       performedByName: currentUser.full_name || currentUser.email,
-      notes: `Updated Secondary SPOC configuration for ${userName}`,
+      notes: `Updated Secondary SPOC configuration for user_id ${userId}`,
     })
 
     return { success: true }
@@ -816,7 +788,7 @@ export async function updateBusinessGroupSpoc(
 
     // Get business group info
     const bgInfo = await sql`
-      SELECT name, spoc_name, primary_spoc_name, secondary_spoc_name, primary_spoc_user_id, secondary_spoc_user_id
+      SELECT name, primary_spoc_user_id, secondary_spoc_user_id
       FROM business_unit_groups
       WHERE id = ${businessGroupId}
     `
@@ -861,20 +833,14 @@ export async function updateBusinessGroupSpoc(
       // Secondary SPOC can be updated by:
       // - Super Admin / Admin, OR
       // - the group's Primary SPOC.
-      const primarySpocName = bg.primary_spoc_name || bg.spoc_name
+      const primarySpocId = bg.primary_spoc_user_id
       const canBypassPrimaryCheck = isSuperAdmin || isAdmin
       if (!canBypassPrimaryCheck) {
-        if (!primarySpocName) {
+        if (!primarySpocId) {
           return { success: false, error: "No Primary SPOC assigned. Cannot update Secondary SPOC." }
         }
 
-        const userMatchesPrimary = await sql`
-          SELECT id FROM users
-          WHERE id = ${currentUser.id}
-            AND LOWER(TRIM(full_name)) = LOWER(TRIM(${primarySpocName}))
-        `
-
-        if (userMatchesPrimary.length === 0) {
+        if (Number(currentUser.id) !== Number(primarySpocId)) {
           return { success: false, error: "Only Primary SPOC can update Secondary SPOC" }
         }
       }
@@ -953,41 +919,36 @@ export async function updateBusinessGroupSpoc(
       }
     }
 
-    // Update the appropriate SPOC field
+    // Update the appropriate SPOC field (FK-only).
     if (spocType === "primary") {
-      // Update both spoc_name (for backward compatibility) and primary_spoc_name
       await sql`
         UPDATE business_unit_groups
-        SET spoc_name = ${isClearSelection ? null : normalizedSpocName}, 
-            primary_spoc_name = ${isClearSelection ? null : normalizedSpocName}, 
-            primary_spoc_user_id = ${isClearSelection ? null : selectedPrimaryUserId},
+        SET primary_spoc_user_id = ${isClearSelection ? null : selectedPrimaryUserId},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${businessGroupId}
       `
     } else {
-      // Only update secondary_spoc_name
       await sql`
         UPDATE business_unit_groups
-        SET secondary_spoc_name = ${isClearSelection ? null : normalizedSpocName}, 
-            secondary_spoc_user_id = ${isClearSelection ? null : selectedSecondaryUserId},
+        SET secondary_spoc_user_id = ${isClearSelection ? null : selectedSecondaryUserId},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${businessGroupId}
       `
     }
 
-    const oldValue = spocType === "primary" 
-      ? (bg.primary_spoc_name || bg.spoc_name || "None")
-      : (bg.secondary_spoc_name || "None")
+    const oldValue = spocType === "primary"
+      ? (bg.primary_spoc_user_id ? `user_id:${bg.primary_spoc_user_id}` : "None")
+      : (bg.secondary_spoc_user_id ? `user_id:${bg.secondary_spoc_user_id}` : "None")
 
     await addSystemAuditLog({
       actionType: "spoc_update",
       entityType: "business_group",
       entityId: businessGroupId,
       oldValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${oldValue}`,
-      newValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${(isClearSelection ? "" : normalizedSpocName) || "None"}`,
+      newValue: `${spocType === "primary" ? "Primary" : "Secondary"}: ${isClearSelection ? "None" : `user_id:${spocType === "primary" ? selectedPrimaryUserId : selectedSecondaryUserId}`}`,
       performedBy: currentUser.id,
       performedByName: currentUser.full_name || currentUser.email,
-      notes: `Updated ${spocType === "primary" ? "Primary" : "Secondary"} SPOC for ${bg.name} to ${(isClearSelection ? "" : normalizedSpocName) || "None"}`,
+      notes: `Updated ${spocType === "primary" ? "Primary" : "Secondary"} SPOC for ${bg.name}`,
     })
 
     return { success: true }
@@ -1003,9 +964,6 @@ export async function getBusinessGroupSpocs(businessGroupId: number) {
       SELECT 
         bug.id,
         bug.name,
-        bug.spoc_name,
-        bug.primary_spoc_name,
-        bug.secondary_spoc_name,
         pspoc.id as primary_spoc_user_id,
         pspoc.full_name as primary_spoc_full_name,
         pspoc.email as primary_spoc_email,

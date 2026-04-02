@@ -76,7 +76,7 @@ export function LoginForm() {
         setIsSSOLoading(false)
       }
     }
-  }
+  } 
 
   return (
     <div className="w-full max-w-sm">

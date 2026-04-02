@@ -318,7 +318,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
               </span>
             </h2>
             <p className="text-sm text-muted-foreground font-medium ml-11">
-              Manage relationships between Functional Areas and Business Groups
+              Manage links between functional areas and business groups.
             </p>
           </div>
           <div className="flex gap-2">
@@ -341,7 +341,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
               }}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add FA
+              Create Functional Area
             </Button>
           </div>
         </div>
@@ -357,7 +357,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
             </div>
             <input
               type="text"
-              placeholder="Search FAs, BGs, or mappings..."
+              placeholder="Search functional areas, business groups, or mappings..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border-2 border-border/50 rounded-lg bg-background/90 backdrop-blur-sm text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 font-medium shadow-sm hover:shadow-md transition-all duration-300"
@@ -494,7 +494,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
               }}
             >
               <Plus className="w-4 h-4 mr-1" />
-              Add Mapping
+              Create Mapping
             </Button>
           </div>
           <div className="space-y-3 max-h-[500px] overflow-y-auto">
@@ -634,7 +634,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border rounded-xl p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Add FA Mapping</h3>
+              <h3 className="font-bold text-lg">Create Mapping</h3>
               <button onClick={() => setShowAddMapping(false)}>
                 <X className="w-5 h-5" />
               </button>
@@ -681,7 +681,7 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
                   disabled={saving || !mappingForm.functionalAreaId || !mappingForm.targetBusinessGroupId}
                   className="bg-black hover:bg-gray-800"
                 >
-                  {saving ? "Saving..." : "Add Mapping"}
+                  {saving ? "Saving..." : "Create Mapping"}
                 </Button>
               </div>
             </form>

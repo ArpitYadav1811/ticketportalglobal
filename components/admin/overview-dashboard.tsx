@@ -309,7 +309,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
       icon: <FolderTree className="w-5 h-5" />,
       color: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900",
       iconColor: "text-amber-600 dark:text-amber-400",
-      onClick: () => onNavigate("functional-areas"),
+      onClick: () => onNavigate("fa-mappings"),
     },
     {
       label: "Categories",
@@ -339,7 +339,7 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
 
   const quickActions = [
     {
-      label: "Create User",
+      label: "Create Account",
       icon: <Plus className="w-4 h-4" />,
       onClick: () => onNavigate("users"),
       color: "bg-primary hover:bg-primary/90 text-primary-foreground",
@@ -370,10 +370,10 @@ export default function OverviewDashboard({ onNavigate }: OverviewDashboardProps
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-            System Overview
+            Control Center
           </h2>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Monitor system health and access quick actions
+            Snapshot of users, ticket flow, business setup, and quick actions.
           </p>
         </div>
         <Button 

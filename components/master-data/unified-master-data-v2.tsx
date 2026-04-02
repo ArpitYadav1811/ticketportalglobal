@@ -288,21 +288,10 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
     }
   }
 
-  /** Users in the same business unit as the Primary SPOC (current user) — only they may be Secondary SPOC. */
-  const usersForSecondarySpocEdit =
-    userBusinessGroupId != null
-      ? users.filter((u) => u.business_unit_group_id === userBusinessGroupId)
-      : []
-
-  const primaryUserForBgEdit = editBG
-    ? users.find(
-        (u) =>
-          u.full_name === (editBG.primary_spoc_name || editBG.spoc_name),
-      )
-    : undefined
-  const usersForSecondaryInFullBgForm =
-    primaryUserForBgEdit?.business_unit_group_id != null
-      ? users.filter((u) => u.business_unit_group_id === primaryUserForBgEdit.business_unit_group_id)
+  // SPOC choices must come only from users belonging to the target business group.
+  const usersForCurrentBusinessGroup =
+    editBG?.id != null
+      ? users.filter((u) => u.business_unit_group_id === editBG.id)
       : []
 
   const getSecondarySpocConflictGroupName = (secondarySpocName: string, currentBusinessGroupId: number) => {
@@ -889,7 +878,7 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               type: "select",
               options: [
                 { value: "", label: "None" },
-                ...usersForSecondarySpocEdit.map((user) => {
+                ...usersForCurrentBusinessGroup.map((user) => {
                   const conflictGroupName = getSecondarySpocConflictGroupName(user.full_name, editBG.id)
                   return {
                     value: user.full_name,
@@ -905,7 +894,7 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               name: "spoc_name",
               label: "Primary SPOC Name",
               type: "select",
-              options: users.map(user => ({ value: user.full_name, label: user.full_name })),
+              options: usersForCurrentBusinessGroup.map(user => ({ value: user.full_name, label: user.full_name })),
               disabled: editBG.isSpocEdit
             },
             {
@@ -914,7 +903,7 @@ export default function UnifiedMasterDataV2({ userId, userRole, hideCardWrapper 
               type: "select",
               options: [
                 { value: "", label: "None" },
-                ...usersForSecondaryInFullBgForm.map((user) => ({
+                ...usersForCurrentBusinessGroup.map((user) => ({
                   value: user.full_name,
                   label: user.full_name,
                 })),

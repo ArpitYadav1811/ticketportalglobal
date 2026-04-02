@@ -188,14 +188,18 @@ export default function UsersPage() {
             onRefresh={loadUsers}
             isSuperAdmin={String(currentUser?.role || "").toLowerCase() === "superadmin"}
             currentUserId={currentUser?.id}
-            canManageSecondarySpoc={["superadmin", "admin"].includes(String(currentUser?.role || "").toLowerCase())}
+            canManageSecondarySpoc={false}
           />
         </div>
       </div>
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <CreateUserModal onClose={() => setShowCreateModal(false)} onUserCreated={handleUserCreated} />
+        <CreateUserModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleUserCreated}
+        />
       )}
 
       {/* Edit User Modal */}

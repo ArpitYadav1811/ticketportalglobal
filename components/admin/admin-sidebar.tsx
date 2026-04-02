@@ -46,35 +46,33 @@ interface NavItem {
 const navSections: NavSection[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "Home",
     icon: <LayoutDashboard className="w-4 h-4" />,
-    items: [{ id: "overview", label: "Dashboard" }],
+    items: [{ id: "overview", label: "Control Center" }],
   },
   {
     id: "users",
-    label: "User Management",
+    label: "Users & Access",
     icon: <Users className="w-4 h-4" />,
     items: [
-      { id: "users", label: "Users", icon: <Users className="w-3.5 h-3.5" /> },
+      { id: "users", label: "User Accounts", icon: <Users className="w-3.5 h-3.5" /> },
       { id: "roles", label: "Roles & Permissions", icon: <Key className="w-3.5 h-3.5" /> },
-      { id: "bulk-users", label: "Bulk Operations", icon: <Upload className="w-3.5 h-3.5" /> },
     ],
   },
   {
-    id: "organization",
-    label: "Organization",
+    id: "business",
+    label: "Business Setup",
     icon: <Building2 className="w-4 h-4" />,
     items: [
-      { id: "business-groups", label: "Business Groups", icon: <Building2 className="w-3.5 h-3.5" /> },
-      { id: "functional-areas", label: "Functional Areas", icon: <FolderTree className="w-3.5 h-3.5" /> },
-      { id: "fa-mappings", label: "FA → BG Mappings", icon: <Link2 className="w-3.5 h-3.5" /> },
+      { id: "business-groups", label: "Business Groups & SPOCs", icon: <Building2 className="w-3.5 h-3.5" /> },
+      { id: "fa-mappings", label: "Functional Area Mappings", icon: <Link2 className="w-3.5 h-3.5" /> },
       { id: "teams", label: "Teams", icon: <FolderTree className="w-3.5 h-3.5" /> },
     ],
     superAdminOnly: true,
   },
   {
     id: "master-data",
-    label: "Master Data",
+    label: "Ticket Catalog",
     icon: <FileText className="w-4 h-4" />,
     items: [
       { id: "categories", label: "Categories & Subcategories", icon: <FileText className="w-3.5 h-3.5" /> },
@@ -84,10 +82,11 @@ const navSections: NavSection[] = [
   },
   {
     id: "system",
-    label: "System",
+    label: "Operations",
     icon: <Settings className="w-4 h-4" />,
     items: [
-      { id: "system-management", label: "System Management", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+      { id: "bulk-users", label: "Bulk Operations", icon: <Upload className="w-3.5 h-3.5" /> },
+      { id: "system-management", label: "Operations Center", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
       { id: "audit-logs", label: "Audit Logs", icon: <ScrollText className="w-3.5 h-3.5" /> },
     ],
     superAdminOnly: true,
@@ -96,7 +95,7 @@ const navSections: NavSection[] = [
 
 export default function AdminSidebar({ activeSection, onSectionChange, isSuperAdmin }: AdminSidebarProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["overview", "users", "organization", "master-data", "system"])
+    new Set(["overview", "users", "business", "master-data", "system"])
   )
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)

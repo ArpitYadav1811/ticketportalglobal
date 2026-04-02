@@ -442,7 +442,7 @@ export default function BulkUserOperations({ onRefresh }: BulkUserOperationsProp
                   size="sm"
                   className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
-                  Update Roles
+                  Apply Role Changes
                 </Button>
               </div>
             </div>
@@ -479,7 +479,7 @@ export default function BulkUserOperations({ onRefresh }: BulkUserOperationsProp
                   size="sm"
                   className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
-                  Update BGs
+                  Apply Business Group Changes
                 </Button>
               </div>
             </div>
