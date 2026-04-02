@@ -156,9 +156,9 @@ export default function RolePermissionsManager() {
   const statusOptions = ["open", "on-hold", "resolved", "closed", "deleted"]
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="h-full flex flex-col min-h-0 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Enhanced Header with Role Selector and Actions */}
-      <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group">
+      <div className="relative bg-card/90 backdrop-blur-md border-2 border-border/50 rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-500 overflow-hidden group flex-shrink-0">
         {/* Animated background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         
@@ -210,6 +210,7 @@ export default function RolePermissionsManager() {
         </div>
       </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
       {loading ? (
         <div className="text-center py-12">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-lg"></div>
@@ -467,6 +468,7 @@ export default function RolePermissionsManager() {
           </PermissionSection>
         </div>
       )}
+      </div>
     </div>
   )
 }

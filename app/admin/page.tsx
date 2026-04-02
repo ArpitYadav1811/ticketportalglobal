@@ -137,12 +137,12 @@ export default function AdminDashboardPage() {
         return <UserManagementTab userRole={userRole} userId={user.id} />
 
       case "roles":
-  return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full">
+        return (
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group h-full flex flex-col min-h-0">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10 h-full">
+            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
               <RolePermissionsManager />
-          </div>
+            </div>
           </div>
         )
 
@@ -162,10 +162,10 @@ export default function AdminDashboardPage() {
 
       case "functional-areas":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col min-h-0">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10 h-full">
+            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
               <FAMappingsVisual currentUser={user} />
             </div>
           </div>
@@ -173,10 +173,10 @@ export default function AdminDashboardPage() {
 
       case "fa-mappings":
         return (
-          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
+          <div className="relative bg-card/90 backdrop-blur-md border border-border/50 rounded-lg shadow-lg p-2 hover:shadow-xl transition-all duration-500 overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col min-h-0">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="relative z-10 h-full">
+            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
               <FAMappingsVisual currentUser={user} />
             </div>
           </div>

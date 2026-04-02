@@ -72,6 +72,7 @@ export default function CreateTicketForm() {
  const [subcategories, setSubcategories] = useState<any[]>([])
  const [assignees, setAssignees] = useState<any[]>([])
  const [isLoading, setIsLoading] = useState(false)
+ const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({})
  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null)
  const fileInputRefSupport = useRef<HTMLInputElement>(null)
@@ -246,6 +247,13 @@ export default function CreateTicketForm() {
  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
  const { name, value } = e.target
  setFormData((prev) => ({ ...prev, [name]: value }))
+ setFieldErrors((prev) => {
+  const key = name as keyof FormData
+  if (!prev[key]) return prev
+  const next = { ...prev }
+  delete next[key]
+  return next
+ })
  }
 
 const handleTargetBusinessGroupChange = async (value: string) => {
@@ -629,8 +637,43 @@ const handleTargetBusinessGroupChange = async (value: string) => {
   referenceTicketsRef.current = updated
  }
 
+ const validateForm = () => {
+  const errors: Partial<Record<keyof FormData, string>> = {}
+
+  const required = (key: keyof FormData, message: string) => {
+   if (!String(formData[key] ?? "").trim()) errors[key] = message
+  }
+
+  required("organizationId", "Functional Area is required.")
+  required("targetBusinessGroupId", "Business Group is required.")
+  required("spocId", "SPOC is required.")
+
+  if (formData.ticketType === "requirement") {
+   required("title", "Title is required for requirements.")
+  } else {
+   required("categoryId", "Category is required.")
+   required("subcategoryId", "Sub Category is required.")
+  }
+
+  const duration = String(formData.estimatedDuration || "").trim()
+  if (duration) {
+   const n = Number(duration)
+   if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
+    errors.estimatedDuration = "Estimated hours must be a positive whole number."
+   }
+  }
+
+  return errors
+ }
+
  const handleSubmit = async (e: FormEvent) => {
  e.preventDefault()
+  const errors = validateForm()
+  if (Object.keys(errors).length > 0) {
+   setFieldErrors(errors)
+   toast.error("Please fix the highlighted fields and try again.")
+   return
+  }
  setIsLoading(true)
 
  try {
@@ -849,6 +892,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  emptyText={organizations.length === 0 ? "No functional areas available. Please ensure the organizations table is seeded." : "No functional areas found"}
  className="h-8 py-1.5 text-xs"
  />
+ {fieldErrors.organizationId && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.organizationId}</p>
+ )}
  </div>
 
  <div className="space-y-1">
@@ -875,6 +921,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  disabled={!formData.organizationId || !!formData.targetBusinessGroupId}
  className="h-8 py-1.5 text-xs"
  />
+ {fieldErrors.targetBusinessGroupId && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.targetBusinessGroupId}</p>
+ )}
  </div>
 
  <div className="space-y-1">
@@ -903,6 +952,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  disabled={!!formData.spocId && !!formData.targetBusinessGroupId}
  className="h-8 py-1.5 text-xs"
  />
+ {fieldErrors.spocId && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.spocId}</p>
+ )}
  {formData.targetBusinessGroupId && !formData.spocId && (
  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
  ⚠️ No SPOC found for this Business Group. Please select a SPOC manually or configure one in Master Settings &gt; Groups.
@@ -931,6 +983,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  placeholder="Enter a descriptive title for this requirement"
  className="w-full h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
  />
+ {fieldErrors.title && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.title}</p>
+ )}
  </div>
 
  {/* Row 4: Description (full width) */}
@@ -964,6 +1019,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  className="w-full h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
  placeholder="Enter estimated hours (e.g., 2, 8, 16)"
  />
+ {fieldErrors.estimatedDuration && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.estimatedDuration}</p>
+ )}
  </div>
 
  <div className="space-y-1">
@@ -1041,6 +1099,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  disabled={!formData.targetBusinessGroupId}
  className="h-8 py-1.5 text-xs"
  />
+ {fieldErrors.categoryId && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.categoryId}</p>
+ )}
  </div>
 
  <div className="space-y-1">
@@ -1064,6 +1125,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  disabled={!formData.categoryId}
  className="h-8 py-1.5 text-xs"
  />
+ {fieldErrors.subcategoryId && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.subcategoryId}</p>
+ )}
  </div>
  </div>
 
@@ -1098,6 +1162,9 @@ const handleTargetBusinessGroupChange = async (value: string) => {
  className="w-full h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 transition-all duration-200 text-xs"
  placeholder="Enter estimated hours (e.g., 2, 8, 16)"
  />
+ {fieldErrors.estimatedDuration && (
+ <p className="text-[11px] text-red-600 dark:text-red-400">{fieldErrors.estimatedDuration}</p>
+ )}
  </div>
 
  <div className="space-y-1">
