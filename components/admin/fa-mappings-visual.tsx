@@ -109,11 +109,14 @@ export default function FAMappingsVisual({ currentUser }: FAMappingsVisualProps)
     bg.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const usersForSecondarySpoc = allUsers.filter(
-    (u: any) =>
-      currentUser?.business_unit_group_id != null &&
-      u.business_unit_group_id === currentUser.business_unit_group_id,
-  )
+  const usersForSecondarySpoc =
+    isSuperAdmin || currentUser?.role?.toLowerCase() === "admin"
+      ? allUsers
+      : allUsers.filter(
+          (u: any) =>
+            currentUser?.business_unit_group_id != null &&
+            u.business_unit_group_id === currentUser.business_unit_group_id,
+        )
 
   const filteredMappings = mappings.filter((m) => {
     if (selectedFA && m.functional_area_id !== selectedFA) return false
