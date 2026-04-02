@@ -122,7 +122,7 @@ export async function getTickets(filters?: {
       SELECT
         t.*,
         u.full_name as creator_name,
-        u.business_unit_group_id as creator_business_unit_group_id,
+        t.business_unit_group_id as creator_business_unit_group_id,
         a.full_name as assignee_name,
         a.business_unit_group_id as assignee_business_unit_group_id,
         spoc.full_name as spoc_name,
@@ -148,7 +148,7 @@ export async function getTickets(filters?: {
       LEFT JOIN business_unit_groups bug ON t.business_unit_group_id = bug.id
       LEFT JOIN business_unit_groups tbg ON t.target_business_group_id = tbg.id
       LEFT JOIN business_unit_groups assignee_bug ON t.assignee_group_id = assignee_bug.id
-      LEFT JOIN business_unit_groups initiator_bug ON u.business_unit_group_id = initiator_bug.id
+      LEFT JOIN business_unit_groups initiator_bug ON t.business_unit_group_id = initiator_bug.id
       LEFT JOIN projects p ON t.project_id = p.id
       LEFT JOIN users closer ON t.closed_by = closer.id
       LEFT JOIN users holder ON t.hold_by = holder.id
@@ -299,7 +299,7 @@ export async function getTicketById(id: number) {
         t.*,
         u.full_name as creator_name,
         u.email as creator_email,
-        u.business_unit_group_id as creator_business_unit_group_id,
+        t.business_unit_group_id as creator_business_unit_group_id,
         a.full_name as assignee_name,
         a.email as assignee_email,
         a.business_unit_group_id as assignee_business_unit_group_id,
