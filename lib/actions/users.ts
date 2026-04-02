@@ -333,6 +333,9 @@ export async function deleteUser(id: number) {
     if (!currentUser) {
       return { success: false, error: "User not authenticated" }
     }
+    if (currentUser.id === id) {
+      return { success: false, error: "You cannot delete your own account" }
+    }
 
     const isSuperAdmin = currentUser.role?.toLowerCase() === "superadmin"
 
@@ -350,7 +353,7 @@ export async function deleteUser(id: number) {
 
     const createdCount = createdTicketCheck[0]?.count || 0
 
-    // Super Admin: Can delete even if user has tickets (will cascade delete related data)
+    // Non-super-admin users cannot delete users with ticket ownership.
     if (!isSuperAdmin) {
       if (ticketCount > 0) {
         return {
@@ -366,6 +369,18 @@ export async function deleteUser(id: number) {
         }
       }
     } else {
+      // Super Admin path: re-home user references before delete so FK constraints do not block.
+      await sql`UPDATE tickets SET assigned_to = NULL, updated_at = CURRENT_TIMESTAMP WHERE assigned_to = ${id}`
+      await sql`UPDATE tickets SET spoc_user_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE spoc_user_id = ${id}`
+      await sql`
+        UPDATE tickets
+        SET created_by = ${currentUser.id}, updated_at = CURRENT_TIMESTAMP
+        WHERE created_by = ${id}
+      `
+      await sql`UPDATE ticket_audit_events SET performed_by = ${currentUser.id} WHERE performed_by = ${id}`
+      await sql`UPDATE ticket_audit_log SET performed_by = ${currentUser.id} WHERE performed_by = ${id}`
+      await sql`UPDATE business_group_spocs SET assigned_by = ${currentUser.id} WHERE assigned_by = ${id}`
+
       // Super Admin: Log the permanent deletion
       try {
         const { addSystemAuditLog } = await import("./admin")
@@ -377,7 +392,7 @@ export async function deleteUser(id: number) {
             oldValue: `${userToDelete[0].full_name} (${userToDelete[0].email})`,
             performedBy: currentUser.id,
             performedByName: currentUser.full_name || currentUser.email,
-            notes: `User permanently deleted by Super Admin. ${ticketCount} assigned tickets and ${createdCount} created tickets will be deleted.`
+            notes: `User permanently deleted by Super Admin. ${ticketCount} assigned tickets and ${createdCount} created tickets were reassigned/unlinked.`
           })
         }
       } catch (auditError) {
@@ -385,13 +400,13 @@ export async function deleteUser(id: number) {
       }
     }
 
-    // Delete user (cascade will handle team_members, and if Super Admin, related tickets will be handled)
+    // Delete user (cascade handles team_members and other ON DELETE CASCADE relations)
     await sql`DELETE FROM users WHERE id = ${id}`
 
     return { 
       success: true, 
       message: isSuperAdmin 
-        ? "User permanently deleted. All related tickets and data have been removed." 
+        ? "User permanently deleted. Related ticket ownership/references have been safely reassigned." 
         : "User deleted successfully"
     }
   } catch (error) {
