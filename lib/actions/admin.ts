@@ -674,25 +674,9 @@ export async function updateBusinessGroupSpoc(
         return { success: false, error: "Only Primary SPOC can update Secondary SPOC" }
       }
 
-      // A user can be Secondary SPOC for only one group at a time.
+      // A user can be Secondary SPOC for only one group at a time (strict by user identity).
       const trimmedSpocName = (spocName || "").trim()
       if (trimmedSpocName) {
-        const existingSecondary = await sql`
-          SELECT id, name
-          FROM business_unit_groups
-          WHERE id <> ${businessGroupId}
-            AND secondary_spoc_name IS NOT NULL
-            AND LOWER(TRIM(secondary_spoc_name)) = LOWER(TRIM(${trimmedSpocName}))
-          LIMIT 1
-        `
-
-        if (existingSecondary.length > 0) {
-          return {
-            success: false,
-            error: `This user is already assigned as Secondary SPOC for ${existingSecondary[0].name}. A user can be Secondary SPOC for only one group.`,
-          }
-        }
-
         // Secondary SPOC must belong to the same business unit as the Primary SPOC (current user).
         const [primaryBuRow] = await sql`
           SELECT business_unit_group_id FROM users WHERE id = ${currentUser.id}
@@ -707,21 +691,50 @@ export async function updateBusinessGroupSpoc(
         }
 
         const candidates = await sql`
-          SELECT id, business_unit_group_id FROM users
+          SELECT id, full_name, business_unit_group_id FROM users
           WHERE LOWER(TRIM(full_name)) = LOWER(TRIM(${trimmedSpocName}))
         `
-        const sameBu = candidates.find(
-          (c: { business_unit_group_id: unknown }) =>
+        if (candidates.length === 0) {
+          return {
+            success: false,
+            error: "No user found with that name. Choose someone from your business unit.",
+          }
+        }
+
+        const sameBuCandidates = candidates.filter(
+          (c) =>
             c.business_unit_group_id != null &&
             Number(c.business_unit_group_id) === Number(primaryBuId),
         )
-        if (!sameBu) {
+        if (sameBuCandidates.length === 0) {
+          return {
+            success: false,
+            error: "Secondary SPOC must be a user from your same business unit group.",
+          }
+        }
+        if (sameBuCandidates.length > 1) {
           return {
             success: false,
             error:
-              candidates.length === 0
-                ? "No user found with that name. Choose someone from your business unit."
-                : "Secondary SPOC must be a user from your same business unit group.",
+              "Multiple users share this name in your business unit. Please use a unique user name before assigning as Secondary SPOC.",
+          }
+        }
+
+        const selectedSecondaryUserId = Number(sameBuCandidates[0].id)
+        const existingSecondary = await sql`
+          SELECT bug.id, bug.name
+          FROM business_unit_groups bug
+          JOIN users u
+            ON LOWER(TRIM(u.full_name)) = LOWER(TRIM(bug.secondary_spoc_name))
+          WHERE bug.id <> ${businessGroupId}
+            AND bug.secondary_spoc_name IS NOT NULL
+            AND u.id = ${selectedSecondaryUserId}
+          LIMIT 1
+        `
+        if (existingSecondary.length > 0) {
+          return {
+            success: false,
+            error: `This user is already assigned as Secondary SPOC for ${existingSecondary[0].name}. A user can be Secondary SPOC for only one group.`,
           }
         }
       }
