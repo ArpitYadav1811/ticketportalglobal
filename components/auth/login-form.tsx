@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { signIn } from "next-auth/react"
 import Image from "next/image"
 import { AlertCircle } from "lucide-react"
 import { useTheme } from "next-themes"
@@ -11,6 +12,13 @@ const errorMessages: Record<string, string> = {
     "Authentication failed. This may be due to a database connection issue. Please try again or contact support if the problem persists.",
   Configuration: "There is a problem with the server configuration. Please contact support.",
   Verification: "The verification token has expired or has already been used.",
+  OAuthSignin: "Could not start Microsoft sign-in. Please try again.",
+  OAuthCallback: "Microsoft sign-in callback failed. Please try again.",
+  OAuthCreateAccount: "Could not create your account from Microsoft profile.",
+  Callback: "Sign-in callback failed. Please try again.",
+  OAuthAccountNotLinked: "This email is linked with a different sign-in method.",
+  SessionRequired: "Please sign in to continue.",
+  Signin: "Sign-in failed. Please try again.",
   Default: "An error occurred during sign-in. Please try again.",
 }
 
@@ -50,13 +58,23 @@ export function LoginForm() {
     setError("")
     setIsSSOLoading(true)
     try {
-      // Use direct NextAuth OAuth entrypoint for a reliable first-click redirect.
-      const callbackUrl = encodeURIComponent("/dashboard")
-      window.location.href = `/api/auth/signin/azure-ad?callbackUrl=${callbackUrl}`
+      const callbackUrl = typeof window !== "undefined" ? `${window.location.origin}/dashboard` : "/dashboard"
+      // Preferred flow
+      await signIn("azure-ad", {
+        redirect: true,
+        callbackUrl,
+      })
     } catch (err) {
       console.error("Microsoft sign-in error:", err)
-      setError("Microsoft sign-in failed. Please try again.")
-      setIsSSOLoading(false)
+      // Fallback direct route if NextAuth client helper fails in browser context
+      try {
+        const callbackUrl = encodeURIComponent("/dashboard")
+        window.location.href = `/api/auth/signin/azure-ad?callbackUrl=${callbackUrl}`
+        return
+      } catch {
+        setError("Microsoft sign-in failed. Please try again.")
+        setIsSSOLoading(false)
+      }
     }
   }
 
