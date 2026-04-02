@@ -77,6 +77,7 @@ export default function CreateTicketForm() {
  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null)
  const fileInputRefSupport = useRef<HTMLInputElement>(null)
  const fileInputRefRequirement = useRef<HTMLInputElement>(null)
+ const didAutoSelectGroupRef = useRef(false)
 
  // Reference ticket state
  const [referenceInput, setReferenceInput] = useState("")
@@ -116,7 +117,13 @@ export default function CreateTicketForm() {
 
  // Pre-select target business group based on user's business unit group (only for customer tickets)
  useEffect(() => {
- if (userGroupId && !formData.targetBusinessGroupId && !isDuplicate && !formData.isInternal) {
+ if (
+  userGroupId &&
+  !formData.targetBusinessGroupId &&
+  !isDuplicate &&
+  !formData.isInternal &&
+  !didAutoSelectGroupRef.current
+ ) {
  const userBug = businessUnitGroups.find(bug => bug.id.toString() === userGroupId)
  if (userBug) {
  // Customer ticket mappings: CS Apps -> TD Apps, CS Web -> TD Web, etc.
@@ -133,6 +140,7 @@ export default function CreateTicketForm() {
  const matchingTbg = targetBusinessGroups.find(tbg => tbg.name === mappedTargetGroupName)
  if (matchingTbg) {
  setFormData((prev) => ({ ...prev, targetBusinessGroupId: matchingTbg.id.toString() }))
+ didAutoSelectGroupRef.current = true
  }
  }
  // For Sales and Others, no pre-selection (user will see filtered list)
